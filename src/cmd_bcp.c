@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.3 2004/04/12 21:02:13 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -340,8 +340,13 @@ int cmd_bcp( argc, argv )
     }
 
     /*-- Find the appropriate BLK_VERSION_xxx value --*/
+#if defined(CS_VERSION_150)
+    if(blk_ver == -1 && g_cs_ver == CS_VERSION_150) {
+	blk_ver = BLK_VERSION_150;
+    }
+#endif
 #if defined(CS_VERSION_125)
-    if(g_cs_ver == CS_VERSION_125) {
+    if(blk_ver == -1 && g_cs_ver == CS_VERSION_125) {
 	blk_ver = BLK_VERSION_125;
     }
 #endif

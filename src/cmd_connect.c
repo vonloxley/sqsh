@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.5 2004/11/04 18:53:15 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.6 2004/11/05 15:53:45 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -155,70 +155,71 @@ int cmd_connect( argc, argv )
     {
         switch( c ) 
         {
-            case 'D' :
-                    if (env_put( g_env, "database", sqsh_optarg, 
-                                 ENV_F_TRAN ) == False)
-                    {
-                        fprintf( stderr, "\\connect: -D: %s\n",
-                                    sqsh_get_errstr() );
-                        have_error = True;
-                    }
-                    break;
-            case 'c' :
-                    preserve_context = False ;
-                    break ;
-            case 'I'  :
-                    if (env_put( g_env, "interfaces", sqsh_optarg, 
-                                 ENV_F_TRAN ) == False)
-                    {
-                        fprintf( stderr, "\\connect: -I: %s\n",
-                                    sqsh_get_errstr() );
-                        have_error = True;
-                    }
-                break ;
-            case 'S'  :    /* Server name */
-                    if (env_put( g_env, "DSQUERY", sqsh_optarg,
-                                 ENV_F_TRAN ) == False)
-                    {
-                        fprintf( stderr, "\\connect: -S: %s\n",
-                                    sqsh_get_errstr() );
-                        have_error = True;
-                    }
-                break ;
-            case 'U' :
-                    if (env_put( g_env, "username", sqsh_optarg,
-                                 ENV_F_TRAN ) == False)
-                    {
-                        fprintf( stderr, "\\connect: -U: %s\n",
-                                    sqsh_get_errstr() );
-                        have_error = True;
-                    }
-                break ;
-            case 'P' :
-                    strcpy( orig_password, g_password );
-                    password_changed = True;
-
-                    if (env_put( g_env, "password", sqsh_optarg,
-                                 ENV_F_TRAN ) == False)
-                    {
-                        fprintf( stderr, "\\connect: -P: %s\n",
-                                    sqsh_get_errstr() );
-                        have_error = True;
-                    }
-					break;
-            case 'n' :
-                    if (env_put( g_env, "chained", sqsh_optarg,
-                                 ENV_F_TRAN ) == False)
-                    {
-                        fprintf( stderr, "\\connect: -n: %s\n",
-                                    sqsh_get_errstr() );
-                        have_error = True;
-                    }
-                break ;
-            default :
-                fprintf( stderr, "\\connect: %s\n", sqsh_get_errstr() ) ;
-                have_error = True ;
-                break ;
+	  case 'D' :
+	    if (env_put( g_env, "database", sqsh_optarg, 
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -D: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break;
+	  case 'c' :
+	    preserve_context = False ;
+	    break ;
+	  case 'I'  :
+	    if (env_put( g_env, "interfaces", sqsh_optarg, 
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -I: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+	  case 'S'  :    /* Server name */
+	    if (env_put( g_env, "DSQUERY", sqsh_optarg,
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -S: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+	  case 'U' :
+	    if (env_put( g_env, "username", sqsh_optarg,
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -U: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+	  case 'P' :
+	    if(g_password_set == True && g_password != NULL)
+		strcpy( orig_password, g_password );
+	    password_changed = True;
+	    
+	    if (env_put( g_env, "password", sqsh_optarg,
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -P: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break;
+	  case 'n' :
+	    if (env_put( g_env, "chained", sqsh_optarg,
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -n: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+	  default :
+	    fprintf( stderr, "\\connect: %s\n", sqsh_get_errstr() ) ;
+	    have_error = True ;
+	    break ;
         }
     }
 
@@ -346,13 +347,22 @@ int cmd_connect( argc, argv )
     if (g_context == NULL)
     {
         /*-- Allocate a new context structure --*/
-	/*-- mpeppler 4/9/2004
+    /*-- mpeppler 4/9/2004
           we loop through the CS_VERSION_xxx values to try
           to use the highest one we find */
 
-#if defined(CS_VERSION_125)
-	g_cs_ver = CS_VERSION_125;
+    retcode = CS_FAIL;
+
+#if defined(CS_VERSION_150)
+        if(retcode != CS_SUCCEED) {
+        g_cs_ver = CS_VERSION_150;
         retcode = cs_ctx_alloc(g_cs_ver, &g_context);
+    }
+#if defined(CS_VERSION_125)
+        if(retcode != CS_SUCCEED) {
+        g_cs_ver = CS_VERSION_125;
+        retcode = cs_ctx_alloc(g_cs_ver, &g_context);
+    }
 #if defined(CS_VERSION_120)
         if(retcode != CS_SUCCEED) {
             g_cs_ver = CS_VERSION_120;
@@ -363,6 +373,7 @@ int cmd_connect( argc, argv )
             g_cs_ver = CS_VERSION_110;
             retcode = cs_ctx_alloc(g_cs_ver, &g_context);
         }
+#endif
 #endif
 #endif
 #endif
@@ -546,12 +557,12 @@ int cmd_connect( argc, argv )
     /*-- Initialize --*/
     if (cs_locale( g_context,                    /* Context */
                    CS_SET,                       /* Action */
-		   locale,                       /* Locale Structure */
+           locale,                       /* Locale Structure */
                    CS_LC_ALL,                    /* Property */
-		   (CS_CHAR*)NULL,               /* Buffer */
+           (CS_CHAR*)NULL,               /* Buffer */
                    CS_UNUSED,                    /* Buffer Length */
                    (CS_INT*)NULL                 /* Output Length */
-	    ) != CS_SUCCEED)
+        ) != CS_SUCCEED)
         goto connect_fail;
 
     /*-- Language --*/
@@ -560,11 +571,11 @@ int cmd_connect( argc, argv )
         if (cs_locale( g_context,                 /* Context */
                        CS_SET,                    /* Action */
                        locale,                    /* Locale Structure */
-		       CS_SYB_LANG,               /* Property */
-		       (CS_CHAR*)language,        /* Buffer */
-		       CS_NULLTERM,               /* Buffer Length */
-		       (CS_INT*)NULL              /* Output Length */
-		) != CS_SUCCEED)
+               CS_SYB_LANG,               /* Property */
+               (CS_CHAR*)language,        /* Buffer */
+               CS_NULLTERM,               /* Buffer Length */
+               (CS_INT*)NULL              /* Output Length */
+        ) != CS_SUCCEED)
             goto connect_fail;
     }
 
@@ -574,22 +585,22 @@ int cmd_connect( argc, argv )
         if (cs_locale( g_context,                 /* Context */
                        CS_SET,                    /* Action */
                        locale,                    /* Locale Structure */
-		       CS_SYB_CHARSET,            /* Property */
-		       (CS_CHAR*)charset,         /* Buffer */
-		       CS_NULLTERM,               /* Buffer Length */
-		       (CS_INT*)NULL              /* Output Length */
-		) != CS_SUCCEED)
+               CS_SYB_CHARSET,            /* Property */
+               (CS_CHAR*)charset,         /* Buffer */
+               CS_NULLTERM,               /* Buffer Length */
+               (CS_INT*)NULL              /* Output Length */
+        ) != CS_SUCCEED)
             goto connect_fail;
     }
 
     /*-- Locale Property --*/
     if (ct_con_props( g_connection,            /* Connection */
-		      CS_SET,                  /* Action */
-		      CS_LOC_PROP,             /* Property */
-		      (CS_VOID*)locale,        /* Buffer */
-		      CS_UNUSED,               /* Buffer Length */
-		      (CS_INT*)NULL            /* Output Length */
-	    ) != CS_SUCCEED)
+              CS_SET,                  /* Action */
+              CS_LOC_PROP,             /* Property */
+              (CS_VOID*)locale,        /* Buffer */
+              CS_UNUSED,               /* Buffer Length */
+              (CS_INT*)NULL            /* Output Length */
+        ) != CS_SUCCEED)
         goto connect_fail;
     
 
@@ -611,7 +622,7 @@ int cmd_connect( argc, argv )
          * error handlers.
          */
         if (ct_connect( g_connection, server,
-			(server == NULL)?CS_UNUSED:CS_NULLTERM ) != CS_SUCCEED)
+            (server == NULL)?CS_UNUSED:CS_NULLTERM ) != CS_SUCCEED)
         {
             if (*password_retry != '1' || !sqsh_stdin_isatty() ||
                 sg_login_failed != True)
@@ -695,6 +706,7 @@ int cmd_connect( argc, argv )
     /*-- If autouse has been set, use it --*/
     if (autouse != NULL && *autouse != '\0') 
     {
+    CS_INT ret = CS_SUCCEED;
 
         if (ct_cmd_alloc( g_connection, &cmd ) != CS_SUCCEED)
             goto connect_succeed;
@@ -718,7 +730,10 @@ int cmd_connect( argc, argv )
             goto connect_succeed;
         }
 
-        while (ct_results( cmd, &result_type ) != CS_END_RESULTS);
+        while (ct_results( cmd, &result_type ) != CS_END_RESULTS) {
+        if(result_type == CS_CMD_FAIL)
+        ret = CS_FAIL;
+    }
         ct_cmd_drop( cmd );
 
     }
@@ -736,15 +751,15 @@ connect_succeed:
 
     /* Set chained mode, if necessary. */
     if ( chained != NULL ) {
-	CS_BOOL value = (*chained == '1' ? CS_TRUE : CS_FALSE);
+    CS_BOOL value = (*chained == '1' ? CS_TRUE : CS_FALSE);
 
-	/* fprintf(stderr, "Setting chained mode to %d\n", value); */
+    /* fprintf(stderr, "Setting chained mode to %d\n", value); */
 
-	retcode = ct_options( g_connection, CS_SET, CS_OPT_CHAINXACTS,
-			      &value, CS_UNUSED, NULL);
-	if(retcode != CS_SUCCEED) {
-	    /* XXX */
-	}
+    retcode = ct_options( g_connection, CS_SET, CS_OPT_CHAINXACTS,
+                  &value, CS_UNUSED, NULL);
+    if(retcode != CS_SUCCEED) {
+        /* XXX */
+    }
     }
 
     return_code = CMD_LEAVEBUF;

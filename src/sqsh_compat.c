@@ -33,7 +33,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_compat.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_compat.c,v 1.2 2004/11/05 13:01:20 mpeppler Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -318,7 +318,7 @@ int sqsh_getinput( prompt, buf, len, echo )
     /*
      * Turn off buffering for both file handles.
      */
-    setbuf( read_fp, NULL ) ;
+    setbuf( read_fp, NULL );
     setbuf( write_fp, NULL ) ;
 
     fputs( prompt, write_fp );
@@ -360,6 +360,10 @@ int sqsh_getinput( prompt, buf, len, echo )
      * Now, read in a string from the user, placing the output in
      * input, and reading at most lencharacters.
      */
+    /* Hmmm... buffering is supposed to be turned off (see the setbuf()
+       calls above), but input is clearly still getting buffered (at least
+       on my linux system). So entering some data then hitting ^D will NOT
+       exit the loop - though a second ^D *will* exit the loop. */
     while ((ch = fgetc( read_fp )) != EOF && ch != '\n')
     {
         if (i < (len - 1))
@@ -370,6 +374,10 @@ int sqsh_getinput( prompt, buf, len, echo )
             }
             buf[i++] = ch;
         }
+    }
+    if (ch == EOF) {
+	/* user hit ^D... */
+	++interrupted;
     }
     if (buf != NULL && len > 1)
     {
