@@ -1,0 +1,17 @@
+$Id$
+
+Release Notes for sqsh 2.1.2
+
+This is an incremental bug-fix release.
+
+Bugs fixed (bug IDs from SourceForge's bug tracker)
+
+1010901		Problems with -w ($width).
+1051672		Missing OCS libs for static build
+1010961		Can't provide multiple sqshrc's
+987494		Better version reporting
+
+Other fixes include fixing a segfault if "go" appears on its own in a 
+comment block, and making sure that the \read command actually reads from
+the terminal even when using redirected input or the -i flag.
+
