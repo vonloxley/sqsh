@@ -1,3 +1,8 @@
+2004-11-08  Michael Peppler  <mpeppler@peppler.org>
+
+	* aclocal.m4 (AC_SYBASE_ASE): Change library search code to
+	also look for libsybxxx.a and lib[syb]xxx64.a libraries.
+
 2004-11-05  Michael Peppler  <mpeppler@peppler.org>
 
 	* src/sqsh_main.c (main): Don't set "width" to the terminal 
@@ -79,7 +84,7 @@
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.8 2004/11/05 13:01:12 mpeppler Exp $
+$Id: ChangeLog,v 1.9 2004/11/05 15:53:44 mpeppler Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against

@@ -235,52 +235,25 @@ AC_DEFUN([AC_SYBASE_ASE], [
 
 		SYBASE_LIBS=
 
-		#
-		# Check for -lblk
-		#
-		if test -f $SYBASE_LIBDIR/libblk.a; then
-			SYBASE_LIBS="$SYBASE_LIBS -lblk"
-		fi
-
-		#
-		# Check for -lcs
-		#
-		if test -f $SYBASE_LIBDIR/libcs.a; then
-			SYBASE_LIBS="$SYBASE_LIBS -lcs"
-		fi
-
-		#
-		# Check for -lct
-		#
-		if test -f $SYBASE_LIBDIR/libct.a; then
-			SYBASE_LIBS="$SYBASE_LIBS -lct"
-		fi
-
-		#
-		# Check for -lsybtcl or -ltcl
-		#
-		if test -f $SYBASE_LIBDIR/libsybtcl.a; then
-			SYBASE_LIBS="$SYBASE_LIBS -lsybtcl"
-		else
-			if test -f $SYBASE_LIBDIR/libtcl.a; then
-				SYBASE_LIBS="$SYBASE_LIBS -ltcl"
+		for i in blk cs ct tcl comn intl
+		do
+			x=
+			if test -f $SYBASE_LIBDIR/lib${i}.a; then
+				x="-l${i}"
+			else if test -f $SYBASE_LIBDIR/lib${i}64.a; then
+				x="-l${i}64"
+			else if test -f $SYBASE_LIBDIR/libsyb${i}.a; then
+				x="-lsyb${i}"
+			else if test -f $SYBASE_LIBDIR/libsyb${i}64.a; then
+				x="-lsyb${i}64"
 			fi
-		fi
-
-		#
-		# Check for -lcomn
-		#
-		if test -f $SYBASE_LIBDIR/libcomn.a; then
-			SYBASE_LIBS="$SYBASE_LIBS -lcomn"
-		fi
-
-		#
-		# Check for -lintl
-		#
-		if test -f $SYBASE_LIBDIR/libintl.a; then
-			SYBASE_LIBS="$SYBASE_LIBS -lintl"
-		fi
-
+			fi
+			fi
+			fi
+			if test -n $x ; then
+				SYBASE_LIBS="$SYBASE_LIBS $x"
+			fi
+		done
 		#
 		# Check for -ltds (FreeTDS project)
 		#
@@ -292,7 +265,7 @@ AC_DEFUN([AC_SYBASE_ASE], [
 
 	AC_MSG_CHECKING(Open Client needs net libraries)
 
-		SYBASE_VERSION=`strings $SYBASE_LIBDIR/libct.a 2>/dev/null | \
+		SYBASE_VERSION=`strings $SYBASE_LIBDIR/lib*ct.a 2>/dev/null | \
 			cut -c1-80 | fgrep 'Sybase Client-Library' | cut -d '/' -f 2`
 		SYBASE_VERSION=`echo $SYBASE_VERSION | cut -d . -f 1`
 
