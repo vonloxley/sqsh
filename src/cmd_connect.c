@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -138,6 +138,8 @@ int cmd_connect( argc, argv )
 	CS_INT      netio_type;
 #endif
 	CS_INT      con_status;
+	CS_INT      cs_ver;
+	CS_INT      retcode;
 
 	/*
 	 * First, we want to establish an environment "transaction". This
@@ -334,7 +336,31 @@ int cmd_connect( argc, argv )
 	if (g_context == NULL)
 	{
 		/*-- Allocate a new context structure --*/
-		if (cs_ctx_alloc( CS_VERSION_100, &g_context ) != CS_SUCCEED)
+	        /*-- mpeppler 4/9/2004
+		  we loop through the CS_VERSION_xxx values to try
+		  to use the highest one we find */
+
+#if defined(CS_VERSION_125)
+	        cs_ver = CS_VERSION_125;
+		retcode = cs_ctx_alloc(cs_ver, &g_context);
+#if defined(CS_VERSION_120)
+		if(retcode != CS_SUCCEED) {
+		    cs_ver = CS_VERSION_120;
+		    retcode = cs_ctx_alloc(cs_ver, &g_context);
+		}
+#if defined(CS_VERSION_110)
+		if(retcode != CS_SUCCEED) {
+		    cs_ver = CS_VERSION_110;
+		    retcode = cs_ctx_alloc(cs_ver, &g_context);
+		}
+#endif
+#endif
+#endif
+		if(retcode != CS_SUCCEED) {
+		    cs_ver = CS_VERSION_100;
+		    retcode = cs_ctx_alloc(cs_ver, &g_context);
+		}
+		if (retcode != CS_SUCCEED) /* nothing worked... */
 			goto connect_fail;
 
 		/*-- Install callbacks into context --*/
@@ -351,7 +377,7 @@ int cmd_connect( argc, argv )
 		}
 		
 		/*-- Initialize the context --*/
-		if (ct_init( g_context, CS_VERSION_100 ) != CS_SUCCEED)
+		if (ct_init( g_context, cs_ver ) != CS_SUCCEED)
 			goto connect_fail;
 
 		if (ct_callback( g_context,                 /* Context */

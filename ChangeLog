@@ -1,4 +1,19 @@
-$Id: ChangeLog,v 1.2 2001/11/06 01:24:49 gray Exp $
+2004-04-09  Michael Peppler  <mpeppler@peppler.org>
+
+	* src/dsp_desc.c (dsp_desc_fetch): Add support for CS_DATE_TYPE
+	and CS_TIME_TYPE.
+
+	* src/dsp_meta.c (dsp_meta_transtate): Add support for
+	CS_DATE_TYPE and CS_TIME_TYPE.
+
+	* src/dsp_desc.c (dsp_desc_fetch): CS_ROW_FAIL return codes from
+	ct_fetch should not be considered fatal errors for the query, as
+	they are usually the result of data overflow/truncation.
+
+	* src/cmd_connect.c (cmd_connect): Add logic to use the the
+	highest CS_VERSION_xxx value that is available at run-time. This
+	should enable wide varchar() columns to be retrieved correctly
+	when sqsh is built with 12.5.x OpenClient.
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against

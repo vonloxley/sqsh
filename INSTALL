@@ -4,7 +4,7 @@ Description
 -=-=-=-=-=-
 
 The follow document describes how to build and install the Sqsh SQL
-shell, version 2.1. For an overall description of the package, please
+shell, version 2.2. For an overall description of the package, please
 refer to the file README.
 
 Supported Platforms
@@ -285,5 +285,6 @@ Good Luck
 Well, hopefully everything went OK for you.  If you have any problems
 or you run across any bugs in the program, contact me at:
 
-Scott C. Gray (gray@voicenet.com, sgray@inventa.com)
-16-Oct-2001
+mpeppler@peppler.org
+
+Michael Peppler, April 2004

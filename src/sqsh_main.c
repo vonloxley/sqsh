@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.2 2001/10/23 21:40:43 gray Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -59,9 +59,9 @@ static void sigwinch_handler _ANSI_ARGS(( int, void* ));
  * description of that it does.
  */
 typedef struct sqsh_flag_st {
-	char *flag;
-	char *arg;
-	char *description;
+    char *flag;
+    char *arg;
+    char *description;
 } sqsh_flag_t;
 
 /*
@@ -73,629 +73,629 @@ typedef struct sqsh_flag_st {
 static sqsh_flag_t sg_flags[] = {
 /* Flag    Argument         Description
    -----   ---------        ----------------------------------- */
-	{ "-a", "count",        "Max. # of errors before abort"      },
-	{ "-A", "packet_size",  "Adjust TDS packet size (512)"       },
-	{ "-b", "",             "Suppress banner message on startup" },
-	{ "-B", "",             "Turn off file buffering on startup" },
-	{ "-c", "[cmdend]",     "Alias for the 'go' command"         },
-	{ "-C", "sql",          "Send sql statment to server"        },
-	{ "-d", "severity",     "Min. severity level to display"     },
-	{ "-D", "database",     "Change database context on startup" },
-	{ "-e", "",             "Echo batch prior to executing"      },
-	{ "-E", "editor",       "Replace default editor (vi)"        },
-	{ "-f", "severity",     "Min. severity level for failure"    },
-	{ "-h", "",             "Disable headers and footers"        },
-	{ "-H", "hostname",     "Set the client hostname"            },
-	{ "-i", "filename",     "Read input from file"               },
-	{ "-I", "interfaces",   "Alternate interfaces file"          },
-	{ "-J", "charset",      "Client character set"               },
-	{ "-k", "keywords",     "Specify alternate keywords file"    },
-	{ "-l", "level",        "Set debugging level"                },
-	{ "-m", "mode",         "Set display mode (normal)"          },
-	{ "-L", "var=value",    "Set the value of a given variable"  },
-	{ "-o", "filename",     "Direct all output to file"          },
-	{ "-p", "",             "Display performance stats"          },
-	{ "-P", "[password]",   "Sybase password (NULL)"             },
-	{ "-r", "[sqshrc]",     "Specify name of .sqshrc"            },
-	{ "-s", "colsep",       "Alternate column separator (\\t)"   },
-	{ "-S", "server",       "Name of Sybase server ($DSQUERY)"   },
-	{ "-t", "[filter]",     "Filter batches through program"     },
-	{ "-U", "username",     "Name of Sybase user"                },
-	{ "-v", "",             "Display current version and exit"   },
-	{ "-w", "width",        "Adjust result display width"        },
-	{ "-X", "",             "Enable client password encryption"  },
-	{ "-y", "dir",          "Override value of $SYBASE"          },
-	{ "-z", "language",     "Alternate display language"         },
+    { "-a", "count",        "Max. # of errors before abort"      },
+    { "-A", "packet_size",  "Adjust TDS packet size (512)"       },
+    { "-b", "",             "Suppress banner message on startup" },
+    { "-B", "",             "Turn off file buffering on startup" },
+    { "-c", "[cmdend]",     "Alias for the 'go' command"         },
+    { "-C", "sql",          "Send sql statment to server"        },
+    { "-d", "severity",     "Min. severity level to display"     },
+    { "-D", "database",     "Change database context on startup" },
+    { "-e", "",             "Echo batch prior to executing"      },
+    { "-E", "editor",       "Replace default editor (vi)"        },
+    { "-f", "severity",     "Min. severity level for failure"    },
+    { "-h", "",             "Disable headers and footers"        },
+    { "-H", "hostname",     "Set the client hostname"            },
+    { "-i", "filename",     "Read input from file"               },
+    { "-I", "interfaces",   "Alternate interfaces file"          },
+    { "-J", "charset",      "Client character set"               },
+    { "-k", "keywords",     "Specify alternate keywords file"    },
+    { "-l", "level",        "Set debugging level"                },
+    { "-m", "mode",         "Set display mode (normal)"          },
+    { "-L", "var=value",    "Set the value of a given variable"  },
+    { "-o", "filename",     "Direct all output to file"          },
+    { "-p", "",             "Display performance stats"          },
+    { "-P", "[password]",   "Sybase password (NULL)"             },
+    { "-r", "[sqshrc]",     "Specify name of .sqshrc"            },
+    { "-s", "colsep",       "Alternate column separator (\\t)"   },
+    { "-S", "server",       "Name of Sybase server ($DSQUERY)"   },
+    { "-t", "[filter]",     "Filter batches through program"     },
+    { "-U", "username",     "Name of Sybase user"                },
+    { "-v", "",             "Display current version and exit"   },
+    { "-w", "width",        "Adjust result display width"        },
+    { "-X", "",             "Enable client password encryption"  },
+    { "-y", "dir",          "Override value of $SYBASE"          },
+    { "-z", "language",     "Alternate display language"         },
 };
 
 int
 main( argc, argv )
-	int    argc;
-	char  *argv[];
+    int    argc;
+    char  *argv[];
 {
-	int           ret;
-	int           exit_status;
+    int           ret;
+    int           exit_status;
 
-	/*-- Variables required by sqsh_getopt() --*/
-	extern  int    sqsh_optind;
-	extern  char  *sqsh_optarg;
-	char          *username = NULL;
-	char          *rcfile;
-	char          *history;
-	char          *banner;
-	char          *thresh_exit;
-	char          *batch_failcount;
-	char          *exit_failcount;
-	char          *keyword_file;
-	char           str[512];
-	int            ch;
-	uid_t          uid;
-	struct passwd *pwd;
-	int            fd;
-	int            stdout_tty;  /* True if stdout is a tty */
-	int            show_banner = True;
-	int            set_width   = False;
-	int            read_file   = False;  /* True if -i supplied */
-	char          *sql = NULL;
-	char          *cptr;
-	int            i;
-	varbuf_t      *exp_buf;
+    /*-- Variables required by sqsh_getopt() --*/
+    extern  int    sqsh_optind;
+    extern  char  *sqsh_optarg;
+    char          *username = NULL;
+    char          *rcfile;
+    char          *history;
+    char          *banner;
+    char          *thresh_exit;
+    char          *batch_failcount;
+    char          *exit_failcount;
+    char          *keyword_file;
+    char           str[512];
+    int            ch;
+    uid_t          uid;
+    struct passwd *pwd;
+    int            fd;
+    int            stdout_tty;  /* True if stdout is a tty */
+    int            show_banner = True;
+    int            set_width   = False;
+    int            read_file   = False;  /* True if -i supplied */
+    char          *sql = NULL;
+    char          *cptr;
+    int            i;
+    varbuf_t      *exp_buf;
 
 
-	/*
-	 * If termios.h defines TIOCGWINSZ, then we need to declare a
-	 * structure in which to retrieve the current window size.
-	 */
+    /*
+     * If termios.h defines TIOCGWINSZ, then we need to declare a
+     * structure in which to retrieve the current window size.
+     */
 #if defined(TIOCGWINSZ)
-	struct winsize  ws;
+    struct winsize  ws;
 #endif
 
-	/*
-	 * Start us our reading from regular old stdin.
-	 */
-	sqsh_stdin_file( stdin );
+    /*
+     * Start us our reading from regular old stdin.
+     */
+    sqsh_stdin_file( stdin );
 
 
-	/*
-	 * The first thing we need to do is intialize all commands, variables,
-	 * etc prior to parsing the command line.  This is important because
-	 * the command line flags simply alter these variables.
-	 */
- 	if( sqsh_init() == False ) {
- 		fprintf( stderr, "%s\n", sqsh_get_errstr() );
- 		sqsh_exit(255);
-	}
+    /*
+     * The first thing we need to do is intialize all commands, variables,
+     * etc prior to parsing the command line.  This is important because
+     * the command line flags simply alter these variables.
+     */
+    if( sqsh_init() == False ) {
+        fprintf( stderr, "%s\n", sqsh_get_errstr() );
+        sqsh_exit(255);
+    }
 
-	/*
-	 * If the first argument on the command line is -r, then we want
-	 * to process it before we attempt to read the .sqshrc file (since
-	 * -r allows the user to specify another .sqshrc file.
-	 */
-	if ( argc > 1 && strcmp( argv[1], "-r" ) == 0)
-	{
-		if (argc > 2 && *argv[2] != '-')
-		{
- 			if (access( argv[2], R_OK ) == -1)
-			{
-				fprintf( stderr, "sqsh: Unable to open %s: %s\n", argv[2],
-				         strerror(errno) );
-				sqsh_exit(255);
-			}
-			rcfile = argv[2];
-			env_set( g_env, "rcfile", argv[2] );
-		}
-		else
-		{
-			rcfile = NULL;
-		}
-	}
-	else
-	{
-		/*
-		 * We now want to read the users resource file prior to dealing
-		 * with any command line options, this way we can override any
-		 * value defined in the rc file with values on the command line.
-		 */
-		env_get( g_env, "SQSHRC", &rcfile );
-		if (rcfile != NULL && *rcfile != '\0')
-		{
-			env_set( g_env, "rcfile", rcfile );
-		}
-		else
-		{
- 			env_get( g_env, "rcfile", &rcfile );
-		}
-	}
+    /*
+     * If the first argument on the command line is -r, then we want
+     * to process it before we attempt to read the .sqshrc file (since
+     * -r allows the user to specify another .sqshrc file.
+     */
+    if ( argc > 1 && strcmp( argv[1], "-r" ) == 0)
+    {
+        if (argc > 2 && *argv[2] != '-')
+        {
+            if (access( argv[2], R_OK ) == -1)
+            {
+                fprintf( stderr, "sqsh: Unable to open %s: %s\n", argv[2],
+                         strerror(errno) );
+                sqsh_exit(255);
+            }
+            rcfile = argv[2];
+            env_set( g_env, "rcfile", argv[2] );
+        }
+        else
+        {
+            rcfile = NULL;
+        }
+    }
+    else
+    {
+        /*
+         * We now want to read the users resource file prior to dealing
+         * with any command line options, this way we can override any
+         * value defined in the rc file with values on the command line.
+         */
+        env_get( g_env, "SQSHRC", &rcfile );
+        if (rcfile != NULL && *rcfile != '\0')
+        {
+            env_set( g_env, "rcfile", rcfile );
+        }
+        else
+        {
+            env_get( g_env, "rcfile", &rcfile );
+        }
+    }
 
- 	/*
-	 * Here is a nifty trick; in order to read the rc file we run the
-	 * \loop command, redirecting $rcfile to its standard in, asking
-	 * for it to *not* connect to the database using the -n flag.
- 	 */
- 	if (rcfile != NULL && *rcfile != '\0')
-	{
-		/*
-		 * Since we need to chop up the contents of rcfile destructively
-		 * we make a backup copy of it.
-		 */
-		strcpy(str, rcfile);
-		cptr = strtok( str, ":\n\t\r" );
+    /*
+     * Here is a nifty trick; in order to read the rc file we run the
+     * \loop command, redirecting $rcfile to its standard in, asking
+     * for it to *not* connect to the database using the -n flag.
+     */
+    if (rcfile != NULL && *rcfile != '\0')
+    {
+        /*
+         * Since we need to chop up the contents of rcfile destructively
+         * we make a backup copy of it.
+         */
+        strcpy(str, rcfile);
+        cptr = strtok( str, ":\n\t\r" );
 
-		/*
-		 * Create a temporary buffer for expansion.
-		 */
-		exp_buf = varbuf_create( 512 );
-		while (cptr != NULL)
-		{
-			if (sqsh_expand( cptr, exp_buf, 0 ) == False)
-			{
-				fprintf( stderr, "sqsh: Error expanding $rcfile: %s\n",
-					sqsh_get_errstr() );
-				sqsh_exit(255);
-			}
+        /*
+         * Create a temporary buffer for expansion.
+         */
+        exp_buf = varbuf_create( 512 );
+        while (cptr != NULL)
+        {
+            if (sqsh_expand( cptr, exp_buf, 0 ) == False)
+            {
+                fprintf( stderr, "sqsh: Error expanding $rcfile: %s\n",
+                    sqsh_get_errstr() );
+                sqsh_exit(255);
+            }
 
-			cptr = varbuf_getstr(exp_buf);
-			if (access( cptr, R_OK ) != -1)
-			{
-				env_set( g_env, "cur_rcfile", cptr );
-				if((jobset_run( g_jobset, "\\loop -n $cur_rcfile", &exit_status)) 
-					== -1 )
-				{
-					fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
-					sqsh_exit(255);
-				}
+            cptr = varbuf_getstr(exp_buf);
+            if (access( cptr, R_OK ) != -1)
+            {
+                env_set( g_env, "cur_rcfile", cptr );
+                if((jobset_run( g_jobset, "\\loop -n $cur_rcfile", &exit_status)) 
+                    == -1 )
+                {
+                    fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
+                    sqsh_exit(255);
+                }
 
-				if( exit_status == CMD_FAIL )
-				{
-					fprintf( stderr, "sqsh: Error in %s\n", cptr );
-					sqsh_exit(255);
-				}
-			}
+                if( exit_status == CMD_FAIL )
+                {
+                    fprintf( stderr, "sqsh: Error in %s\n", cptr );
+                    sqsh_exit(255);
+                }
+            }
 
-			cptr = strtok( NULL, ":\n\t\r" );
-		}
-		varbuf_destroy(exp_buf);
- 	}
+            cptr = strtok( NULL, ":\n\t\r" );
+        }
+        varbuf_destroy(exp_buf);
+    }
 
-	/*
-	 * Parse the command line options.  Note, that setting most of
-	 * these variables has side effects.  For example, setting
-	 * $script automatically sets $interactive to 0 and redirects
-	 * stdin from the script file.
-	 */
-	while ((ch = sqsh_getopt_combined( "SQSH", argc, argv,
-		"a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:l:L:m:o:pP;r;s:S:t;U:vV:w:Xy:z:" )) != EOF)
-	{
-		ret = 0;
-		switch (ch) 
-		{
-			case 'V' :
-				ret = env_set( g_env, "tds_version", sqsh_optarg );
-				break;
-			case 'a' :
-				ret = env_set( g_env, "thresh_exit", sqsh_optarg );
-				break;
-			case 'A' :
-				ret = env_set( g_env, "packet_size", sqsh_optarg );
-				break;
-			case 'b' :
-				ret = env_set( g_env, "banner", "0" );
-				break;
-			case 'B' :
-				setbuf( stdout, NULL );
-				setbuf( stderr, NULL );
-				setbuf( stdin, NULL );
-				ret = True;
-				break;
-			case 'c' :
-				/*-- Cheesy newline-go hack. Suck! --*/
-				if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
-				{
-					ret = env_set( g_env, "newline_go", "1" );
-				}
-				else if (alias_add( g_alias, "\\go", sqsh_optarg ) <= 0)
-				{
-					fprintf( stderr, "sqsh: -c: %s\n", sqsh_get_errstr() );
-					sqsh_exit(255);
-				}
-				ret = True;
-				break;
-			case 'C' :
-				ret = True;
-				sql = sqsh_optarg;
-				env_set( g_env, "sql", sqsh_optarg );
-				break;
-			case 'd' :
-				ret = env_set( g_env, "thresh_display", sqsh_optarg );
-				break;
-			case 'D' :
-				ret = env_set( g_env, "database", sqsh_optarg );
-				break;
-			case 'e' :
-				ret = env_set( g_env, "echo", "1" );
-				break;
-			case 'E' :
-				ret = env_set( g_env, "EDITOR", sqsh_optarg );
-				break;
-			case 'f' :
-				ret = env_set( g_env, "thresh_fail", sqsh_optarg );
-				break;
-			case 'h' :
-				ret = env_set( g_env, "headers", "0" );
+    /*
+     * Parse the command line options.  Note, that setting most of
+     * these variables has side effects.  For example, setting
+     * $script automatically sets $interactive to 0 and redirects
+     * stdin from the script file.
+     */
+    while ((ch = sqsh_getopt_combined( "SQSH", argc, argv,
+        "a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:l:L:m:o:pP;r;s:S:t;U:vV:w:Xy:z:" )) != EOF)
+    {
+        ret = 0;
+        switch (ch) 
+        {
+            case 'V' :
+                ret = env_set( g_env, "tds_version", sqsh_optarg );
+                break;
+            case 'a' :
+                ret = env_set( g_env, "thresh_exit", sqsh_optarg );
+                break;
+            case 'A' :
+                ret = env_set( g_env, "packet_size", sqsh_optarg );
+                break;
+            case 'b' :
+                ret = env_set( g_env, "banner", "0" );
+                break;
+            case 'B' :
+                setbuf( stdout, NULL );
+                setbuf( stderr, NULL );
+                setbuf( stdin, NULL );
+                ret = True;
+                break;
+            case 'c' :
+                /*-- Cheesy newline-go hack. Suck! --*/
+                if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
+                {
+                    ret = env_set( g_env, "newline_go", "1" );
+                }
+                else if (alias_add( g_alias, "\\go", sqsh_optarg ) <= 0)
+                {
+                    fprintf( stderr, "sqsh: -c: %s\n", sqsh_get_errstr() );
+                    sqsh_exit(255);
+                }
+                ret = True;
+                break;
+            case 'C' :
+                ret = True;
+                sql = sqsh_optarg;
+                env_set( g_env, "sql", sqsh_optarg );
+                break;
+            case 'd' :
+                ret = env_set( g_env, "thresh_display", sqsh_optarg );
+                break;
+            case 'D' :
+                ret = env_set( g_env, "database", sqsh_optarg );
+                break;
+            case 'e' :
+                ret = env_set( g_env, "echo", "1" );
+                break;
+            case 'E' :
+                ret = env_set( g_env, "EDITOR", sqsh_optarg );
+                break;
+            case 'f' :
+                ret = env_set( g_env, "thresh_fail", sqsh_optarg );
+                break;
+            case 'h' :
+                ret = env_set( g_env, "headers", "0" );
 
-				if (ret != -1)
-				{
-					ret = env_set( g_env, "footers", "0" );
-				}
-				break;
-			case 'H' :
-				ret = env_set( g_env, "hostname", sqsh_optarg );
-				break;
-			case 'i' :
-				read_file   = True;
-				show_banner = False;
-				ret = env_set( g_env, "script", sqsh_optarg );
-				ret = env_set( g_internal_env, "0", sqsh_optarg );
-				break;
-			case 'I' :
-				ret = env_set( g_env, "interfaces", sqsh_optarg );
-				break;
-			case 'J' :
-				ret = env_set( g_env, "charset", sqsh_optarg );
-				break;
-			case 'k' :
-				ret = env_set( g_env, "keyword_file", sqsh_optarg );
-				break;
-			case 'l' :
-				ret = env_set( g_env, "debug", sqsh_optarg );
-				break;
-			case 'm' :
-				ret = env_set( g_env, "style", sqsh_optarg );
-				break;
-			case 'L' :
-				cptr = sqsh_optarg;
-				i    = 0;
-				while( i < sizeof(str) && *cptr != '\0' && *cptr != '=' )
-					str[i++] = *cptr++;
-				str[i] = '\0';
-				if( *cptr != '=' ) {
-					fprintf( stderr, "sqsh: -L: Missing '='\n" );
-					sqsh_exit(255);
-				}
-				++cptr;
-				ret = env_set( g_env, str, cptr );
-				break;
-			case 'o' :
-				fflush(stdout);
-				if( (fd = sqsh_open( sqsh_optarg, O_WRONLY|O_CREAT, 0 )) == -1 ||
-					 sqsh_dup2( fd, fileno(stdout) ) == -1 ||
-					 sqsh_close( fd ) == -1 ) {
-					fprintf( stderr, "sqsh: -o: %s: %s\n", sqsh_optarg,
-								sqsh_get_errstr() );
-					sqsh_exit(255);
-				}
-				ret = True;
-				break;
-			case 'p' :
-				ret = env_set( g_env, "statistics", "1" );
-				break;
-			case 'P' :
-				/*
-				 * Special case: An explicit -P'' should be treated the
-				 * space as a -P without the optional argument.
-				 */
-				if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
-				{
-					ret = env_set( g_env, "password", NULL );
-				}
-				else
-				{
-					ret = env_set( g_env, "password", sqsh_optarg );
+                if (ret != -1)
+                {
+                    ret = env_set( g_env, "footers", "0" );
+                }
+                break;
+            case 'H' :
+                ret = env_set( g_env, "hostname", sqsh_optarg );
+                break;
+            case 'i' :
+                read_file   = True;
+                show_banner = False;
+                ret = env_set( g_env, "script", sqsh_optarg );
+                ret = env_set( g_internal_env, "0", sqsh_optarg );
+                break;
+            case 'I' :
+                ret = env_set( g_env, "interfaces", sqsh_optarg );
+                break;
+            case 'J' :
+                ret = env_set( g_env, "charset", sqsh_optarg );
+                break;
+            case 'k' :
+                ret = env_set( g_env, "keyword_file", sqsh_optarg );
+                break;
+            case 'l' :
+                ret = env_set( g_env, "debug", sqsh_optarg );
+                break;
+            case 'm' :
+                ret = env_set( g_env, "style", sqsh_optarg );
+                break;
+            case 'L' :
+                cptr = sqsh_optarg;
+                i    = 0;
+                while( i < sizeof(str) && *cptr != '\0' && *cptr != '=' )
+                    str[i++] = *cptr++;
+                str[i] = '\0';
+                if( *cptr != '=' ) {
+                    fprintf( stderr, "sqsh: -L: Missing '='\n" );
+                    sqsh_exit(255);
+                }
+                ++cptr;
+                ret = env_set( g_env, str, cptr );
+                break;
+            case 'o' :
+                fflush(stdout);
+                if( (fd = sqsh_open( sqsh_optarg, O_WRONLY|O_CREAT, 0 )) == -1 ||
+                     sqsh_dup2( fd, fileno(stdout) ) == -1 ||
+                     sqsh_close( fd ) == -1 ) {
+                    fprintf( stderr, "sqsh: -o: %s: %s\n", sqsh_optarg,
+                                sqsh_get_errstr() );
+                    sqsh_exit(255);
+                }
+                ret = True;
+                break;
+            case 'p' :
+                ret = env_set( g_env, "statistics", "1" );
+                break;
+            case 'P' :
+                /*
+                 * Special case: An explicit -P'' should be treated the
+                 * space as a -P without the optional argument.
+                 */
+                if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
+                {
+                    ret = env_set( g_env, "password", NULL );
+                }
+                else
+                {
+                    ret = env_set( g_env, "password", sqsh_optarg );
 
-					while( *sqsh_optarg != '\0' )
-						*sqsh_optarg++ = ' ';
-				}
-				
-				break;
-			case 'r' :
-				ret = True;
-				break;
-			case 's' :
-				ret = env_set( g_env, "colsep", sqsh_optarg );
-				break;
-			case 'S' :
-				ret = env_set( g_env, "DSQUERY", sqsh_optarg );
-				break;
-			case 't' :
-				ret = env_set( g_env, "filter", "1" );
-				if (ret == True && sqsh_optarg != NULL)
-				{
-					ret = env_set( g_env, "filter_prog", sqsh_optarg );
-				}
-				break;
-			case 'U' :
-				ret = env_set( g_env, "username", sqsh_optarg );
-				username = sqsh_optarg;
-				break;
-			case 'v' :
-				printf( "%s\n", g_version );
-				sqsh_exit(0);
-				break;
-			case 'w' :
-				ret = env_set( g_env, "width", sqsh_optarg );
-				set_width = True;
-				break;
-			case 'X' :
-				ret = env_set( g_env, "encryption", "1" );
-				break;
-			case 'y' :
-				sprintf( str, "SYBASE=%s", sqsh_optarg );
-				putenv( str );
-				ret = env_set( g_env, "SYBASE", sqsh_optarg );
-				break;
-			case 'z' :
-				ret = env_set( g_env, "language", sqsh_optarg );
-				break;
-			default :
-				fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
-				print_usage();
-				sqsh_exit(255);
-				break;
-		}
+                    while( *sqsh_optarg != '\0' )
+                        *sqsh_optarg++ = ' ';
+                }
+                
+                break;
+            case 'r' :
+                ret = True;
+                break;
+            case 's' :
+                ret = env_set( g_env, "colsep", sqsh_optarg );
+                break;
+            case 'S' :
+                ret = env_set( g_env, "DSQUERY", sqsh_optarg );
+                break;
+            case 't' :
+                ret = env_set( g_env, "filter", "1" );
+                if (ret == True && sqsh_optarg != NULL)
+                {
+                    ret = env_set( g_env, "filter_prog", sqsh_optarg );
+                }
+                break;
+            case 'U' :
+                ret = env_set( g_env, "username", sqsh_optarg );
+                username = sqsh_optarg;
+                break;
+            case 'v' :
+                printf( "%s\n", g_version );
+                sqsh_exit(0);
+                break;
+            case 'w' :
+                ret = env_set( g_env, "width", sqsh_optarg );
+                set_width = True;
+                break;
+            case 'X' :
+                ret = env_set( g_env, "encryption", "1" );
+                break;
+            case 'y' :
+                sprintf( str, "SYBASE=%s", sqsh_optarg );
+                putenv( str );
+                ret = env_set( g_env, "SYBASE", sqsh_optarg );
+                break;
+            case 'z' :
+                ret = env_set( g_env, "language", sqsh_optarg );
+                break;
+            default :
+                fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+                print_usage();
+                sqsh_exit(255);
+                break;
+        }
 
-		/*
-		 * Check the results from whichever variable we attempted
-		 * to set.
-		 */
-		if (ret == False) 
-		{
-			fprintf( stderr, "sqsh: -%c: %s\n", ch, sqsh_get_errstr() );
-			sqsh_exit( 255 );
-		}
-	}
+        /*
+         * Check the results from whichever variable we attempted
+         * to set.
+         */
+        if (ret == False) 
+        {
+            fprintf( stderr, "sqsh: -%c: %s\n", ch, sqsh_get_errstr() );
+            sqsh_exit( 255 );
+        }
+    }
 
-	/*
-	 * The only time that we allow extra parameters on the command line
-	 * is if the -i flag is supplied.  These are then passed as positional
-	 * parameters to the underlying script.
-	 */
-	if (read_file == False && argc != sqsh_optind)
-	{
-		print_usage();
-		sqsh_exit( 255 );
-	}
+    /*
+     * The only time that we allow extra parameters on the command line
+     * is if the -i flag is supplied.  These are then passed as positional
+     * parameters to the underlying script.
+     */
+    if (read_file == False && argc != sqsh_optind)
+    {
+        print_usage();
+        sqsh_exit( 255 );
+    }
 
-	/*
-	 * If we are reading from a file and there are parameters left then
-	 * we want to copy them to the internal environment list.
-	 */
-	if (read_file)
-	{
-		if (sqsh_optind > 1)
-		{
-			argv[sqsh_optind-1] = argv[0];
-		}
-		g_func_args[g_func_nargs].argc = argc - sqsh_optind;
-		g_func_args[g_func_nargs].argv = &(argv[sqsh_optind-1]);
-		++g_func_nargs;
-	}
+    /*
+     * If we are reading from a file and there are parameters left then
+     * we want to copy them to the internal environment list.
+     */
+    if (read_file)
+    {
+        if (sqsh_optind > 1)
+        {
+            argv[sqsh_optind-1] = argv[0];
+        }
+        g_func_args[g_func_nargs].argc = argc - sqsh_optind;
+        g_func_args[g_func_nargs].argv = &(argv[sqsh_optind-1]);
+        ++g_func_nargs;
+    }
 
-	/*
-	 * Figure out if stdin or stdout is connected to a tty.
-	 */
-	stdout_tty = isatty( fileno(stdout) );
+    /*
+     * Figure out if stdin or stdout is connected to a tty.
+     */
+    stdout_tty = isatty( fileno(stdout) );
 
 #if defined(TIOCGWINSZ)
-	/*
-	 * If the width hasn't been explicitly set by the user and the
-	 * stdout is connected to a tty, then we want to request the
-	 * current screen width from the tty.
-	 */
-	if (set_width == False && stdout_tty)
-	{
-		if (ioctl(fileno(stdout), TIOCGWINSZ, &ws ) != -1)
-		{
-			sprintf( str, "%d", ws.ws_col );
-			env_set( g_env, "width", str );
+    /*
+     * If the width hasn't been explicitly set by the user and the
+     * stdout is connected to a tty, then we want to request the
+     * current screen width from the tty.
+     */
+    if (set_width == False && stdout_tty)
+    {
+        if (ioctl(fileno(stdout), TIOCGWINSZ, &ws ) != -1)
+        {
+            sprintf( str, "%d", ws.ws_col );
+            env_set( g_env, "width", str );
 
-			DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: Screen width = %d\n",
-			               ws.ws_col);)
+            DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: Screen width = %d\n",
+                           ws.ws_col);)
 
-		}
-		else
-		{
-			DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: ioctl(%d,TIOCGWINSZ): %s\n",
-			               (int)fileno(stdout), strerror(errno));)
-		}
+        }
+        else
+        {
+            DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: ioctl(%d,TIOCGWINSZ): %s\n",
+                           (int)fileno(stdout), strerror(errno));)
+        }
 
 #if defined(SIGWINCH)
-		if (stdout_tty)
-		{
-			sig_install( SIGWINCH, sigwinch_handler, (void*)NULL, 0 );
-		}
+        if (stdout_tty)
+        {
+            sig_install( SIGWINCH, sigwinch_handler, (void*)NULL, 0 );
+        }
 #endif /* SIGWINCH */
-	}
+    }
 #endif /* TIOGWINSZ */
 
- 	/*
-	 * If both input and output are connected to a tty *and* $banner
-	 * is 1 and the -i flag has not been set, then we display the
-	 * banner.
- 	 */
- 	env_get( g_env, "banner", &banner );
- 	if (show_banner && (banner == NULL || *banner == '1') && 
-		sqsh_stdin_isatty() && stdout_tty)
-	{
-		printf( "%s ", g_version );
-		DBG(printf( "(DEBUG) " );)
- 		printf( "%s", g_copyright );
-		printf( "\n" );
- 		printf( "This is free software with ABSOLUTELY NO WARRANTY\n" );
- 		printf( "For more information type '\\warranty'\n" );
- 	}
+    /*
+     * If both input and output are connected to a tty *and* $banner
+     * is 1 and the -i flag has not been set, then we display the
+     * banner.
+     */
+    env_get( g_env, "banner", &banner );
+    if (show_banner && (banner == NULL || *banner == '1') && 
+        sqsh_stdin_isatty() && stdout_tty)
+    {
+        printf( "%s ", g_version );
+        DBG(printf( "(DEBUG) " );)
+        printf( "%s", g_copyright );
+        printf( "\n" );
+        printf( "This is free software with ABSOLUTELY NO WARRANTY\n" );
+        printf( "For more information type '\\warranty'\n" );
+    }
 
-	/*
-	 * Now, if username hasn't been explicitly set at the command
-	 * line then figure out what it is by looking at the current
-	 * uid.
-	 */
-	env_get( g_env, "username", &username );
+    /*
+     * Now, if username hasn't been explicitly set at the command
+     * line then figure out what it is by looking at the current
+     * uid.
+     */
+    env_get( g_env, "username", &username );
 
-	if (username == NULL)
-	{
-		uid = getuid();
-		pwd = getpwuid( uid );
+    if (username == NULL)
+    {
+        uid = getuid();
+        pwd = getpwuid( uid );
 
-		if (pwd == NULL)
-		{
-			fprintf( stderr, "sqsh: Unable to get username for uid %d: %s\n",
-			         (int)uid, strerror(errno) );
-			sqsh_exit(255);
-		}
+        if (pwd == NULL)
+        {
+            fprintf( stderr, "sqsh: Unable to get username for uid %d: %s\n",
+                     (int)uid, strerror(errno) );
+            sqsh_exit(255);
+        }
 
-		env_set( g_env, "username", pwd->pw_name );
-	}
+        env_set( g_env, "username", pwd->pw_name );
+    }
 
-	/*
-	 * Before we go any further we need to do a little work if
-	 * we are not connected to a tty.
-	 */
- 	if (sqsh_stdin_isatty())
-	{
- 		/*
- 		 * Next, we need to try to load the history file, if one is
- 		 * available.  We ignore the results of history_load, just
- 		 * in case the history file doesn't exist.
- 		 */
-	 	env_get( g_env, "history", &history );
+    /*
+     * Before we go any further we need to do a little work if
+     * we are not connected to a tty.
+     */
+    if (sqsh_stdin_isatty())
+    {
+        /*
+         * Next, we need to try to load the history file, if one is
+         * available.  We ignore the results of history_load, just
+         * in case the history file doesn't exist.
+         */
+        env_get( g_env, "history", &history );
 
-		/*
-		 * If a history file has been defined, then we want to 
-		 * expand its contents. This will allow folks to have
-		 * a different history file for each server.
-		 */
-	 	if (history != NULL && *history != '\0')
-		{
-			exp_buf = varbuf_create( 512 );
+        /*
+         * If a history file has been defined, then we want to 
+         * expand its contents. This will allow folks to have
+         * a different history file for each server.
+         */
+        if (history != NULL && *history != '\0')
+        {
+            exp_buf = varbuf_create( 512 );
 
-			if (exp_buf == NULL)
-			{
-				fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
-				sqsh_exit( 255 );
-			}
+            if (exp_buf == NULL)
+            {
+                fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+                sqsh_exit( 255 );
+            }
 
-			if (sqsh_expand( history, exp_buf, 0 ) == False)
-			{
-				fprintf( stderr, "sqsh: Error expanding $history: %s\n",
-					sqsh_get_errstr() );
-				history_load( g_history, history );
-			}
-			else
-			{
-				history_load( g_history, varbuf_getstr( exp_buf ) );
-			}
-			varbuf_destroy( exp_buf );
+            if (sqsh_expand( history, exp_buf, 0 ) == False)
+            {
+                fprintf( stderr, "sqsh: Error expanding $history: %s\n",
+                    sqsh_get_errstr() );
+                history_load( g_history, history );
+            }
+            else
+            {
+                history_load( g_history, varbuf_getstr( exp_buf ) );
+            }
+            varbuf_destroy( exp_buf );
 
-			sprintf( str, "%d", history_get_nbr(g_history) );
-			env_set( g_env, "histnum", str );
-		}
+            sprintf( str, "%d", history_get_nbr(g_history) );
+            env_set( g_env, "histnum", str );
+        }
 
-		/*
-		 * If the user has requested some form of keyword completion
-		 * then attempt to read the contents of the keywords file.
-		 */
-		env_get( g_env, "keyword_file", &keyword_file );
-		if( keyword_file != NULL )
-			sqsh_readline_read( keyword_file );
-	}
+        /*
+         * If the user has requested some form of keyword completion
+         * then attempt to read the contents of the keywords file.
+         */
+        env_get( g_env, "keyword_file", &keyword_file );
+        if( keyword_file != NULL )
+            sqsh_readline_read( keyword_file );
+    }
 
-	/*
-	 * Initialize the readline "sub-system".  This basically consists
-	 * of installing handlers for readline keyword completion and
-	 * sucking in the readline history file.
-	 */
-	sqsh_readline_init();
+    /*
+     * Initialize the readline "sub-system".  This basically consists
+     * of installing handlers for readline keyword completion and
+     * sucking in the readline history file.
+     */
+    sqsh_readline_init();
 
-	/*
-	 * If a single SQL statement was supplied on the command line
-	 * then we simply want to execute the \loop -e.
-	 */
-	if (sql != NULL)
-	{
-		if ((jobset_run( g_jobset, "\\loop -e \"$sql\"", &exit_status )) == -1)
-		{
-			fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
-			sqsh_exit( 255 );
-		}
-	}
-	else
-	{
-		/*
-		 * Now that everything is configured we can go ahead and enter
-		 * the read-eval-print loop.  Note, it is the responsibility
-		 * of the loop to establish the connection to the database.
-		 */
-		if ((jobset_run( g_jobset, "\\loop $script", &exit_status )) == -1)
-		{
-			fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
-			sqsh_exit( 255 );
-		}
-	}
+    /*
+     * If a single SQL statement was supplied on the command line
+     * then we simply want to execute the \loop -e.
+     */
+    if (sql != NULL)
+    {
+        if ((jobset_run( g_jobset, "\\loop -e \"$sql\"", &exit_status )) == -1)
+        {
+            fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
+            sqsh_exit( 255 );
+        }
+    }
+    else
+    {
+        /*
+         * Now that everything is configured we can go ahead and enter
+         * the read-eval-print loop.  Note, it is the responsibility
+         * of the loop to establish the connection to the database.
+         */
+        if ((jobset_run( g_jobset, "\\loop $script", &exit_status )) == -1)
+        {
+            fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
+            sqsh_exit( 255 );
+        }
+    }
 
-	/*
-	 * CMD_FAIL indicates that something went wrong internally with
-	 * \loop and that it probably never even executed a command.  If
-	 * this is the case, then just exit with 255.
-	 */
-	if( exit_status == CMD_FAIL )
-		sqsh_exit( 255 );
+    /*
+     * CMD_FAIL indicates that something went wrong internally with
+     * \loop and that it probably never even executed a command.  If
+     * this is the case, then just exit with 255.
+     */
+    if( exit_status == CMD_FAIL )
+        sqsh_exit( 255 );
 
-	/*
-	 * However, if \loop exited with a CMD_ABORT, then we need to check
-	 * to see if the reason was because the maximum number of errors
-	 * was reached.
-	 */
-	if (exit_status == CMD_ABORT || exit_status == CMD_INTERRUPTED)
-	{
-		/*
-		 * Retrieve the values of thresh_exit and batch_failcount.  If
-		 * thresh_exit is not zero, and the two variables are equal, then
-		 * we need to exit with the total number of batches that failed.
-		 */
-		env_get( g_env, "thresh_exit", &thresh_exit );
-		env_get( g_env, "batch_failcount", &batch_failcount );
-		if (thresh_exit != NULL && batch_failcount != NULL )
-		{
-			if( strcmp(thresh_exit,"0") != 0 &&
-			    strcmp( thresh_exit, batch_failcount ) == 0 )
-				sqsh_exit( atoi(batch_failcount) );
-		}
+    /*
+     * However, if \loop exited with a CMD_ABORT, then we need to check
+     * to see if the reason was because the maximum number of errors
+     * was reached.
+     */
+    if (exit_status == CMD_ABORT || exit_status == CMD_INTERRUPTED)
+    {
+        /*
+         * Retrieve the values of thresh_exit and batch_failcount.  If
+         * thresh_exit is not zero, and the two variables are equal, then
+         * we need to exit with the total number of batches that failed.
+         */
+        env_get( g_env, "thresh_exit", &thresh_exit );
+        env_get( g_env, "batch_failcount", &batch_failcount );
+        if (thresh_exit != NULL && batch_failcount != NULL )
+        {
+            if( strcmp(thresh_exit,"0") != 0 &&
+                strcmp( thresh_exit, batch_failcount ) == 0 )
+                sqsh_exit( atoi(batch_failcount) );
+        }
 
-		/*
-		 * Otherwise, we return the abort error code.
-		 */
-		sqsh_exit( 254 );
-	}
+        /*
+         * Otherwise, we return the abort error code.
+         */
+        sqsh_exit( 254 );
+    }
 
-	/*
-	 * This point is reached if \loop returned either CMD_LEAVEBUF,
-	 * CMD_ALTERBUF, CMD_CLEARBUF, or CMD_EXIT, all of which indicate
-	 * that nothing went wrong.  Normally isql would just exit(0) here.
-	 * However, we are not isql, and if exit_failcount is 1, then we
-	 * exit with the total number of batches that failed.
-	 */
-	env_get( g_env, "exit_failcount", &exit_failcount );
-	env_get( g_env, "batch_failcount", &batch_failcount );
-	if( exit_failcount != NULL && *exit_failcount == '1' &&
-	    batch_failcount != NULL ) {
-		sqsh_exit( atoi(batch_failcount) );
-	}
+    /*
+     * This point is reached if \loop returned either CMD_LEAVEBUF,
+     * CMD_ALTERBUF, CMD_CLEARBUF, or CMD_EXIT, all of which indicate
+     * that nothing went wrong.  Normally isql would just exit(0) here.
+     * However, we are not isql, and if exit_failcount is 1, then we
+     * exit with the total number of batches that failed.
+     */
+    env_get( g_env, "exit_failcount", &exit_failcount );
+    env_get( g_env, "batch_failcount", &batch_failcount );
+    if( exit_failcount != NULL && *exit_failcount == '1' &&
+        batch_failcount != NULL ) {
+        sqsh_exit( atoi(batch_failcount) );
+    }
 
-	/*
-	 * If exit_failcount is 0, then just perform a normal exit.
-	 */
-	sqsh_exit( 0 );
-	/* NOTREACHED */
+    /*
+     * If exit_failcount is 0, then just perform a normal exit.
+     */
+    sqsh_exit( 0 );
+    /* NOTREACHED */
 }
 
 #if defined(TIOCGWINSZ) && defined(SIGWINCH)
@@ -711,63 +711,63 @@ main( argc, argv )
  * this code.
  */
 static void sigwinch_handler( sig, user_data )
-	int   sig;
-	void *user_data;
+    int   sig;
+    void *user_data;
 {
-	struct winsize ws;
-	char   ctty_path[SQSH_MAXPATH+1];
-	int    ctty_fd;
-	char   num[10];
+    struct winsize ws;
+    char   ctty_path[SQSH_MAXPATH+1];
+    int    ctty_fd;
+    char   num[10];
 
-	/*
-	 * Unfortunately, we can recieve the SIGWINCH if our controlling
-	 * terminal changes size, even though our stdout may have been
-	 * redirected to a file.  If this is the case, we cannot query
-	 * stdout for the size, we must ask the controlling terminal.
-	 */
-	if (isatty( fileno(stdout) ))
-		ctty_fd = fileno(stdout);
-	else {
-		
-		/*
-		 * Attempt to grab the path to our controlling tty.  If we can't
-		 * find it, then we have to give up.
-		 */
-		if (ctermid( ctty_path ) == NULL) {
-			DBG(sqsh_debug(DEBUG_SCREEN,
-			    "sigwinch: Unable to get controlling tty\n");)
-			return;
-		}
+    /*
+     * Unfortunately, we can recieve the SIGWINCH if our controlling
+     * terminal changes size, even though our stdout may have been
+     * redirected to a file.  If this is the case, we cannot query
+     * stdout for the size, we must ask the controlling terminal.
+     */
+    if (isatty( fileno(stdout) ))
+        ctty_fd = fileno(stdout);
+    else {
+        
+        /*
+         * Attempt to grab the path to our controlling tty.  If we can't
+         * find it, then we have to give up.
+         */
+        if (ctermid( ctty_path ) == NULL) {
+            DBG(sqsh_debug(DEBUG_SCREEN,
+                "sigwinch: Unable to get controlling tty\n");)
+            return;
+        }
 
-		/*
-		 * Now, open a file descriptor to the controlling terminal. We'll
-		 * use this to query the current size.
-		 */
-		if ((ctty_fd = open( ctty_path, O_RDONLY )) == -1) {
-			DBG(sqsh_debug(DEBUG_SCREEN, "sigwinch: Unable to open %s for read\n",
-			    ctty_path);)
-			return;
-		}
+        /*
+         * Now, open a file descriptor to the controlling terminal. We'll
+         * use this to query the current size.
+         */
+        if ((ctty_fd = open( ctty_path, O_RDONLY )) == -1) {
+            DBG(sqsh_debug(DEBUG_SCREEN, "sigwinch: Unable to open %s for read\n",
+                ctty_path);)
+            return;
+        }
 
-	}
+    }
 
-	if (ioctl( ctty_fd, TIOCGWINSZ, &ws ) != -1) {
-		sprintf( num, "%d", (int)ws.ws_col );
-		env_set( g_env, "width", num );
+    if (ioctl( ctty_fd, TIOCGWINSZ, &ws ) != -1) {
+        sprintf( num, "%d", (int)ws.ws_col );
+        env_set( g_env, "width", num );
 
-		DBG(sqsh_debug(DEBUG_SCREEN, "sigwinch: Screen size changed to %d\n",
-			 ws.ws_col);)
-	} else {
-		DBG(sqsh_debug(DEBUG_SCREEN, "sigwinch: ioctl(%d,TIOCGWINSZ): %s\n",
-			fileno(stdout), strerror(errno));)
-	}
+        DBG(sqsh_debug(DEBUG_SCREEN, "sigwinch: Screen size changed to %d\n",
+             ws.ws_col);)
+    } else {
+        DBG(sqsh_debug(DEBUG_SCREEN, "sigwinch: ioctl(%d,TIOCGWINSZ): %s\n",
+            fileno(stdout), strerror(errno));)
+    }
 
-	/*
-	 * Now, if we created a file descriptor to test the screen size
-	 * then we need to destroy it.
-	 */
-	if (ctty_fd != fileno(stdout))
-		close( ctty_fd );
+    /*
+     * Now, if we created a file descriptor to test the screen size
+     * then we need to destroy it.
+     */
+    if (ctty_fd != fileno(stdout))
+        close( ctty_fd );
 }
 
 #endif
@@ -779,57 +779,57 @@ static void sigwinch_handler( sig, user_data )
  */
 static void print_usage()
 {
-	char  str[40];
-	int   nflags;
-	int   line_len;
-	int   len;
-	int   middle;
-	int   i, j;
+    char  str[40];
+    int   nflags;
+    int   line_len;
+    int   len;
+    int   middle;
+    int   i, j;
 
-	/*-- Calculate the size of our array of flags --*/
-	nflags = sizeof(sg_flags) / sizeof(sqsh_flag_t);
+    /*-- Calculate the size of our array of flags --*/
+    nflags = sizeof(sg_flags) / sizeof(sqsh_flag_t);
 
-	/*
-	 * The following nastyness is responsible for formatting the
-	 * initial usage line.  Don't bother to try to understand it...
-	 * it would be easier to re-write it.
-	 */
-	fprintf( stderr, "Use: sqsh" );
-	line_len = 0;
-	for( i = 0; i < nflags; i++ ) {
-		if( sg_flags[i].arg == NULL || *sg_flags[i].arg == '\0' )
-			sprintf( str, " [%s]", sg_flags[i].flag );
-		else
-			sprintf( str, " [%s %s]", sg_flags[i].flag, sg_flags[i].arg );
-		
-		len = strlen( str );
+    /*
+     * The following nastyness is responsible for formatting the
+     * initial usage line.  Don't bother to try to understand it...
+     * it would be easier to re-write it.
+     */
+    fprintf( stderr, "Use: sqsh" );
+    line_len = 0;
+    for( i = 0; i < nflags; i++ ) {
+        if( sg_flags[i].arg == NULL || *sg_flags[i].arg == '\0' )
+            sprintf( str, " [%s]", sg_flags[i].flag );
+        else
+            sprintf( str, " [%s %s]", sg_flags[i].flag, sg_flags[i].arg );
+        
+        len = strlen( str );
 
-		if( (line_len + len) > 68 ) {
-			fprintf( stderr, "\n         " );
-			line_len = 0;
-		}
-		fputs( str, stderr );
-		line_len += len;
-	}
+        if( (line_len + len) > 68 ) {
+            fprintf( stderr, "\n         " );
+            line_len = 0;
+        }
+        fputs( str, stderr );
+        line_len += len;
+    }
 
-	fputs( "\n\n", stderr );
+    fputs( "\n\n", stderr );
 
-	/*
-	 * The splits the descriptions for each flag in our array into
-	 * two nice columns.
-	 */
-	middle = (nflags+1) / 2;
-	j = middle;
-	for( i = 0; i < middle; i++ ) {
-		fprintf( stderr, " %2s  %-35.35s", sg_flags[i].flag,
-		                                  sg_flags[i].description );
-		if( j < nflags ) {
-			fprintf( stderr, " %2s  %s\n", sg_flags[j].flag,
-			                               sg_flags[j].description );
-			++j;
-		} else {
-			fputc( '\n', stderr );
-		}
-	}
-	fputc( '\n', stderr );
+    /*
+     * The splits the descriptions for each flag in our array into
+     * two nice columns.
+     */
+    middle = (nflags+1) / 2;
+    j = middle;
+    for( i = 0; i < middle; i++ ) {
+        fprintf( stderr, " %2s  %-35.35s", sg_flags[i].flag,
+                                          sg_flags[i].description );
+        if( j < nflags ) {
+            fprintf( stderr, " %2s  %s\n", sg_flags[j].flag,
+                                           sg_flags[j].description );
+            ++j;
+        } else {
+            fputc( '\n', stderr );
+        }
+    }
+    fputc( '\n', stderr );
 }
