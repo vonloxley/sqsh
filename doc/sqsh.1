@@ -1,4 +1,4 @@
-.\" $Id: sqsh.1,v 1.3 2004/11/04 18:53:15 mpeppler Exp $
+.\" $Id: sqsh.1,v 1.4 2004/11/05 15:53:44 mpeppler Exp $
 .\" Copyright (C) 1995, 1996 by Scott C. Gray
 .\"
 .\" This program is free software; you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 .B \\$1           \" 	Buffer name in bold
 ..                \" End the macro
 .fp 5 CR
-.TH SQSH 1 "4 Nov 2004"
+.TH SQSH 1 "8 Nov 2004"
 .ds )H Sqsh
 .ds ]W Version 2.1.2
 .\" 
@@ -150,7 +150,7 @@ sqsh - Interactive database shell
 ]
 .br
 [
-.BI  -r " [sqshrc[:sqshrc ...]]"
+.BI  -r " [sqshrc]"
 ]
 .br
 [
@@ -461,7 +461,7 @@ readable by anyone other than yourself.
 .\" -r [sqshrc]
 .\"
 .TP 
-.B -r [\fIsqshrc[:sqshrc ...]\fP]
+.B -r [\fIsqshrc\fP]
 Specifies an alternate .\fIsqshrc\fP file to be processed, rather than
 the default.  If no \fIsqshrc\fP is supplied
 following \fB-r\fP, then no initialization files are processed.

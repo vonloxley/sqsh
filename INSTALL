@@ -4,7 +4,7 @@ Description
 -=-=-=-=-=-
 
 The follow document describes how to build and install the Sqsh SQL
-shell, version 2.1.1. For an overall description of the package, please
+shell, version 2.1.2. For an overall description of the package, please
 refer to the file README.
 
 Supported Platforms
@@ -89,6 +89,11 @@ Just follow the following directions:
    or for csh and that ilk, do:
 
       % setenv SYBASE /usr/local/sybase
+
+   If you are using Sybase 12.0 or later, the simplest thing to do is
+   to "source" the SYBASE.sh or SYBASE.csh file located in the 
+   Sybase installation root directory - this will set all of the 
+   necessary environment variables.
 
 2) Run "configure"
 
@@ -287,4 +292,4 @@ or you run across any bugs in the program, contact me at:
 
 mpeppler@peppler.org
 
-Michael Peppler, April 2004
+Michael Peppler, November 2004
