@@ -1,4 +1,4 @@
-.\" $Id: sqsh.1,v 1.1.1.1 2004/04/07 12:35:01 chunkm0nkey Exp $
+.\" $Id: sqsh.1,v 1.2 2004/04/11 15:18:53 mpeppler Exp $
 .\" Copyright (C) 1995, 1996 by Scott C. Gray
 .\"
 .\" This program is free software; you can redistribute it and/or modify
@@ -37,9 +37,9 @@
 .B \\$1           \" 	Buffer name in bold
 ..                \" End the macro
 .fp 5 CR
-.TH SQSH 1 "11 Apr 2004"
+.TH SQSH 1 "4 Nov 2004"
 .ds )H Sqsh
-.ds ]W Version 2.1.1
+.ds ]W Version 2.1.2
 .\" 
 .\" ==========================================
 .SH NAME
@@ -131,6 +131,10 @@ sqsh - Interactive database shell
 .br
 [
 .BI -m " style"
+]
+.br
+[
+.BI -n " on|off"
 ]
 .br
 [
@@ -414,6 +418,13 @@ also be set using the
 variable or via the \fB-m\fP flag to the
 .Cm go
 command.
+.\"
+.\" -n {on|off}
+.\"
+.TP
+.B -n \fIon|off\fP
+Enables chained transaction mode on connect (if set to on). Chained
+transaction mode is also known as "AutoCommit off" mode.
 .\"
 .\" -o filename
 .\"
@@ -2973,6 +2984,14 @@ is "|".
 .B \fIbcp_trim\fP (boolean)
 Controls whether or not BCP style output trims trailing spaces
 from fixed length columns.  The default is "True".
+.\"
+.\"  chained
+.\"
+.TP
+.B \fIchained\fP (boolean)
+If set then sqsh uses the "chained" transaction mode (aka "AutoCommit off").
+Setting this has NO effect on the current connection. It can be set
+via the command line argument \fB-n\fP.
 .\"
 .\"  charset
 .\"

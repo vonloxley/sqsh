@@ -1,4 +1,10 @@
-2004-11-04  Michael Peppler  <mpeppler@localhost.localdomain>
+2004-11-04  Michael Peppler  <mpeppler@peppler.org>
+
+	* src/cmd_connect.c (cmd_connect): First try at implementing 
+	optionally setting "chained" mode on connect.
+
+	* aclocal.m4 (AC_SYBASE_ASE): Change the order of the libraries
+	so that static linking will work.
 
 	* src/cmd_read.c (cmd_read): Add check to make sure that
 	we read data from the terminal in all cases. This means
@@ -54,7 +60,7 @@
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.4 2004/04/12 21:02:11 mpeppler Exp $
+$Id: ChangeLog,v 1.5 2004/11/04 14:44:54 mpeppler Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against

@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.2 2004/04/10 00:10:31 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -92,6 +92,7 @@ static sqsh_flag_t sg_flags[] = {
     { "-k", "keywords",     "Specify alternate keywords file"    },
     { "-l", "level",        "Set debugging level"                },
     { "-m", "mode",         "Set display mode (normal)"          },
+    { "-n", "on|off",       "Set chained transaction mode"       },
     { "-L", "var=value",    "Set the value of a given variable"  },
     { "-o", "filename",     "Direct all output to file"          },
     { "-p", "",             "Display performance stats"          },
@@ -264,7 +265,7 @@ main( argc, argv )
      * stdin from the script file.
      */
     while ((ch = sqsh_getopt_combined( "SQSH", argc, argv,
-        "a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:l:L:m:o:pP;r;s:S:t;U:vV:w:Xy:z:" )) != EOF)
+        "a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:l:L:m:n:o:pP;r;s:S:t;U:vV:w:Xy:z:" )) != EOF)
     {
         ret = 0;
         switch (ch) 
@@ -351,6 +352,9 @@ main( argc, argv )
                 break;
             case 'm' :
                 ret = env_set( g_env, "style", sqsh_optarg );
+                break;
+            case 'n' :
+                ret = env_set( g_env, "chained", sqsh_optarg );
                 break;
             case 'L' :
                 cptr = sqsh_optarg;

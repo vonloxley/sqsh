@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.3 2004/04/11 15:14:32 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.4 2004/04/12 21:02:13 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -110,6 +110,7 @@ int cmd_connect( argc, argv )
     char      *hostname ;
     char      *password_retry;
     char      *tds_version;
+    char      *chained;
     char      *cp;
     extern    char *sqsh_optarg ;
     extern    int   sqsh_optind ;
@@ -150,7 +151,7 @@ int cmd_connect( argc, argv )
     /*
      * Parse the command line options.
      */
-    while ((c = sqsh_getopt( argc, argv, "D:U:P;S;I;c" )) != EOF) 
+    while ((c = sqsh_getopt( argc, argv, "D:U:P;S;I;cn" )) != EOF) 
     {
         switch( c ) 
         {
@@ -204,6 +205,15 @@ int cmd_connect( argc, argv )
                                     sqsh_get_errstr() );
                         have_error = True;
                     }
+					break;
+            case 'n' :
+                    if (env_put( g_env, "chained", sqsh_optarg,
+                                 ENV_F_TRAN ) == False)
+                    {
+                        fprintf( stderr, "\\connect: -n: %s\n",
+                                    sqsh_get_errstr() );
+                        have_error = True;
+                    }
                 break ;
             default :
                 fprintf( stderr, "\\connect: %s\n", sqsh_get_errstr() ) ;
@@ -220,7 +230,7 @@ int cmd_connect( argc, argv )
     {
         fprintf( stderr, 
             "Use: \\connect [-c] [-I interfaces] [-U username] [-P password]\n"
-            "               [-S server]\n" ) ;
+            "               [-S server] [-n {on|off}]\n" ) ;
     
         env_rollback( g_env );
         return CMD_FAIL;
@@ -245,6 +255,7 @@ int cmd_connect( argc, argv )
     env_get( g_env, "hostname", &hostname ) ;
     env_get( g_env, "password_retry", &password_retry ) ;
     env_get( g_env, "tds_version", &tds_version ) ;
+    env_get( g_env, "chained", &chained ) ;
     password = g_password;
 
     /*
@@ -722,6 +733,19 @@ connect_succeed:
 
     if (locale != NULL)
         cs_loc_drop( g_context, locale );
+
+    /* Set chained mode, if necessary. */
+    if ( chained != NULL ) {
+	CS_BOOL value = (*chained == '1' ? CS_TRUE : CS_FALSE);
+
+	/* fprintf(stderr, "Setting chained mode to %d\n", value); */
+
+	retcode = ct_options( g_connection, CS_SET, CS_OPT_CHAINXACTS,
+			      &value, CS_UNUSED, NULL);
+	if(retcode != CS_SUCCEED) {
+	    /* XXX */
+	}
+    }
 
     return_code = CMD_LEAVEBUF;
     goto connect_leave;

@@ -257,13 +257,6 @@ AC_DEFUN([AC_SYBASE_ASE], [
 		fi
 
 		#
-		# Check for -lcomn
-		#
-		if test -f $SYBASE_LIBDIR/libcomn.a; then
-			SYBASE_LIBS="$SYBASE_LIBS -lcomn"
-		fi
-
-		#
 		# Check for -lsybtcl or -ltcl
 		#
 		if test -f $SYBASE_LIBDIR/libsybtcl.a; then
@@ -272,6 +265,13 @@ AC_DEFUN([AC_SYBASE_ASE], [
 			if test -f $SYBASE_LIBDIR/libtcl.a; then
 				SYBASE_LIBS="$SYBASE_LIBS -ltcl"
 			fi
+		fi
+
+		#
+		# Check for -lcomn
+		#
+		if test -f $SYBASE_LIBDIR/libcomn.a; then
+			SYBASE_LIBS="$SYBASE_LIBS -lcomn"
 		fi
 
 		#
