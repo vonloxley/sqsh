@@ -1,0 +1,50 @@
+divert(-1)
+dnl
+dnl $Id: sample.sqsh_m4,v 1.1.1.1 2001/10/23 20:31:05 gray Exp $
+dnl
+dnl .sqsh_m4 - Example m4 macros for use with sqsh
+dnl
+dnl Several of the following macros come from:
+dnl
+dnl      "Optimizing Transact SQL", by David Rozenshtein, et al.
+dnl      Copyright (C) 1995, by SQL Forum Press
+dnl      ISBN: 0-9649812-0-3
+dnl
+dnl a pretty handy book to keep around.
+dnl
+dnl Note that the call to changequote is very important because
+dnl m4's default quoting mechanism conflicts with sqsh's command
+dnl substition feature.  Also, the call to divert, above, is to
+dnl keep lots of blank lines being generated in the SQL Buffer.
+dnl
+changequote([,])
+
+define([EQ],    (1-abs(sign([$1]-[$2]))))
+define([NE],    (abs(sign([$1]-[$2]))))
+define([LT],    (1-sign(1+sign([$1]-[$2]))))
+define([LTE],   (sign(1+sign([$1]-[$2]))))
+define([GT],    (1-sign(1-sign([$1]-[$2]))))
+define([GTE],   (sign(1+sign([$1]-[$2]))))
+define([ZERO],  (1-abs(sign([$1]))))
+define([NZERO], (abs(sign([$1]))))
+define([DIV],   ((NZERO([$2])*[$1])/([$2]+ZERO([$2]))))
+
+define([GREATEST], 
+       [ifelse($#, 2,[((($2)*LT($1,$2))+(($1)*GTE($1,$2)))],
+                     [GREATEST($1,GREATEST(shift($@)))])])
+define([LEAST], 
+       [ifelse($#, 2,[((($1)*LTE($1,$2))+(($2)*GT($1,$2)))],
+                     [LEAST($1,LEAST(shift($@)))])])
+define([DROP_TABLE],
+[IF EXISTS
+     (SELECT 1 FROM sysobjects
+       WHERE name = "translit([$1],[ ])" AND type = "U")
+   DROP TABLE $1])
+
+define([DROP_PROCEDURE],
+[IF EXISTS
+     (SELECT 1 FROM sysobjects
+       WHERE name = "translit([$1],[ ])" AND type = "P")
+   DROP PROCEDURE $1])
+
+divert(0)

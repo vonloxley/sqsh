@@ -1,0 +1,459 @@
+                     SQSH-FAQ Version 2.1
+
+Name:      SQSH-FAQ
+Version:   $Id: FAQ,v 1.1.1.1 2001/10/23 20:31:05 gray Exp $
+Copyright: (C) 1996-2001 by Scott C. Gray
+
+This document contains of Frequently Asked Questions (or Frequently
+Answered Questions, as the case may be) concerning sqsh, a UNIX 
+replacement for the 'isql' program supplied with Sybase SQL Server.
+
+If you have any questions, comments, or additions to this FAQ feel
+free to send them to Scott Gray, gray@voicenet.com (or, if that 
+fails try sgray@inventa.com).
+
+Contents:
+
+Section 1:  Introduction to Sqsh and how to install it
+  1.1  What is it?
+  1.2  What makes it different?
+  1.3  What is the current release?
+  1.4  Basic Requirements
+  1.5  Sources of information
+  1.6  Supported platforms
+  1.7  Unsupported platforms
+  1.8  Where do I get it?
+
+Section 2:  Features
+
+Section 3:  Common build and installation problems
+  3.1  Basic instructions
+  3.2  I cannot get 'configure' to run while building GNU Readline
+  3.3  I get errors from ld.so when attempting to run sqsh
+  3.4  Building sqsh on Linux
+
+Section 4:  Run-time problems
+  4.1  Why can't I alias a SQL statement?
+  4.2  ^C causes coredump on SGI IRIX
+  4.3  Why do I get "TDS state" errors when running stored procedures?
+  4.4  Why doesn't command line editing work?
+  4.5  Piping output to another program does not work.
+
+Section 1:  Introduction to Sqsh and how to install it
+
+1.1  What is it?
+
+  Sqsh is a replacement for the 'isql' program supplied with Sybase's
+  SQL Server database on UNIX platforms.  Besides supporting or emu-
+  lating most of the features that isql provides, sqsh provides a
+  reasonably rich set of features that users have been asking of isql
+  for the last couple of years.
+   
+  In their basic forms, both isql and sqsh, are simply command line 
+  tools used to send queries to a SQL Server or Open Server and display 
+  the result set in a (questionably) readable form.
+
+  sqsh was written by Scott C. Gray (gray@voicenet.com, sgray@inventa.com)
+  plus various patches submitted by other users throughout the 
+  internet.
+
+1.2  What makes sqsh different?
+
+  Sqsh attempts to meld the basic requirements of isql with the features
+  of bourne shell, such as file redirection, piping, command aliasing,
+  variables, backgrounding, job control, history, and dynamic configuration.
+  It also provides several SQL-specific enhancements including multiple
+  display styles (including HTML for use in CGI applications), the
+  ability to BCP result sets between servers, and execute remote procedure
+  calls directly.
+
+  For a complete list of features, please refer to the manual page
+  supplied with the program; a lot of effort went into writing it.
+
+1.3  What is the current release?
+
+  The current release of sqsh is 2.1.
+
+1.4  Basic requirements
+
+  In order to compile sqsh, you will need the following:
+
+  1.  A decent C compiler
+      Theoretically, sqsh should compile on older K&R compilers, but
+      this hasn't been confirmed.  Currently sqsh is developed using
+      gcc 2.95.3 using '-g -O -Wall'.
+
+  2.  Open Client/C from Sybase or FreeTDS
+      All versions of sqsh prior to 1.4.1 require the availability of
+      Sybase's DB-Library.  As of sqsh-1.4.1 and later require Sybase's
+      CT-Library or FreeTDS (http://www.freetds.org).
+      
+      Sqsh has been tested almost all versions of DB-Library as well
+      as CT-Lib 10.0.x, 11.1.x, and 12.x. Note that there is little
+      effort underway to allow sqsh to continue compiling against
+      CT-Lib 10.x, so it may require a bit of work on your part if
+      you really need 10.x support.
+
+  3.  GNU Readline 4.2
+      Although this library is not required, it is highly recommended
+      if you will to take advantage of command-line history, and key-
+      word completion.  Readline 4.2 may be found at 
+          http://cnswww.cns.cwru.edu/~chet/readline/rltop.html.
+
+  4.  X11R4 or Later
+      If available, sqsh may be compiled such that a result set may
+      be displayed within a separate X window.  This requires the
+      standard Athena widget set (Xaw).
+   
+   Obviously, in order to use sqsh, you will need a SQL Server or Open
+   Server to communicate with.
+
+1.5  Sources of Information
+
+   The SQSH Homepage may be found at:
+
+              http://www.sqsh.org/
+
+   Sqsh comes with a pretty extensive set of documentation:
+
+       README              -  Basic introducation to sqsh and its features
+       INSTALL             -  Build and installation guide
+       README.SGI          -  SGI IRIX build Issues
+       COPYING             -  GNU copyleft license
+       doc/FAQ             -  This file
+       doc/sqsh.1          -  Sqsh manual page in 'roff -man' format
+       doc/sample.sqshrc   -  Example configuration file
+       doc/advanced.sqshrc -  Example configuration with advanced features
+
+   Please make sure you read at least FAQ, README and INSTALL before asking
+   building and installation questions, and read the manual page before
+   asking usage and command questions.
+
+1.6  Supported Platforms
+
+   Well, the idea of "supported" does not really apply to freeware, 
+   however sqsh has been known to compile and work on most UNIX
+   platforms supported by Sybase, including Linux, Solaris, HP-UX, AIX, 
+   IRIX, SunOS, NCR, Dynix, OSF/1, DEC Unix, SCO, NeXT.  Some systems 
+   are a little trickier than others to get sqsh to build (such as Dynix),
+   but it gets a little better with every release.  Also, with release 1.7
+   sqsh will now run on NT with the help of the Cygwin32 porting kit.
+
+1.7  Unsupported Platforms
+
+   Sqsh will not currently work with OS/2 or MacOS <= 9.x. I haven't
+   seen it running on Mac OS X, however it should work just fine with
+   FreeTDS.
+
+1.8  Where do I get it?
+
+   Currently, the only available location to get sqsh from is
+   the home page:
+   
+   http://www.sqsh.org/
+
+Section 2:  Features
+
+This section is currently under construction.
+
+Section 3:  Common build and installation problems
+
+3.1  Basic instructions
+
+   Make sure you read README and INSTALL included with the installation
+   before attempting to build sqsh, but the basic routine is:
+   
+       % gunzip -c sqsh-X.Y.tar.gz | tar xvf -
+       % cd sqsh-X.Y
+       % ./configure --prefix="/<install_dir>" --with-x --with-readline
+       % vi Makefile
+       % make
+       % make install
+       % make install.man
+   
+   What could be easier? :)
+
+3.2  I cannot get 'configure' to run while building GNU Readline
+
+   This section only applies to really old versions of readline
+   (< 2.2).
+
+   While running GNU Readline's 'configure' script you get a message
+   about not being able to find 'install-sh'.
+
+   Although this is really a problem with the GNU Readline library
+   it gets asked often enough to make its way here.  It seems that
+   GNU Readline is no longer being developed, but you may want to
+   bug the developers to fix it.
+
+   Basically here is the solution: while sitting in the readline-2.0
+   directory, do:
+
+      % touch install.sh
+      % configure
+      % make
+
+   this will allow configure to complete, but it will mean that you
+   must hand install readline.  Then to install readline, create the
+   install directories if necessary (/usr/local is simply an example,
+   you can use whatever you want):
+
+      % mkdir /usr/local/lib
+      % mkdir /usr/local/include
+      % mkdir /usr/local/include/readline
+   
+   then copy the necessary files in:
+
+      % cp libreadline.a  /usr/local/lib
+      % cp chardefs.h history.h keymaps.h readline.h tilde.h \
+           /usr/local/include/readline
+   
+   and finally, make sure everything has the correct permissions:
+
+      % chmod 755 /usr/local/lib /usr/local/include 
+      % chmod 755 /usr/local/include/readline
+      % chmod 644 /usr/local/lib/libreadline.a
+      % chmod 644 /usr/local/include/readline/*.h
+
+3.3  I get errors from ld.so when attempting to run sqsh
+
+   This problem is typically due to the fact that the dynamic linker
+   used for the OS either cannot find the Sybase libraries or it
+   is finding the wrong libraries.  This problem is usually fixed
+   by setting the environment variable LD_LIBRARY_PATH.
+
+   On many operating systems, when a program is linked with dynamic
+   (shared) libraries, the full path to find the libraries is recorded
+   in the binary itself.  On other platforms, such as Linux and Solaris
+   (well, and Windows), only the name of the library is stored and
+   the operating system searches through a default set of directories
+   in order to find the necessary libraries at run-time.  By default, 
+   these are usually /lib and /usr/lib.  The advantage of this method 
+   is that you can test out different versions of the library without
+   having to recompile your application; you simply change the search path
+   to look in a new directory.
+
+   If, while attempting to run sqsh, you get a message from 'ld.so'
+   (that's the name of the program in charge of doing dynamic loading)
+   complaining that it cannot open a particular library, such as:
+
+      % sqsh -Usa -Ppassword
+      ld.so.1: sqsh: fatal: libcs.so: can't open file: errno=2
+      Killed
+   
+   it is probably due to the fact that the loader doesn't know where
+   the Sybase libraries are found.
+
+   There are two ways to correct this:
+   
+      1. Set the environment variable LD_LIBRARY_PATH with:
+
+            export LD_LIBRARY_PATH=${SYBASE}/lib:${LD_LIBRARY_PATH}
+         
+         or for csh and tcsh users:
+
+            setenv LD_LIBRARY_PATH "$SYBASE/lib:$LD_LIBRARY_PATH"
+      
+      2. If you have root access, you can set this up for all users
+         on a system by editing /etc/ld.conf  and then running ldconfig 
+         (this may vary on some systems).
+   
+   For the most part, option #1 is the recommended method of configuring
+   your library search path.
+
+   It is very important to watch the order of library directories listed
+   in the LD_LIBRARY_PATH environment variable due to the fact that
+   several Sybase libraries conflict with the naming of several common
+   operating system libraries:
+
+      1.  Solaris has libintl.so in /usr/lib
+          Even if you build sqsh with the correct libraries, because
+          these libraries are shared, the setting of LD_LIBRARY_PATH
+          may override the actual library that is used at run-time.
+          Having /usr/lib in LD_LIBRARY_PATH *before* $SYBASE/lib
+          will cause any CTlib app to fail on Solaris.
+         
+      2.  libtcl.{a,so} from the tcl language
+          Sybase has a libtcl.so, and tcl has a libtcl.{a,so}, which
+          very often gets installed in /usr/local/lib.  Again, the
+          same potential problem applies if you have a libtcl.so
+          in two places, and the wrong one is found at run-time.
+      
+   (thanks to Michael Peppler, author of SybPerl, for this info). The
+   above problem will usually manifest itself when running sqsh
+   like so:
+
+      % sqsh -Usa -Ppassword
+      ld.so.1: sqsh: fatal: relocation error: symbol not found: intlgetenv:
+      referenced in /usr/local/sybase/libcomn.so
+      Killed
+   
+   In general it is highly recommended that you *not* place /lib and
+   /usr/lib in your LD_LIBRARY_PATH.
+
+3.4  Building sqsh on Linux
+
+   Sqsh will *not* build on Linux against the *really* old version
+   of CT-Lib (10.0.4) that may still be floating around out there.
+   It is highly recommended that you get ahold of a more recent 
+   version that is bundled with ASE (11.0.3.3 or 12.x).
+
+Section 4:  Run-time problems
+
+4.1  Why can't I alias a SQL statement?
+
+   Many users attempt to alias SQL statements or clauses like this:
+
+      1> \alias nrows="SELECT COUNT(*) FROM *!"
+      1> nrows syscolumns;
+      sqsh: Invalid command
+
+   however it is stated in the manual page that \alias only applies
+   to aliasing other sqsh commands.  The above problem can be
+   expressed using environment variables as:
+
+      1> \set nrows="SELECT COUNT(*) FROM"
+      1> $nrows syscolumns;
+
+4.2  ^C causes coredump on SGI IRIX
+
+   This problem is covered extensively in README.SGI supplied with the
+   sqsh distribution. In short it is due to the fact that sqsh requires
+   BSD style signals which require a little tweaking on SGI to get it
+   to work.
+
+
+4.3  Why do I get "TDS state" errors when running stored procedures?
+
+   This problem is typically due to turning on traceflag 260 in the
+   server (-T260 turns off the sending of done-in-proc packets back
+   to the client each time a statement is completed within a stored
+   procedure).  While this flag provides some savings in network
+   communications between the client and the server, it will break
+   virtually any CT-Lib program, including sqsh.  DB-Lib applications
+   are typically unaffected by this flag, that is why older versions
+   of sqsh and isql are unaffected when turning it on.
+
+   This is a common problem that has yet to be addressed, even in
+   current releases of Open Client.
+
+   Trace-flag 260 my be turned on and off by the SA user with:
+
+      1> dbcc traceoff(260)
+      2> go
+   
+   This bug has supposedly been corrected in SQL Server release 11.0.3.1
+   and later.
+
+4.4  Why doesn't command line editing work?
+
+   In order to vi-style or emacs-style command line editing support
+   you must compile sqsh using the GNU Readline library, available
+   from ftp://prep.ai.mit.edu/pub/gnu/readline/readline-2.2.1.tar.gz.
+   See section 3.2 for tips on building readline.
+
+   By default, the readline library starts in "emacs" editing mode,
+   which uses either the arrow keys or ctrl-p, ctrl-n, ctrl-b, and
+   ctrl-f to move around. If, like me, you prefer vi-style editing,
+   you need to create a file in your home directory called 
+   $HOME/.inputrc containing the following line:
+
+      set editing-mode vi
+   
+   (Note: this file is used directly by the GNU Readline library, and
+   does not have anything directly to do with sqsh).  Refer to the
+   readline documentation for other options that are configurable via
+   the .inputrc.  However, for those that care, here are the settings
+   that I prefer:
+
+      set editing-mode vi
+      set horizontal-scroll-mode On
+      set show-all-if-ambiguous On
+      set visible-stats On
+   
+   Also note, any program that employs GNU Readline will be affected
+   by this file, this includes such programs as gdb and bash.
+
+4.5  Piping output to another program does not work
+
+   This problem usually manifests itself like so:
+
+      1> sp_who
+      2> go | more
+      1>
+   
+   the command seems to have executed, but the output just seems to
+   go into the bit-bucket.
+
+   This problem is usually due to a bug in some versions of CT-Lib,
+   in the way that the library configures itself for Asyncronous I/O,
+   and may be tested by placing the following code in a file called
+   sqsh_pipe.c:
+
+      /* sqsh_pipe.c - Demo bug in CT-Lib */
+      #include <stdio.h>
+      #include <signal.h>
+
+      static void sigpoll_handler();
+
+      main()
+      {
+         struct sigaction sa;
+
+         sigaction(SIGPOLL, NULL, &sa);
+         sa.sa_handler = sigpoll_handler;
+         sigaction(SIGPOLL, &sa, NULL);
+
+         sleep(20);
+
+         printf( "sqsh_pipe: Congratulations, you don't have the bug!\n" );
+         fflush( stdout );
+         exit(0);
+      }
+
+      static void sigpoll_handler()
+      {
+         printf( "sqsh_pipe: You have the SIGPOLL bug.\n" );
+         fflush( stdout );
+         exit(1);
+      }
+
+   You can compile this with:
+
+      % cc sqsh_pipe.c -o sqsh_pipe
+
+   And test it with:
+
+      1> sp_who
+      2> go | sqsh_pipe
+   
+   If you get the message "You have the SIGPOLL bug." then you have
+   the bug in CT-Lib and should get in touch with Sybase Technical
+   Support for the latest version of the library.
+
+   For those of you that are interested in this, here is what the
+   bug entails.  When CT-Lib creates a socket to talk to the SQL
+   Server, it will typically initialize it to use Async I/O, so 
+   that the library will receive a signal (SIGPOLL or SIGIO) whenver 
+   data is ready to be received from SQL Server.  Now, by default,
+   when a socket is initialized to use SIGPOLL, it is set that the
+   signal will only be delivered to the process that requested (in this
+   case, sqsh).  However, for some reason, the broken versions of
+   CT-Lib actually request that the SIGPOLL signal be sent, not
+   only to the process that requested the signal, but to any process
+   spawned from it.
+
+   In our case, what happens is that when you type:
+
+     1> sp_who
+     2> go | more
+   
+   sqsh will fork() a new process when will then run the program
+   "more".  Well, as soon as SQL Server starts sending data to
+   sqsh, both sqsh _and_ "more" will receive the SIGPOLL, and
+   since most programs aren't written to deal with this signal,
+   they will exit immediatly.
+
+   Many, many thanks to Pablo Sanchez (pablo@sgi.com) and Jason
+   Thorpe (thorpej@nas.nasa.gov) for helping track down this problem.
+

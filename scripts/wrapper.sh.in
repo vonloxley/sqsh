@@ -1,0 +1,17 @@
+#!/bin/sh
+
+SQSHRC='%SQSHRC%'
+if [ "$SQSHRC" != "" ]; then
+	export SQSHRC
+fi
+
+SYBASE=%SYBASE%
+export SYBASE
+
+LD_LIBRARY_PATH=%LD_LIBRARY_PATH%:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH
+
+SHLIB_PATH=%LD_LIBRARY_PATH%:$SHLIB_PATH
+export SHLIB_PATH
+
+exec %BIN_DIR%/sqsh.bin $*

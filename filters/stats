@@ -1,0 +1,89 @@
+#!/bin/sh
+#
+# Quick script to filter output from a batch executed with SET
+# STATISTICS IO ON. The statistics will be stripped from the
+# original output and summarized after the query has been completed
+# in a pretty table.
+#
+
+awk \
+'BEGIN {
+	table_idx = 0;
+}
+{
+	if ($1 == "Table:")
+	{
+		table_name=$2;
+		scan_count=0+$5;
+		log_io=0+$8;
+		phys_io=0+$11;
+
+		if (table_count[table_name] <= 0)
+		{
+			table_names[table_idx] = table_name;
+			table_count[table_name] = 0;
+			++table_idx;
+		}
+
+		++table_count[table_name];
+		total_scan_count[table_name] += scan_count;
+		total_log_io[table_name] += log_io;
+		total_phys_io[table_name] += phys_io;
+	}
+	else if ($1 == "Total" && $2 == "writes")
+	{
+		total_writes += $6;
+	}
+	else
+	{
+		print $0;
+		next;
+	}
+}
+END {
+	grand_scan_count=0
+	grand_log_io=0
+	grand_phys_io=0
+	grand_count=0
+
+	printf( "%-30s %5s %10s %10s %10s %10s\n",
+		"Table Name", "Count", "Scan Count", "Log I/O", "Phys I/O", "Writes" );
+	printf( "%-30s %5s %10s %10s %10s %10s\n",
+		"------------------------------",
+		"-----",
+		"----------",
+		"----------",
+		"----------",
+		"----------" );
+	for (i = 0; i < table_idx; ++i)
+	{
+		printf( "%-30s %5d %10d %10d %10d %10s\n",
+			table_names[i], 
+			table_count[table_names[i]],
+			total_scan_count[table_names[i]],
+			total_log_io[table_names[i]],
+			total_phys_io[table_names[i]],
+			"N/A" );
+
+			grand_scan_count += total_scan_count[table_names[i]] ;
+			grand_count  += table_count[table_names[i]];
+			grand_log_io += total_log_io[table_names[i]] ;
+			grand_phys_io += total_phys_io[table_names[i]];
+	}
+
+	printf( "%-30s %5s %10s %10s %10s %10s\n",
+		"",
+		"-----",
+		"----------",
+		"----------",
+		"----------",
+		"----------" );
+
+	printf( "%-30s %5d %10d %10d %10d %10d\n",
+		"",
+		grant_count,
+		grand_scan_count,
+		grand_log_io,
+		grand_phys_io,
+		total_writes );
+}' $*

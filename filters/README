@@ -1,0 +1,7 @@
+
+This directory contains handy scripts that can be used to
+filter SQL output through sqsh.  The following filters are
+available:
+
+  stats       - Strips all STATISTICS IO output and summarizes
+                statistical results at the end of the batch.

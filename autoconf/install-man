@@ -1,0 +1,145 @@
+#!/bin/sh
+#
+# install-man -- install or uninstall compressed or uncompressed man pages.
+#
+# This horrible shell script handles install and deleting of man pages.
+# it tries to be reasonably smart about the placement of the pages,
+# looking a the extension of the man page for clues (e.g. it would put
+# "shit.3" in section 3. Just by adding the -u flag, the man pages may
+# be removed.
+#
+# Author: Scott C. Gray   (except where noted)
+# Created: 1995-02-03
+#
+src_dir=.                              # default search path for man pages
+dst_dir=/usr/local/man                 # default destination
+man_type=man                           # default type, could be "cat"
+man_default_ext=1                      # default manual section
+compressed=0                           # default to no compression
+uninstall=0                            # default to no uninstall
+
+set -- `getopt cun:d:t:s: $*`
+
+has_error=0
+
+while ( test $# -ne 0 -a "$1" != "--" ); do
+	case $1 in
+		-t)
+			shift
+			if (test "$1" != "cat" -a "$1" != "man"); then
+				echo "install.man: -t: Invalid man type"
+				has_error=1
+			else
+				man_type=$1
+			fi
+			;;
+		-s)
+			shift
+			src_dir=$1
+			if (test ! -d "${src_dir}"); then
+				echo "install.man: Can't find source directory ${src_dir}"
+				exit 1
+			fi
+			;;
+		-d)
+			shift
+			dst_dir=$1
+			;;
+		-c)
+			compressed=1
+			;;
+		-u)
+			uninstall=1
+			;;
+		-n)
+			default_man_ext=$1
+			;;
+		*)
+			has_error=1
+			;;
+	esac
+	shift
+done
+
+shift       # get rid of the -- in the options line
+
+if (test ${has_error} -eq 1 -o $# -eq 0); then
+	echo "use: install.man [-t type] [-s src_dir] [-d dst_dir] [-n section] "
+	echo "                 [-c] [-u] man_page ..."
+	echo "      -t type     either \"cat\" or \"man\" (default \"man\")"
+	echo "      -s src_dir  where to find man pages (default .)"
+	echo "      -d dst_dir  where to place man pages (default /usr/local/man)"
+	echo "      -n section  change default man section (default 1)"
+	echo "      -c          compress man pages, place in man?.Z or cat?.Z"
+	echo "      -u          uninstall the man pages"
+	exit 1
+fi
+
+		
+has_error=0
+while (test $# -gt 0); do
+
+	if (test ${uninstall} = 0 -a ! -r ${src_dir}/$1); then
+		echo "install.man: No such man page ${src_dir}/$1"
+		exit 1
+	fi
+
+	man_page=`echo $1 | sed -e 's/\.[^\.]*$//g'`
+	man_ext=`echo $1 | sed -e 's/.*\.//g' | grep '^[0-9n]$'`
+
+	if (test "${man_ext}" = ""); then
+		man_ext=${man_default_ext}
+	fi
+
+	#
+	# The exact location of this particular man page
+	#
+	man_path=${dst_dir}/${man_type}${man_ext}
+
+	if (test ${compressed} = 1); then
+		man_path=${man_path}.Z
+	fi
+
+	#
+	# This section of code attempts to create the destination directory
+	# if it doesn't work.  Note, the sed line was stolen almost entirely
+	# from mkinstalldirs that comes with GNU autoconf (by Noah Friedman 
+	# <friedman@prep.ai.mit.edu>).
+	#
+	if (test ${uninstall} = 0 -a ! -d ${man_path}); then
+		dir=""
+		for i in `echo ":${man_path}" | \
+		          sed -ne 's/^:\//#/;s/^://;s/\// /g;s/^#/\//;p'`
+		do
+			if (test "${dir}" = ""); then
+				dir=$i
+			else
+				dir=${dir}/$i
+			fi
+			if (test ! -d ${dir}); then
+				output=`mkdir ${dir} 2>&1`
+				if (test "${output}" != ""); then
+					echo "install.man: ${output}"
+					exit 1
+				fi
+			fi
+		done
+	fi
+
+	if (test ${uninstall} -eq 1); then
+		echo "Uninstalling $1 from ${man_path}"
+		rm -f ${man_path}/${man_page}.${man_ext}
+	else
+		if (test ${compressed} -eq 1); then
+			echo "Installing $1 as ${man_path}/${man_page}.${man_ext}"
+			compress -c ${src_dir}/$1 > ${man_path}/${man_page}.${man_ext}
+		else
+			echo "Installing $1 as ${man_path}/${man_page}.${man_ext}"
+			cp ${src_dir}/$1 ${man_path}/${man_page}.${man_ext}
+		fi
+	fi
+
+	shift
+done
+
+exit 0

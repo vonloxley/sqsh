@@ -1,0 +1,721 @@
+$Id: ChangeLog,v 1.2 2001/11/06 01:24:49 gray Exp $
+
+Changes from 1.8 to 2.0
+   o  New build system/directory structure. Should build against
+      ASE 12.0 and FreeTDS now.
+   o  Added support for varchar2() and varbinary2() for ASE 12.5
+      (I don't have a 12.5 instance to test against yet though).
+   o  New $maxlen configuration variable controls the maximum 
+      amount of data that will be displayed for a given column.
+      The default value is 8192 (8K). This will automaticallly
+      truncate large columns (i.e. TEXT columns) to 8K.
+   o  Added \if command to perform conditional execution. This
+      includes \elif and \else handling, like so:
+           \if [ $x -lt 10 ]
+               \echo hello
+           \elif [ $x -lt 15 ]
+               \echo hi
+           \else
+               \echo howdy
+           \fi
+      Please read the manual carefully on how expressions work.
+   o  Added \while command to perform basic looping conditional
+      expressions:
+           \while [ $x -lt 10 ]
+               \echo $x
+               \set x=`expr $x + 1`
+           \done
+   o  Added \break command to break out of current loop
+   o  Added \for command to perform basic iteration.
+           \for i in 1 2 3 4 5 6
+               \echo $i
+           \done
+   o  Added \do command to allow the exection of a sqsh script
+      block once per row returned from statement. Also new
+      #[0-9] variables may be used to refer to column names
+      in result set.
+           SELECT name FROM SYSDATABASES 
+           \do
+               USE #1
+               go
+               CHECKPOINT
+               go
+           \done
+      Also note that \do allows flags -U, -S, -P for execution
+      of statements on other server or as other users.
+   o  Added \func command to create a sqsh function for later
+      execution.  Also, now ${[0-9]} now refer to the parameters
+      to this function when it is called.
+           \func stats
+               SET STATISTICS IO ${1}
+               SET STATISTICS TIME ${1}
+               go
+           \done
+           \call stats on
+      Note that by passing -x to \func, the function will be
+      exported as a full sqsh command, and can be called
+      directly without calling \call.
+   o  Added \return to return from current function.
+   o  Obviously, added \call to call sqsh function.
+   o  New variable $? contains:
+         -  Return status of command executed on pipe '|'
+         -  Return status of expression evaluated for \while or \if.
+         -  Last server error number of severity > 10 (@@error).
+      This is useful for flow-of-control using the new conditional
+      statements.
+   o  Added a directory of handy filter scripts.
+   o  Fixed \rpc command with @variable names.
+   o  \exit now exits sqsh, no matter how many \loop nesting 
+      levels you are in.
+   o  The user will now be re-prompted to enter a password if a
+      "Login failed." message is received from the server. This
+      may be disabled using the new $password_retry variable.
+   o  Fix for signal handling (usually puked on AIX) - Brian 
+      Bruns.
+
+Changes from 1.7 to 1.8
+   o  Got rid of error message about ct_exit() not being called.
+   o  Created new 'make distrib' option to build a self-contained
+      sqsh binary distribution.
+   o  $rcfile and $SQSHRC may now be colon delimited lists of 
+      sqshrc files.  This allows for system-wide rc files to be
+      loaded first before local files.  Also, the default $SQSHRC
+      setting is now "/usr/local/etc/sqshrc:$HOME/.sqshrc" (the
+      /usr/local will be automatically replaced by the contents
+      of --prefix when passed to configure).
+   o  Fixed -C.
+   o  $SQSHRC no longer needs to be writable.
+   o  sqsh no longer pays attention to quotes inside of comments
+      during variable expansion.
+   o  Fixed bcp'ing of results from stored procedures.
+   o  libsybtcl will now be chosen if available.
+   o  'exact' mode keyword expansion should now work better (thanks
+      to Sean Woolcock <sean@nando.net>.
+   o  Added $bcp_colsep and $bcp_rowsep configuration variables to
+      control the separators used during "go -m bcp".
+   o  Added $bcp_trim to configure whether or not trailing spaces
+      are trimmed in the bcp output.
+   o  Fixed segfault in "pretty" display mode.
+
+Changes from 1.6 to 1.7
+
+   o  Added support for Windows NT (many thanks to Vadim
+      Beloborodov <bvr@cc.pib.alex-ua.com> for the tips and
+      tricks to get cygwin32 to work properly).
+   o  Fixed Linux stropt.h problem.
+   o  For better NT support sqsh will now use $SHELL to determine
+      which shell is to be used when processing pipes.
+   o  Horizontal output should now make maximal use of the screen
+      width (it used to wrap at $width-1 characters).
+   o  Hopefully finally fixed characters being dropped in the
+      output on certain platforms.
+   o  Added new `meta' display style.  This style suppresses row
+      data and only shows the behind-the-scenes meta information
+      returned instead.  I used this primarily for debugging 
+      Open Server passthrough gateways.
+   o  Added new `pretty' display style.  This style prints its out-
+      put in a nicely formatted table output.  Also added the
+      variable $colwidth to control the maximum width of a column
+      displayed in this mode.
+   o  Finally re-wrote the \rpc command to use CT-Lib.  This works
+      as it did in 1.4 with the exception that output parameters can
+      no longer be sent to sqsh variables.
+   o  Fixed CTRL-C problem sending sqsh into an infinite loop on some
+      platforms.
+   o  Fixed -D flag to connect/reconnect.
+   o  Fixed install-wrapper's setting of LD_LIBRARY_PATH.
+   o  Added --with-motif support that will cause X support for sqsh
+      to use Motif widgets rather than the rather crude and ugly
+      Athena widgets. See INSTALL for details (thanks to John Griffin
+      <belved!JOHNG@uunet.uu.net> for contribted code).
+   o  Added --with-static configure flag to allow static linking with
+      sybase libraries.
+   o  Added --with-devlib configure flag to allow linking with
+      sybase devlib libraries.
+   o  Got rid of some compiler warning messages.
+   o  Worked around AIX bug where periodically a 'go | more' would 
+      stop displaying a prompt (this was a freaky problem).
+   o  The $history environment will now have its contents expanded
+      prior to loading the history file.  This allows for such
+      nifty tricks as having a different history file for each
+      server.  Thanks to Colin Foss <colin.foss@efi.com> for this
+      submission.
+   o  Added ability to pass multiple instances of '-e' to the \loop
+      command.  Thanks again to Colin Foss <colinf@ttmc.com>.
+   o  Changed password behavior. If password is set to the string
+      "NULL" then the user is prompted.
+   o  Fixed problem with -k option being ignored.
+   o  Fixed -lsec library problem with HP-UX 10.20.
+   o  Fixed `errno' undeclared problem on certain environments.
+   o  Added -C flag to allow a single sql statement to be executed.
+      Right now this is a little limited in that it may not contain
+      any double quotes.
+   o  Added boolean $output_parms variable to enable to disable the
+      display of output parameter result sets.
+   o  Fixed small locale problem when determining the maximum
+      length of a datetime (thanks again to Vadim Beloborodov 
+      <bvr@cc.pib.alex-ua.com>).
+
+Changes from 1.5 to 1.6
+
+   Release 1.6
+
+   o  Cleaned up the `Password' entry a tad to help programs like
+      `expect' avoid race conditions.
+   o  Supplying a password of `-' to the -P flag will now cause your
+      password to be read from the first line of stdin.
+   o  Added install-wrapper option to install a shell-script wrapper
+      around sqsh that automatically takes care of setting your
+      LD_LIBRARY_PATH (thanks to Tod Olsen).
+   o  Reverted back to the 1.5.2 version of the logic that determines
+      the set of libraries on a given platform.  1.5.3 had some 
+      problems on certain Solaris installations.
+   o  Fixed redirection problem with the html and bcp display styles
+      when performed non-interactively (say via a sqsh script).
+   o  Fixed problem where $database was no longer tracking your
+      current database context (broken in previous release).
+   o  Added configurable display format for floats and reals via
+      $float and $real environment variables.
+   o  Got rid of setjmp/longjmp in new filtering feature in order
+      to lose some compiler warnings about clobbered variables.
+   o  Got rid of packet size limit of 2048 (I don't know why I had
+      it in the first place).
+   o  Fixed coredump problem with `\set var' was called without
+      an '=' to specify the value of the variable.
+   o  Hopefully got rid of characters being dropped on HP-UX when
+      sqsh is linked with termcap.
+   o  Fixed problem with \read failing to echo when -h is not
+      supplied.
+   o  Added -a option to \buf-load to append, rather than replace,
+      the buffer being loaded.
+
+   Release 1.5.3 (internal release)
+
+   o  Fixed bug on AIX where a COMPUTE clause without a BY list would
+      fail to display any results.
+   o  Corrected bug where 'SELECT * FROM sysaudits' was not returning
+      a result set.
+   o  Fixed problem with certain message headers being displayed when
+      they shouldn't have, such as messages from dbcc's and database
+      dumps.
+   o  Added new $filter and $filter_prog variables, and -t flag to \go
+      command to allow the SQL buffer to be filtered through an external 
+      program (such as cpp or m4) prior to being sent to SQL Server.
+   o  Added new $HOME/.sqsh_readline output which will save away 
+      the readline line-by-line history buffer upon exit.  Also added
+      new variables $readline_history which allows you to change the
+      default filename, and $readline_histsize which allows you to
+      limit the number of entries in the file.
+   o  Added new "exact" option to the $keyword_completion variable
+      which will complete the keyword exactly as it is specified in
+      the .sqsh_words file.
+   o  Added new $repeat_batch variable to control whether or not
+      a 'go' with an empty work buffer will repeat the last command
+      executed.  Note that this now defaults to 'off' which is the
+      opposite of previous versions.
+   o  Added -x flag to the \set command to allow the variable to
+      be exported to the environment.  Also, the \set command may
+      now be used to set more than one variable at a time.
+   o  Added $semicolon_cmd to set which command will be executed
+      when a semicolon is encountered (only when $semicolon_hack
+      is set to On).
+   o  PRINT statements and informational messages will no longer
+      increment batch_failcount because $thresh_fail now defaults
+      to 11.  Any several level under 11 is now considered 
+      informational.
+   o  The -P option of \bcp no longer requires an argument
+   o  The \bcp command should deal with transferring identity columns
+      between tables.  Also, added the -N option to indiciate that the
+      identity column values are not being supplied.
+   o  Fixed memory leak related to editing a SQL Buffer (sqsh was
+      losing approx. 1K every time you ran vi, emacs, or edit). Thanks
+      again to the folks at Pure.
+
+   Release 1.5.2
+
+   o  Added -D option to \connect and \reconnect to allow switching
+      of database context during establishing of a new connection.
+   o  Return param result sets should now be displayed similar to
+      11.1 version of isql (anyway, they shouldn't cause sqsh to 
+      choke).
+   o  Ran sqsh through Purify (a great tool!) and cleaned up a couple
+      of minor memory leaks and array boundry read problems.
+   o  Corrected the ability to ^C out of the \lock command (making
+      it virtually useless).
+   o  Cleaned up error recovery during result set display so sqsh
+      should no longer go into infinite loops.
+   o  SA_RESETHAND and SA_ONESHOT problems should be solved on AIX
+      (which, for some reason does not support these flags).
+   o  Fixed problem with -P being ignored during \reconnect and
+      \connect.
+
+   Release 1.5.1
+
+   o  Cleaned up 'configure' logic to make it a little smarter in
+      determining whether or not to use siglongjmp() or longjmp().
+   o  Added -lsdna to link line for OSF/1.
+   o  On SGI machines using TLI, configure should now choose to 
+      include the -lnsl library as well.
+   o  Got rid of test for -Xc flag on the SunPro compiler.  This
+      was causing sigjmp_buf to be unavailable for use by sqsh.
+   o  Fixed (?) problem with SA_RESETHAND being undefined on AIX,
+      sqsh will now also look for SA_ONESHOT instead.
+   o  Fixed problem with $thresh_exit being ignored.
+   o  Fixed problem with sig_t conflicting with OS defintion on
+      Dec UNIX in sqsh_sig.c.
+   o  Fixed formatting problem with REAL and FLOAT data types.
+   o  Added configurable date format with the $datetime variable,
+      similar to the strftime(3C) function.
+   o  Started documentation on "How to write a sqsh command" in
+      doc/Commands.
+
+Changes from 1.4 to 1.5
+
+   Release 1.5
+
+   o  Fixed problem where sqsh was not kicking you out when the
+      server was shut down.
+   o  Fixed bug in longjmp() code throughout sqsh that I am totally
+      amazed hasn't caused anyone to coredump during the last year
+      that sqsh has been available.
+   o  Fixed bug in signal handling during non-interactive mode.
+   o  Replaced entire signal handling mechanism in sqsh with a 
+      centralized signal handler (quite an interesting piece of
+      work).  This handler will use POSIX signals if they are 
+      available on the system, so -D_BSD_SIGNALS is no longer
+      required on SGI IRIX.
+   o  Added $batch_pause to cause a "Hit enter to continue" message
+      following each batch sent to the server, useful for use with
+      $echo to debug scripts.
+   o  Added '-r sqshrc' option to allow you override the name of the
+      .sqshrc file to read upon start-up.  If sqshrc is not supplied
+      then no startup file is read.
+   o  Optimized file descriptor handling so that sqsh no longer
+      attempts to fstat() every possible file descriptor upon
+      startup.
+   o  The "rows affected" message should come close to emulating
+      isql's and older versions of sqsh. It probably will never
+      match exactly, but should be pretty close.
+   o  Cleaned up client and server error handlers to display
+      more closely to the DB-Lib version of sqsh (they still
+      don't quite match, but it looks much better then 1.4.2).
+   o  Added -B flag so that sqsh will now attempt to turn off 
+      buffering of stdin, stdout, and stderr upon start-up.  
+      This should allow it to be controlled by such libraries 
+      as 'expect'.
+   o  Added --with-gcc flag, and INCDIRS and LIBDIRS environment
+      variables (thanks to Tod Olson <ta-olson@uchicago.edu>).
+
+   Release 1.4.2
+
+   o  Reworked autoconf stuff to determine the set/order of libraries
+      used to link according to OS type; if this fails, autoconf
+      should now take a best guess.  Also, added check to define 
+      _POSIX_SOURCE. Added --with-x, --x-includes, --x-libraries
+      options to configure.
+   o  Got rid of extraneous error messages generated if a login
+      fails (this was do to faulty clean-up code).
+   o  If no buffer is supplied, '\go' will now re-execute the
+      last command run (thanks to Daniel Roitman <daniel.roitman@gs.com>
+      for this patch).
+   o  Added '-e <statement>' to the \loop command to execute
+      the contents of <statement> within its own SQL Buffer (thanks
+      again to Dan Roitman for this patch).
+   o  Horizontal output style (default isql style) will now attempt to
+      pack the data as tight as the current locale will allow. For 
+      example, if the datetime format for the current locale uses at
+      most 23 characters, then a 23 character column will be displayed.
+   o  Added new X display style if X11 support is compiled in.  This
+      also added the new $xgeom variable and -d, -w and -x flags to the
+      \go command.
+   o  Semicolon will no longer be interpreted within comments (both
+      "/* */" style and "--" style).
+   o  thresh_exit will now only be applicable while in non-interactive
+      mode, rather than any time.
+   o  Added a FAQ to the distribution.
+
+   Release 1.4.1
+
+   o  Converted all internal Sybase calls from db-lib to ct-lib (a
+      major undertaking that is highly likely to break things, so
+      watch out!).
+   o  Fixed faulty test in which sqsh would only abort if 
+      $batch_failcount was exactly equal to $thresh_exit.
+   o  Added new "html" display style, that generates HTML <TABLE>
+      constructs, this should be useful for running sqsh through
+      a CGI.  Right now, the format is not very configurable, but
+      this may change in the future.
+   o  Stole some 'configure' logic from Steve Etchelecu (thanks
+      Steve!), so sqsh should now automatically configure the
+      appropriate include and lib directories as well as the
+      required set of libraries.
+   o  Thanks to the kind sole that converted CT-Lib for Linux 
+      (Steve again?), the -DNO_DB flag has been removed.
+   o  Cleaned up many warning messages generated on stricter ANSI
+      compilers (such as SunPro).
+   o  Slowly converting my coding style from K&R to BSD (much easier
+      to read), so for those coders out there, you'll now see two
+      different styles intermixed in the code until I am done cleaning
+      everything up.
+
+Changes from 1.3 to 1.4
+   o  Fixed bug in vertical display style where garbage was being
+      displayed following certain data types.
+   o  Fixed bug in \bcp where it would give an overflow error on
+      non-NULL CHAR(n) columns.
+   o  Added code to automatically detect window size change (SIGWINCH)
+      and adjust the $width variable while sqsh is running.  The behavior
+      of resizing the screen while a result set is being displayed is
+      undetermined.
+   o  Added new \lock command to lock the current session until a
+      password is typed.  The default password is the same as your
+      UNIX password, unless the $lock password is set.
+   o  Both $password and $lock are no longer available in clear-text,
+      they will now expand to '*password*' and '*lock*' respectively
+      thus providing some semblance of security in sqsh.  If you want
+      to keep the old behavior, define -DINSECURE in the Makefile.
+   o  Added new \rpc command for calling a remote procedure directly.
+      This is useful for using sqsh to control an Open Server that does
+      not support language calls.
+
+Changes from 1.2 to 1.3
+   o  (Hopefully) fixed bug with AIX dropping portions of the output
+      from a command substitution (many thanks to David Whitmarsh
+      <djw@accessio.demon.co.uk>!).
+   o  Fixed bug where \buf-edit attempted to launch an editor called
+      \buf-edit.
+   o  Fixed bug where partial alias names were being expanded (for 
+      example just typing the first character of an alias name caused
+      the alias to expand).
+   o  Added positional parameters when the -i flag is used, so now
+      you can do nifty things like creating an executable file called
+      sp_who with the contents of:
+
+           #!/usr/local/bin/sqsh -i
+           sp_who ${1}
+           go
+
+   o  Added transaction count to the '\go' command, similar to isql's.
+      Also added -s flag to \go to pause for a specified number of
+      seconds per transactions.  Also changed to statistics output
+      to more closely resemble that of isql.
+   o  Corrected some faulty logic with error capturing. Now, the variable
+      $thresh_fail is based upon the error severity as reported by the
+      message handler rather than the error handler (makes a lot more
+      sense).
+   o  Added -c flag to \connect and \reconnect to force the commands
+      to ignore the value of $database.  That is, to *not* attempt to
+      preserve the current database context upon reconnect.
+   o  Added new selectable result set display styles.  Currently supported
+      styles are "horizontal" (traditional isql output), "vertical", "bcp",
+      and "none" (thanks to Bob Stent for example vertical code). The
+      display style is selectable via the new $style variable, and the -m
+      command line flag and -m option to the \go command.
+   o  Added the \bcp command to transfer the result set from the current
+      command batch to another SQL Server via bcp protocol.  This acts
+      kind of like a SELECT INTO another server.
+
+Changes from 1.1 to 1.2
+
+   o  Got rid of the "(exit = X)" message generated by the
+      \shell command and added a new variable called $? that
+      contains the exit status of the process.
+   o  Fixed problem where the output of \shell would "out-run"
+      the output of sqsh when redirected to a file.
+   o  Fixed problem with a background connection being established
+      with a database context of the users default database rather
+      than inheriting the context of the foreground (its parent)
+      connection.
+   o  Added code to attempt to blank out the password from the
+      command line on platforms that support this (hopefully
+      this won't cause a coredump on other platforms).
+   o  Added -J flag and $charset variable to set the character
+      set to be used on the client side. Note that the $charset
+      variable will automatically set itself to the current
+      client charset.
+   o  Added -X flag and $encryption variable to enable client-side
+      password encryption.
+   o  Added -z flag and $language variable to enable language specific
+      database messages.  $language will automatically set itself
+      to the current language context.
+   o  Added -H flag and $hostname variable to set the client hostname
+      for the sqsh session.  Note that "\set hostname=`hostname`" is
+      a neat trick to put in your .sqshrc.
+   o  The $autouse variable has been deprecated. Now, if the $database
+      variable is set, it will take precedence over the $autouse 
+      variable.  Since the $database variable is automatically set
+      after connecting to the database this fixes the bug where a
+      background task was failing to connect to the same database
+      as the forground task that launched it.
+   o  Added "real" alias support.  That is, aliases may now contain
+      additional command line information, and may include positional
+      '!*' entries for expansion within the body of the alias. So,
+      you may now do cool things like "\alias prod='\reconnect !*
+      -SSYB_PROD'" and "\alias mo='\go !* | more'".
+
+Changes from 1.0 to 1.1
+
+   o  Fixed bug with redirection failing to truncate the output
+      file upon creation.
+   o  Fixed problem with -i flag being ignored by \loop.
+   o  During interactive use, sqsh will now attempt to figure out
+      the current screen width if an explicit -w was not been
+      supplied.  This feature may not work on all terminals.
+   o  Added external environment variable SQSH, which may contain
+      any desired sqsh command line arguments.  This variable is
+      parsed prior to parsing the actual sqsh command line. This
+      provides yet another reasonably secure way to supply a password
+      to sqsh.
+   o  Added new command line argument '-L var=value' used to set
+      the value of the variable $var.  This may be used to set any
+      sqsh variable, even if there is no explicit command line flag
+      available.
+   o  Added new $histnum variable that contains the history number
+      that will be assigned to the current SQL batch as soon as the
+      \go command is executed.
+   o  Added line continuation by escaping the new-line, that is
+      if the line ends with a \\, then the newline will be ignored.
+   o  Added $prompt2 variable to be displayed during line continuations.
+   o  Drastically re-worked user input internals, cleaning up signal
+      handling and modularlizing the read functions (making way for
+      dealing with flow-of-control logic). Also got rid of compiler
+      warnings about variables being clobbered by longjmp.
+   o  Added tons of comments to doc/sample.sqshrc.
+
+Changes from 0.8 to 1.0
+
+   o  Fixed bug introduced in 0.8 where a NULL -P on the command
+      line caused a coredump.
+   o  Reduced the circumstances in which the banner message is
+      displayed (it won't be displayed if -i is used, or stdin
+      or stdout has been redirected).
+   o  Fixed bug where setting $username in your .sqshrc was being
+      ignored (it was still defaulting to your real username).
+   o  Fixed bug with coredumps when sqsh commands receive more than
+      16 arguments.
+   o  Fixed portability issue with the MAXPATHLEN define and with
+      strdup prototype.
+   o  Fixed problem with sqsh failing to exit following a shutdown
+      of the server (ignoring the EOF from SQL Server).  The new rule
+      is, unless you are doing a \reconnect, if DBPROCESS dies or is
+      NULL, then sqsh will exit with 255.
+   o  Fixed portability problem for 4.9.2 systems that don't have
+      the DBSETLPACKET() call available.
+   o  Corrected quoting rules. I used to interpret single quotes
+      contained within double quotes and visa versa.  This meant
+      that in the string "scott '$rules'" the $rules wouldn't be
+      expanded. According to POSIX quoting rules this isn't the
+      correct behaviour.  Once inside either single or double quotes
+      the only quote to be interpreted is the matching closing quote.
+   o  Reworked the escaping mechanism.  Basically I threw out the
+      escaping via doubling mechanism (where ""hello"" expanded
+      to "hello") and went with something a little more conventional.
+      Since \ is already reserved for commands, the escape character
+      is now \\.
+   o  Attempted to make sqsh command line parsing a bit smarter. Now,
+      commands no longer have to begin at the very first column of the
+      current command line.
+   o  Added command substitution both withing SQL batches and
+      in a command function, using the ` character, much in the
+      same way a standard shell does.  This also necessitated the
+      creation of the $ifs variable to determine the internal 
+      field separator.
+   o  Added new start-up configuration file ~/.sqsh_session to be
+      executed immediatly prior to establishing a connection to the
+      database.
+   o  To allow setting NULL passwords within the .sqshrc, you may now
+      do: \set password=NULL.
+   o  Added all sorts of internal debugging code, a -l flag to set
+      the debugging level and a new $debug variable.  These are
+      mostly undocumented, but they are there.
+   o  Added -v flag and $version variable to display the current version
+      number.
+   o  \alias without any parameters will now display a list of the alias'
+      that are currently in place.
+   o  \help now displays its commands in alphabetical order.
+   o  Added new \shell command to execute something in a sub-shell.
+   o  Added -i flag to \loop to supress error conditions if the 
+      supplied file name could not be opened.
+   o  Fixed problem with 'go 2>&1 | more' failing to redirect error
+      messages to 'more'.
+   o  Added -k flag, $keyword_file variable for supplying your own
+      file full of custom readline completion keyword.
+   o  Added support for -c without an associated argument.  This
+      is the same as -c "".
+
+Changes from 0.6 to 0.8
+
+   o  Added some more GNU Autoconf logic to make Sequents happier
+      with the gettimeofday() function.
+   o  Added $database variable which automagically keeps track of
+      the current database context.
+   o  The SQSHRC environment variable was being ignored.   This
+      has been corrected.
+   o  Added README.SGI to detail solutions to getting sqsh to build
+      on SGI's (thanks to Pablo Sanchez).
+   o  Added -D flag and $autouse variable to force to sqsh to connect
+      with a database context of $autouse.
+   o  Added "real" history recall mechanism. That is, you don't need
+      to have a space after the '!' to copy a buffer into the current
+      work buffer.  This feature is only available for interactive
+      sessions and must be turned on with the $history_shorthand
+      variable.
+   o  Re-worked signal handling for cmd_go.c (when your result set
+      is being displayed), such that a longjmp() is never performed.
+      Hopefully this will keep dblib happy across all platforms.
+   o  Fixed bug where -n flag to \echo was being ignored.
+   o  Added \read command to read input from user.
+   o  Drastically re-worked variable expansion scheme when executing
+      sqsh commands.  It used to be that when doing:
+
+        1> \set x="1 2 3"
+        2> \command $x
+
+      that \command would only receive one argument, '1 2 3', however
+      I was doing some testing and discovered that most shells don't
+      behave this way.  Now, \command will receive three arguments,
+      '1', '2', and '3'.  Unforunately (or fortunately) because of the
+      way that I did this, this also means that you can now do:
+
+        1> \set x=">/dev/null"
+        2> \echo hello $x
+
+      And "hello" will be sent to /dev/null, which isn't "standard"
+      shell behaviour.
+   o  In an effort to take a stab at adding \if, \then, \endif logic
+      to sqsh, \loop is now contextual, that is, each instance of
+      \loop maintains its own $lineno and work buffer.  This doesn't
+      mean much now, but paves the way towards allowing loop to execute
+      to be used by \if to execute one of the conditions.
+   o  Added comments using the '#'. Comments must begin at the first
+      column of the line, and the first character following the '#'
+      must *not* be a valid character for a temp-table name.  This now
+      gives you the ability to have sqsh skip lines that start with #!, so
+      that sqsh scripts may now be run directly.
+   o  Fixed bug encountered on some systems, where a 60 second delay
+      is encountered between when a pipe completed and the prompt is
+      returned.
+
+Changes from 0.5 to 0.6
+
+   o  Fixed problem introducted in 0.5 that caused sqsh to immediatly
+      exit after reading a user's .sqshrc file on SunOS machines.
+   o  Fixed -s flag (I thought I had fixed it in 0.5, but I didn't).
+   o  Damn it! Once and for all, I have fixed the -c flag.  I swear
+      I wish I would read my own command and source code from time
+      to time.
+   o  The check to verify if a variable being set by command line
+      flags was properly specified, was not working.  This has been
+      corrected.
+   o  Fixed bad quoting rules associated with commands following a
+      pipe.  I was accidently striping the quotes off of the string
+      following a pipe, which is not what was documented.
+   o  Cleaned up the message handler output to make sure that I print
+      the name of the stored procedure (if applicable) and don't
+      print the current line number (if no applicable).
+   o  Fixed problem where a SIGINT while sqsh is in non-interactive
+      mode (i.e. reading input from a file or some-such), only caused
+      sqsh to abort the current batch.  It should now abort, returning
+      an exit value of 254.
+   o  Added TSQL keyword completion if GNU readline support is compiled
+      in.  This feature may be turned on using the $keyword_completion
+      variable, and supports either forcing the completion to lower case,
+      upper case, or "smart" casing of the keyword.
+   o  Added call to dbsetversion(DBVERSION_100), if available,
+      to fix dbcancel() failure on SGI's and similar platforms.  This
+      may also be fixed by grabbing the latest EBF of dblib for that
+      platform.
+   o  Added the -d flag and $thresh_display variable to specify the
+      minimum severity level which will display a message.
+   o  Added the -f flag and $thresh_fail variable to specify the
+      minimum severity level which will be considered a failed batch.
+   o  Added the -a flag and $thresh_exit variable to specify the
+      maximum number of failed batches (from above) that may occur
+      before sqsh will exit.
+   o  Added -A flag and $packet_size variable to control the TDS
+      packet size used during a session.
+   o  Added -o flag to attach sqsh's stdout to a file.
+   o  Added the \abort command to force sqsh to abort (even from within
+      nested \loop's) with an error code of 254.
+   o  Added (well, added documentation for) $clear_on_fail, which is used
+      to toggle wether or not the current work buffer is cleared out if
+      the batch doesn't succeed.
+   o  Once again, I bow to the masses against my better judegement. You
+      can now provide and empty alias for \go, via the command line
+      option -c ''.  However, this is a pretty ugly hack and is done
+      using the variable $newline_go.  Use at your own risk.  You have
+      been warned.
+   o  Added -y to specify alternative $SYBASE value.
+   o  Made the $semicolon_hack smarter.  Now, if a semicolon is contained
+      within either a set of single quotes or double quotes it will not
+      be interpreted.  This holds true even for multi-line quotes.
+
+Changes from 0.4 to 0.5
+
+   o  Fixed more signal handling problem (actually, some that I thought
+      were fixed in the last release) in config.h.in and cmd_go.c.  Now,
+      if you have sigsetjmp() available, then it will be used in 
+      preference to setjmp().  This solves many of the collisions with
+      use with the readline library.
+   o  Actually remembered to update the banner message with the
+      current version number (yeah, big deal).
+   o  Bowed (reluctantly) to the torrent of users that wanted to use ';'
+      as an in-line command terminator.  This must be turned on using the
+      $semicolon_hack variable.  Unfortunately, this is not yet smart
+      enough to figure out when a ';' is being used inside of a quoted
+      string.  I'll add that later.
+   o  Fixed problem with certain severity 0 messages being dropped from
+      being printed by the message handler.
+   o  For some reason I had the $colsep variable only accepting integer
+      values, this also affected the -s flag.  This has been cleared
+      up (hopefully).
+   o  Fixed problem with my quoting rules: under certain circumstances
+      sqsh would throw quotes out of strings in SQL statements (which
+      is obviously not what is wanted).
+   o  A SIGPIPE (death of the process on the end of a pipe) no longer
+      generates a ^C, not that anyone complained.
+   o  Got rid of the \floop command, and merged the responsibilities
+      into the \loop command.  The user's resource file is now read via
+      '\loop -n < $rcfile'...see sqsh_main.c.
+   o  Got rid (hopefully) of warning messages about setjmp() being
+      redifined on some systems.
+
+Changes from 0.3 to 0.4
+
+   o  Added prototype for strdup() to sqsh_compat.h for those systems
+      that don't supply one for you (what *is* it with that function?).
+   o  Cleaned up the USE() macro in sqsh_compat.h that caused some anal
+      versions of gcc to spew warnings.
+   o  I lied last time, *now* \help should display a message that there
+      are no help files available.
+   o  Cleared up some compiler warning messages on some platforms.
+   o  Fixed potential bug with signal handlers destroying the current
+      state of the processes signal mask.
+   o  Fixed '-h' flag failing to work on the command line.
+   o  Still having signal handling problems with some platforms.  Added
+      the \sigtest command to dump some usefull debugging information.
+
+Changes from 0.2 to 0.3
+
+   o  Fixed security bug in sqsh_open() that caused in file created by
+      redirection to be created with the wrong/random permissions.
+   o  Defer files are now created with permissions of 0600, for a little
+      added security.
+   o  Added more comments in Makefile.in to make life a little easier.  Also
+      added default library -lm to SYBASE_LIBS.
+   o  File descriptor manipulation is more efficient; there is less 
+      juggling going on for files that are rapidly opened and closed
+      (see sqsh_fd.c, fop_push()).
+   o  Added the -b flag and the $banner variable to turn off the start-up
+      banner message.
+   o  Added the -p flag to the command line and \go command, and the
+      $statistics variable to turn on/off performance statistics.
+   o  Fixed bug in syb_err_handler() that caused a coredump on dblib 4.9.x
+      if dbproc is NULL.
+   o  Fixed bug with -S being ignored.
+   o  '\help command' now properly displays that it doesn't have any help
+      files yet.
+
+Release 0.2
+
+   o  Initial release.  Chock Full O' Bugs.

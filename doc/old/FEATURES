@@ -1,0 +1,59 @@
+/* $Id: FEATURES,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $ */
+
+Features I don't want to forget about:
+
+1. \if, \elif, \endif syntax
+
+   I have some ideas, but I really want to think this through. For
+   example with:
+   
+     \if (expression)
+   
+   will expression *always* be an external unix command?  Do I need
+   to come up with another type of function (something different then
+   a sqsh command) that can replace things like 'test', 'access', etc.?
+   
+   Within:
+
+     \if (expression)
+        select count(*) from syspickles
+     \endif
+   
+   Will the select actually happen, or does it need an explicit "go"?
+   Such as 
+
+     \if (expression)
+        select count(*) from syspickles
+        \go
+     \endif
+   
+   Inquiring minds want to know.
+
+2. .netrc style password file
+
+   Before I dive into this I want to explore an \if, \elif, \endif
+   construct.  This would provide something far more flexible. For
+   example:
+
+     \if (test "$DSQUERY" = "SYB_PICKLES")
+        \set password=ickypoo
+     \elif (test "$DSQUERY" = "SYB_STINK")
+        \set password=yukcy
+     \endif
+
+3. A read command
+
+   So you could have interactive scripts like:
+
+      \echo -n "Name: "
+      \read $name
+      select * from sysobjects where name like "$name"
+
+4. Allow the \abort and \exit commands to take an error code
+
+   Once again, this would be primarily useful with if-then-else logic,
+   such as:
+
+      \if (test "$severity" -gt "10")
+         \exit 128
+      \fi

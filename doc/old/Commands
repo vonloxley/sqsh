@@ -1,0 +1,619 @@
+Title:   How to Write a New Command
+Author:  Scott C. Gray
+Version: $Id: Commands,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $
+
+1.0   A Simple Command
+
+Implementing a new command within sqsh is a relatively simple
+task; all commands are implemented as if they were their own
+stand-alone program.  For example, a simple command to display 
+the string "Hello World" when executed is:
+
+    #include <stdio.h>
+    #include "sqsh_config.h"
+    #include "cmd.h"
+
+    int cmd_hello( argc, argv )
+      int    argc;
+      char  *argv[];
+    {
+       printf( "Hello World!\n" );
+       return CMD_LEAVEBUF;
+    }
+
+Look familier?
+
+As with any C program, the command function acts as a main(), 
+recieving a count of the number of arguments passed to the 
+function, argc, as well as an array of pointers to the value
+of these arguments, argv.
+
+Thus, if the user enters:
+
+   1> \hello a b c
+
+then:
+
+   argc    = 4
+   argv[0] = "\hello"
+   argv[1] = "a"
+   argv[2] = "b"
+   argv[3] = "c"
+
+The only difference between a sqsh command and a standalone C
+program is that you should not call exit() to return from it,
+instead one of the return values described below should be
+returned.
+
+
+2.0  Return Values
+
+The value returned from a sqsh command indicates to the caller
+(usually the \loop command) how it should behave, usually with
+respect to the current SQL Buffer that the user is typing in.
+
+The following are the valid return values from a sqsh command:
+
+   CMD_FAIL       Indicates that something went wrong while
+                  the command was executing.  If $clear_on_fail
+                  is set to on, then the current SQL Buffer 
+                  will be cleared.
+
+   CMD_LEAVEBUF   The command succeeded, and the SQL Buffer
+                  should remain untouched.  Commands such as
+                  \echo typically return this value.
+     
+   CMD_ALTERBUF   The command succeeded and altered the SQL 
+                  Buffer. If sqsh is in interactive mode then
+                  the contents of the buffer will be redisplayed
+                  upon returning.  Commands such as \vi return
+                  this value.
+  
+   CMD_CLEARBUF   The command succeeded, and the current SQL
+                  Buffer should be cleared of its contents.
+                  The \go command returns this value.
+
+   CMD_EXIT       Requests that \loop exit.  When the last 
+                  \loop completes, sqsh will exit. Commands
+                  such as \exit return this value.
+
+   CMD_ABORT      Requests that sqsh exit with an exit code of
+                  255.
+
+
+3.0  Making it Available
+
+Simply writing a new command is not quite enough to make it
+available from the command line of sqsh, however getting it
+set up is very simple.
+
+The prototype for all commands are placed in cmd.h, like so:
+
+    int  cmd_hello _ANSI_ARGS(( int, char** ));
+
+The _ANSI_ARGS() macro is provided as a shield for non-ANSI
+C compilers.  It will automatically strip off the argument
+prototypes when older K&R compilers are used.
+
+Further down in the cmd.h file is a look-up table that maps
+the name of the command to the actual C function.  Adding a
+new entry to this table will make the function visible to 
+the sqsh command line:
+
+    static cmd_entry_t  sg_cmd_entry[] = {
+
+        /* COMMAND          ALIAS          FUNCTION  */
+        /* ------------     ----------     --------  */
+        { "\\hello",        NULL,          cmd_hello },
+        ...
+    };
+
+In this name the COMMAND is the name that of the command that
+will be visible to the user (note that if the command is to
+start with a \, then the \\ is required to ensure that the
+\ will not be interpreted as an escape character).
+
+Currently the ALIAS column is unused.
+
+The FUNCTION column contains the name of the C function that
+is to be called when COMMAND is executed.
+
+Thats it!  You have now implemented your first sqsh command.
+
+But wait, there's more...
+
+
+4.0  Globals
+
+As you have seen, it is possible to write a sqsh command without
+knowing anything other than how to implement a very simple
+C program.  However, once difference between a standalone C
+program and a sqsh command, is that several global variables
+can be made available to your command by simply including the
+file:
+
+    #include "sqsh_global.h"
+
+These globals contain such things as a the database connection 
+currently in use by sqsh, and the internal sqsh environment 
+variables.
+
+The following table outlines all of the global variables available
+for use within a sqsh command:
+
+    Type           Name          Description
+    -----------    ---------     -----------------------------------------
+    CS_CONTEXT*    g_context     The global CT-Lib context structure used
+                                 to establish the sqsh connection.  This
+                                 variable will be NULL if sqsh has not yet
+                                 connected to a database.
+
+    CS_CONNECTION* g_connection  Current CT-Lib connection used by sqsh.
+                                 This variable will have a NULL value if
+                                 sqsh has not yet connected to the database.
+
+    env_t*         g_env         Data structure containing all sqsh en-
+                                 environment variables.  See the section
+                                 _Environment_Variables_, below, for how
+                                 to manipulate this data structure.
+   
+    env_t*         g_internal_   Contains environment variables internal
+                   env           to sqsh's functions, such as $1..$n. 
+
+    env_t*         g_buf         Contains named SQL buffers.
+
+    varbuf_t*      g_sqlbuf      Represents the current SQL buffer as
+                                 entered by the user. Refer to sqsh_varbuf.h
+                                 for details on manipulation of the
+                                 varbuf_t structure.
+
+    cmdset_t*      g_cmdset      Data structure that represents the func-
+                                 tion name/pointer pairs described in 
+                                 the _Making_it_Available_ section, above.
+                                 Typically you shouldn't need to directly
+                                 manipulate this structure.  Details may
+                                 be found in sqsh_cmd.h.
+   
+    alias_t*       g_alias       Represents alias name/body pairs.  
+                                 Typically you shouldn't need to directly
+                                 manipulate this structure.  Details may
+                                 be found in sqsh_alias.h.
+   
+    jobset_t*      g_jobset      The current list of commands running 
+                                 within sqsh, including background jobs.
+                                 This is a pretty nasty structure that
+                                 you usually will not need.  Details may
+                                 be found in sqsh_job.h.
+
+    history_t*     g_history     The complete history of commands that
+                                 have been executed within sqsh.  Typicaly
+                                 this structure is only altered within
+                                 cmd_loop.c and most other functions will
+                                 only query it.  See sqsh_history.h for
+                                 details.
+
+    char*          g_copyright   The copyright banner and version number.
+                   g_version
+   
+    int            g_password_   True/False, has the password been exp-
+                   set           licitly set by the user?
+   
+    char*          g_password    Password as supplied by the user.
+
+    char*          g_lock        Password for screen lock.  This will be
+                                 NULL if the user hasn't set it with the
+                                 \lock command.
+
+Although the number and variety of global variables in sqsh can look
+a little bit daunting but, in reality, only g_connection, g_env, 
+and g_sqlbuf are frequently used.
+
+
+5.0  Environment Variables
+
+If you haven't noticed already, most sqsh commands lean very heavily 
+on the use of environment variables, such as $width and $password,
+for configuration of default behavior.  For example, the \go
+command uses $width variable to determine the current screen width
+when displaying result sets.
+
+Fetching and setting environment variables witin a sqsh command
+is relatively simple, using the env_set() and env_get() functions.
+
+     int env_get( env_t *env, char *var_name, char **var_value )
+     int env_set( env_t *env, char *var_name, char *var_value )
+
+Thus, if you wish to determine the current value of the width
+variable:
+
+     char    *width;
+
+     if (env_get( g_env, "width", &width ) <= 0)
+     {
+         fprintf( stderr, "width: Variable not defined.\n" );
+         return CMD_FAIL;
+     }
+
+The env_get() function returns 0 if the named variable does not
+exist in the global environment, g_env. -1 is returned if an error
+is encountered, and a value of 1 is returned and width will point 
+to the appropriate value if the variable is found.
+
+Changing the value of an environment variable is just as simple
+as fetching its value:
+
+    if (env_set( g_env, "width", "80" ) == 0)
+    {
+        fprintf( stderr, "width: Unable to set the value to 80\n" );
+        return CMD_FAIL;
+    }
+
+The env_set() function returns 1 (or True) upon succesfully changing
+the value of of the variable and 0 (or False) if the value could
+not be set.  See section 6.0 _Capturing_Errors_, below for how to
+determine the reason for a fail condition from either env_set() or 
+env_get().
+
+5.1  Defining A New Variable
+
+Although calling env_set() with the name of a new variable will auto-
+matically create it, it is sometimes desirable to have a variable 
+automatically created for you upon start-up of sqsh.  This features
+allows you to make certain assumptions about the contents and
+existence of the variable within your code.
+
+All that is required to define a new variable within sqsh is to
+add it into the sg_var_entry[] lookup table defined in var.h.
+
+    static var_entry_t  sg_var_entry[] = {
+
+    /* VARIABLE          DEFAULT        SET VAL              GET VAL
+       NAME              VALUE          FUNCTION             FUNCTION
+       ---------------   ------------   --------------       ------------- */
+       { "new_var",      "hi",          NULL,                NULL       },
+       ...
+     };
+
+The VARIABLE NAME column defines the name of the variable as it will
+be referred to with env_set() and env_get().  The DEFAULT VALUE 
+contains the value with which the variable will be set to upon
+start-up of sqsh.  SET VAL FUNCTION and GET VAL FUNCTION are pointers
+to functions that will automatically be called when the value of the
+variable is set or retrieved, respectively.  See sections 5.2 and 5.2
+below.
+
+5.2  Variable Set Validation Function
+
+When establishing a new environment variable, it is possible to define
+a validation function that will be called each time the user (or any
+caller of env_set()) attempts to change the existing value of the
+variable.  Usually this feature is used to either validate that the
+variable is be set to a legal value or to perform some sort of 
+processing on its contents.
+
+A variable-set validation function looks like this:
+
+     int var_set_func( env, var_name, var_value )
+         env_t   *env;
+         char    *var_name;
+         char   **var_value;
+
+The env parameter points to the environment in which the variable
+is being set, and var_name contains the name of the variable that
+is being set.  var_value is a pointer to the value of the variable.
+
+A set validation function may return one of two values: A return
+value of True indicates that the validation function succeeded
+in whatever processing it needed to do.  A return value of
+False indicates that something went wrong, and that env_set()
+should not change the existing value of the variable.  It is
+customary that a set validation function returning False, also
+indicate a reason for the failure using the sqsh_set_error()
+function (see Capturing Errors, below).
+
+The var_value pointer is very important.  By changing what it points
+to within the body of the validation function it is possible to 
+over-ride the value that was passed into env_set(), be the user.
+For example, to write a validation function that forces the value
+of a variable to be "hi", regardless of what the user attempts 
+to set it to, would simply be:
+
+     int var_set_hi( env, var_name, var_value )
+         env_t   *env;
+         char    *var_name;
+         char   **var_value;
+     {
+         *var_value = "hi";
+         return True;
+     }
+
+Thus, say this validation function was used on our new_var, we defined
+above like so:
+
+    int var_set_hi _ANSI_ARGS(( env_t*, char*, char** ));
+
+    static var_entry_t  sg_var_entry[] = {
+
+    /* VARIABLE          DEFAULT        SET VAL              GET VAL
+       NAME              VALUE          FUNCTION             FUNCTION
+       ---------------   ------------   --------------       ------------- */
+       { "new_var",      "hi",          var_set_hi,          NULL       },
+       ...
+     };
+
+then the following would happen:
+
+     1> \set new_var="hello"
+     1> \echo $new_var
+     hi
+
+For a good example, of a validation function that takes advantage of
+all of these features, see var_set_bool() in var_misc.c.  This function
+allows the contents of the variable to be set using either "1", "0", 
+"True", "False", "Yes", "No", or "On" and "Off", and reguardless of
+which is used the contents of the variable will always contain either
+a "1" or a "0".
+
+5.3  Variable Retrieval Function Function
+
+Converse to the set-validation function, a retrieval (or get-validation)
+function is called every time the value of a particular variable is
+queried.  These functions are currently used within sqsh for such
+things as the $date and $time variables (which return the current
+date and time respectively) as well as the password retrieval.
+
+The declaration of the get-validation function is identical to that
+of the set-validation function:
+
+     int var_get_func( env, var_name, var_value )
+         env_t   *env;
+         char    *var_name;
+         char   **var_value;
+
+Immediately prior to returning the value of a variable, sqsh will call
+this function with env containing the environment in which the
+variable is being retrieved, var_name containing the name of the variable
+being gotten and *var_value pointing to the string value the variable
+is currently set to.
+
+By replacing the string that *var_value is pointing to, the existing
+value of the variable may be overridden.  For example, if we wanted
+to implement a variable that returned its contents in upper case,
+reguardless of the case in which the variable was set, the
+retrieval function would look like:
+
+     int var_get_upper( env, var_name, var_value )
+         env_t   *env;
+         char    *var_name;
+         char   **var_value;
+    {
+       static char new_value[64];
+       char   *cptr;
+       int     i = 0;
+ 
+       cptr = *var_value;
+ 
+       while (*cptr != '\0')
+       {
+          new_value[i++] = upper(*cptr);
+          ++cptr;
+       }
+ 
+       *var_value = new_value;
+       return True;
+    }
+
+
+As with the set-validation function, a return value of True from
+the function indicates that the retrieval passed validation,
+and a return value of False indicates that something went wrong
+during the process (for example, a malloc() fails), in which case
+it is the author of the validation function's responsibility
+to indicate the reason for the error using sqsh_set_error().
+
+
+6.0  Capturing Errors
+
+As a general rule, all internal sqsh functions that are not user
+commands will never display an error message to stdout or stderr,
+instead these functions will return an error condition (usually
+by either returning False, NULL, or a negative value) and set
+a global error condition describing the nature of the failure, much
+in the way that the standard C library functions behave.
+
+It is the responsibility of the writer of a new sqsh command
+to check the return condition from every sqsh library function
+and determine the appropriate response (which is usually to
+display the reason for the error then abort), and it is considered
+poor programming style to simply ignore error messages and
+continue processing (unless you document the rationally behind
+this).
+
+The following code demonstrates a simple command that replaces
+the basic functionality behind the existing sqsh \set command.
+Here, the command retrieves two arguments: the name of the variable
+and the value that the variable should be set too, it then
+attempts to perform the env_set() required to set the value.
+If env_set() returns a failure status (False)--usually do to
+either memory allocation failure or a set-validation failure, we 
+must inform the user that the set failed.
+
+    #include <stdio.h>
+    #include "sqsh_config.h"     /* Always required */
+    #include "sqsh_global.h"     /* Required to get g_env */
+    #include "sqsh_error.h"      /* For sqsh_get_errstr() */
+    #include "sqsh_env.h"        /* Required for env_set() */
+    #include "cmd.h"
+
+    int cmd_simple_set( argc, argv )
+      int    argc;
+      char  *argv[];
+    {
+       if (argc != 3)
+       {
+          fprintf( stderr, "Use: \\simple_set var_name var_value\n" );
+          return CMD_FAIL;
+       }
+
+       if (env_set( g_env, argv[1], argv[2] ) == False)
+       {
+          fprintf( stderr, "\\simple_set: %s: %s\n",
+                   argv[1],
+                   sqsh_get_errstr() );
+
+          return CMD_FAIL;
+       }
+
+       return CMD_LEAVEBUF;
+    }
+
+The major thing to notice here is the call to sqsh_get_errstr() to
+fetch the string description of the current error condition.  
+Similarly sqsh_error() may be called to fetch a numeric description
+of the failure condition (the symbolic values for these conditions
+are available in sqsh_error.h).
+
+Also, pay close attention to the header files that are included with
+this particular command.  It is always important to realize the 
+portions of the sqsh core modules that you are using and include
+the appropriate header files accordingly.
+
+Before ending this section, it is only proper to also describe the
+method in which errors are raised within sqsh:
+
+    void sqsh_set_error( errno, fmt, ... )
+        int    errno;
+        char  *fmt;
+
+This function is called with errno set to one of the symbolic
+values described in sqsh_error.h (such as SQSH_E_NOMEM to indicate
+memory allocation failures) and fmt containing a format string
+suitable for use in printf(), followed by all of the necessary
+parameters to the format string.
+
+After calling this function any call to sqsh_get_error() will
+return errno, and sqsh_get_errstr() will return the formatted
+error string.
+
+Keep in mind that you will typically not need this function within
+a command, since a command is expected to display any error 
+condition directly to the screen, however it is approriate to
+use this function in such places as variable set- and get-validation
+functions, described above.
+
+
+7.0  Parsing Arguments
+
+Experienced C programmers should be familier with the standard
+libc function getopt(), used to parse command line options 
+recieved through the `argv' parameter to main.  Unfortunately,
+this particular function may not be used within sqsh, due to
+some limitations in dealing with being called repeatedly
+within the same program with different `argc' and `argv' values.
+
+To get around this limitation, and to add a little extra function-
+ality, sqsh provides the sqsh_getopt() function that behaves
+in a similar manner:
+
+     #include "sqsh_getopt.h"
+
+     extern char *sqsh_optarg;
+     extern int   sqsh_optind;
+
+     int sqsh_getopt( argc, argv, optstring )
+         int   argc;
+         char *argv[];
+         char *optstring;
+
+The arguments `argc' and `argv' are the argument count and array
+as passed into the sqsh command upon invocation.  Any element
+of argv[] that starts with a `-' is considered an option, with
+the character following the `-' considered an option character.
+If sqsh_getopt() is called repeatedly with the same argc and
+argv pair, it returns successively each of the option characters
+from each of the option elements, finally returning EOF when there
+are no more option characters left to return.
+
+As it procedes the `sqsh_optind' variable is updated internally,
+keeping track of the current index into the arv array. Also,
+as it procedes the contents of `argv' are permuted such that 
+all non-options are at the end of the array, and upon completion 
+the `sqsh_optind' variable will point to the first element of 
+the argv[] array that is not an option.
+
+The `optstring' is a string that contains a list of legitimate
+option characters.  If the character is followed by a colon,
+then the option requires an argument.  If the character is
+followed by a semicolon, then the option accepts an optional
+argument (`sqsh_optarg' will be NULL if the argument is not sup-
+plied).  All other characters take no argument.
+
+If, while parsing `argv', sqsh_getopt() detects an option that
+is not contained with `optstring' a `?' is returned indicating
+an error, and the error condition is fetchable via sqsh_get_errstr().
+
+The following sample demonstrates the use of sqsh_getopt():
+
+   #include <stdio.h>
+   #include "sqsh_config.h"
+   #include "sqsh_getopt.h"
+   #include "cmd.h"
+
+   int cmd_argtest( argc, argv )
+      int   argc;
+      char *argv[];
+   {
+      extern  int   sqsh_optind;
+      extern  char *sqsh_optarg;
+
+      int     ch;
+      char   *ofile = "default.out";
+      int     aflag = 0;
+      int     bflag = 0;
+      int     err   = 0;
+
+      while ((ch = sqsh_getopt( argc, argv, "abo:" )) != EOF)
+      {
+         switch (ch)
+         {
+            case 'a':
+               if (bflag != 0)
+                  ++err;
+               else
+                  ++aflag;
+               break;
+            case 'b':
+               if (aflag != 0)
+                  ++err;
+               else
+                  ++bflag;
+               break;
+            caes 'o':
+               ofile = sqsh_optarg;
+               break;
+            default:
+               ++err;
+         }
+      }
+
+      if (err != 0 || sqsh_optind != argc)
+      {
+         fprintf( stderr, "Usage: ...\n" );
+         return CMD_FAIL;
+      }
+
+      ...
+   }
+
+In this example, cmd_argtest accepts two mutually exclusive 
+flags, `-a' and `-b', and one option o which requires and 
+option argument.  By checking `sqsh_optind != argc', following
+the call to sqsh_getopt() it then assures that there are no
+more arguments left on the command line.
+
+Signals
+-------
+
+Buffers
+-------
+

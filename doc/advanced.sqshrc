@@ -1,0 +1,69 @@
+#
+# This .sqshrc is my own personal configuration.
+#
+
+#
+# Basic settings.
+#
+\set bcp_rowsep=''
+\set bcp_colsep=','
+\set prompt='$DSQUERY.$database.$lineno> '
+\set hostname=XTENDTECH1
+
+#
+# \obj <type>
+#
+# Where <type> is a valid type as defined in the type column
+# of sysobjects. This function will list the name of all
+# objects matching that type.
+#
+\func -x \obj
+   \if [ $# -ne 1 ]
+      \echo "use: \obj [U|V|S|TR|P]"
+      \return 1
+   \fi
+
+   select name from sysobjects where type = "${1}"
+   go
+\done
+
+#
+# \db
+#
+# Lists the names of all databases in the system.
+#
+\func -x \db
+   select name from master..sysdatabases
+   go
+\done
+
+#
+# cd <database>
+#
+# Replacement for issuing a 'use <db>' with the following 
+# exceptions:
+#   o  There is no need to issue a 'go' (that is done for you)
+#   o  Issuing a 'use -' will return you to the previous
+#      database you were using.
+# I use this command a lot.
+#
+\func -x cd
+   \if [ $# -ne 1 ]
+      \echo "use: cd <db>"
+      \return 1
+   \fi
+
+   \if [ "${1}" = "-" ]
+      \set db=$prev_db
+   \else
+      \set db=${1}
+   \fi
+   \set cur_db=$database
+
+   use $db
+   go
+
+   \if [ "$?" = 0 ]
+      \set prev_db=$cur_db
+   \fi
+\done

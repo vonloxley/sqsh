@@ -1,0 +1,330 @@
+dnl
+dnl  The following file is used to determine if autoconf is working
+dnl  in the correct directory.
+dnl
+AC_INIT(src/sqsh_main.c)
+AC_CONFIG_HEADER(src/config.h)
+AC_CONFIG_AUX_DIR(autoconf)
+
+AC_CANONICAL_HOST
+
+dnl
+dnl  Enable workarounds for various operating system bugs.
+dnl  Right now, the only known one has to do with AIX.
+dnl
+case "$host_os" in
+	aix*)
+		DEF_AIX_FIX="-DUSE_AIX_FIX"
+		AC_SUBST(DEF_AIX_FIX)
+		;;
+	*) 
+		;;
+esac
+	
+
+AC_ARG_WITH([gcc],
+	[  --with-gcc              Use gcc, regardless of path],
+	[with_gcc="yes"], [])
+
+AC_ARG_WITH([x], [], [],[with_x="no"])
+
+AC_ARG_WITH([readline], 
+	[  --with-readline         support fancy command line editing],
+	[], [with_readline="no"])
+
+AC_ARG_WITH([old-readline], 
+	[  --with-old-readline     Force readline backwards compatibilty],
+	[], [with_old_readline="no"])
+
+AC_ARG_WITH([static], 
+	[  --with-static           Statically link in Sybase libraries],
+	[], [with_static="no"])
+
+AC_ARG_WITH([devlib], 
+	[  --with-devlib           Compile against Open Client devlibs],
+	[], [with_devlib="no"])
+
+AC_ARG_WITH([motif], 
+	[  --with-motif            support X11/Motif widgets],
+	[
+		if test $with_motif != "yes"
+		then
+			MOTIF_PATH=$with_motif
+			with_motif="yes"
+			MOTIF_INCDIR="-I$MOTIF_PATH/include/X11"
+			MOTIF_LIBDIR="-L$MOTIF_PATH/lib"
+		else
+			MOTIF_INCDIR="# -I/usr/X11/include"
+			MOTIF_LIBDIR="# -L/usr/X11/lib"
+		fi
+
+		with_x="yes"
+		DEF_MOTIF="-DUSE_MOTIF"
+		AC_SUBST(MOTIF_PATH)
+		AC_SUBST(MOTIF_LIBS)
+	],[
+		DEF_MOTIF="# -DUSE_MOTIF"
+		with_motif="no"
+	])
+
+AC_SUBST(with_x)
+AC_SUBST(with_motif)
+AC_SUBST(with_readline)
+AC_SUBST(DEF_MOTIF)
+AC_SUBST(MOTIF_PATH)
+AC_SUBST(MOTIF_INCDIR)
+AC_SUBST(MOTIF_LIBDIR)
+
+if test "$with_x" = "yes"
+then
+	if test "$with_motif" = "yes"
+	then
+		MOTIF_LIBS=-lXm
+		ATHENA_LIBS=
+	else
+		MOTIF_LIBS=
+		ATHENA_LIBS=-lXaw
+	fi
+fi
+
+AC_SUBST(MOTIF_LIBS)
+AC_SUBST(ATHENA_LIBS)
+
+dnl
+dnl  Compiler characteristics
+dnl
+AC_PROG_CC
+AC_PROG_CPP
+AC_ISC_POSIX
+
+if test "${ISC}" = "yes"; then
+	DEF_POSIX="-D_POSIX_SOURCE"
+	AC_SUBST(DEF_POSIX)
+fi
+
+AC_VOLATILE
+
+AC_SYBASE_ASE
+
+if test "$with_old_readline" = "yes"; then
+	with_readline="yes"
+fi
+
+if test "$with_readline" = "no"; then
+	DEF_READLINE="# -DUSE_READLINE"
+	READLINE_INCDIR="# -I/usr/local/include"
+	READLINE_LIBDIR="# -I/usr/local/lib"
+	READLINE_LIBS="# -lreadline -lcurses"
+else
+	DEF_READLINE="-DUSE_READLINE"
+
+	AC_FIND_LIB(readline, [$LIBDIRS],
+		[
+			READLINE_LIBDIR="${libdir}"
+			inc_search="`echo ${libdir} | sed -e 's,/[^/]*$,,g'`/include"
+		],[
+			READLINE_LIBDIR=""
+			inc_search=""
+		])
+
+	if test "$INCDIRS" != ""; then
+		if test "$inc_search" = ""; then
+			inc_search=$INCDIRS
+		else
+			inc_search=$INCDIRS:$inc_search
+		fi
+	fi
+
+	AC_FIND_HDR([readline/readline.h],[$inc_search],
+		[READLINE_INCDIR="${include_dir}"],[READLINE_INCDIR=""])
+			
+	AC_MSG_CHECKING(for readline link)
+
+	AC_CACHE_VAL(ac_cv_readline_libs,
+	[
+		readline_libs=""
+
+		ORIG_CPPFLAGS="${CPPFLAGS}"
+		ORIG_LDFLAGS="${LDFLAGS}"
+		ORIG_LIBS="${LIBS}"
+
+		if test "${READLINE_INCDIR}" != ""; then
+			CPPFLAGS="${CPPFLAGS} -I${READLINE_INCDIR}"
+		fi
+
+		if test "${READLINE_LIBDIR}" != ""; then
+			CPPFLAGS="${CPPFLAGS} -L${READLINE_LIBDIR}"
+		fi
+
+		for lib in "-lHcurses" "-lcurses" "-lncurses" "-ltermcap" \
+			"-ltermcap -lucb"
+		do
+			LIBS="${ORIG_LIBS} -lreadline ${lib}"
+			AC_TRY_LINK([
+#include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+				],[
+					char  *c;
+					add_history( c );
+					readline( c );
+				],[
+					readline_libs="${lib}"
+			])
+
+			if test "${readline_libs}" != ""; then
+				break;
+			fi
+		done
+
+		CPPFLAGS="${ORIG_CPPFLAGS}"
+		LDFLAGS="${ORIG_LDFLAGS}"
+		LIBS="${ORIG_LIBS}"
+
+		ac_cv_readline_libs=${readline_libs}
+	])	
+
+	READLINE_LIBS=${ac_cv_readline_libs}
+	
+	if test "${READLINE_LIBS}" = ""; then
+		AC_MSG_RESULT(not found)
+		READLINE_LIBS="-lreadline -lcurses"
+	else
+		READLINE_LIBS="-lreadline ${READLINE_LIBS}"
+		AC_MSG_RESULT(${READLINE_LIBS})
+	fi
+
+	if test "$READLINE_INCDIR" = ""; then
+		READLINE_INCDIR="-I/usr/local/include"
+	else
+		if test "$READLINE_INCDIR" = "/usr/include"; then
+			READLINE_INCDIR="# -I${READLINE_INCDIR}"
+		else
+			READLINE_INCDIR="-I${READLINE_INCDIR}"
+		fi
+	fi
+
+	if test "$READLINE_LIBDIR" = ""; then
+		READLINE_LIBDIR="-L/usr/local/lib"
+	else
+		if test "$READLINE_LIBDIR" = "/usr/lib" -o ${READLINE_LIBDIR} = "/lib"
+		then
+			READLINE_LIBDIR="# -L${READLINE_LIBDIR}"
+		else
+			READLINE_LIBDIR="-L${READLINE_LIBDIR}"
+		fi
+	fi
+
+	if [[ "$with_old_readline" = "yes" ]]; then
+		DEF_READLINE="${DEF_READLINE} -DOLD_READLINE"
+	else
+		AC_CHECK_LIB(readline,
+			rl_completion_matches,,DEF_READLINE="${DEF_READLINE} -DOLD_READLINE",
+			"${READLINE_LIBS}")
+	fi
+fi
+
+AC_SUBST(DEF_READLINE)
+AC_SUBST(READLINE_INCDIR)
+AC_SUBST(READLINE_LIBDIR)
+AC_SUBST(READLINE_LIBS)
+
+DEF_X11="-DUSE_X11"
+
+if test "$with_x" = "no"; then
+	DEF_X11="# ${DEF_X11}"
+	X_LIBS="# -lXaw -lXt -lXext -lXmu -lX11"
+	X_INCDIR="# -I/usr/X11R6/include"
+	X_LIBDIR="# -L/usr/X11R6/lib"
+else
+
+	# The AC PATH EXTRA macro uses xmkmf to figure out where to
+	# find the X include directory and X lib directories, so lets
+	# make sure that it can find the xmkmf executable.
+
+	AC_PATH_PROG(xmkmfpath, xmkmf)
+
+	# When complete, the following macro should define x_includes,
+	# x_libraries, X_CFLAGS, X_LIBS, X_EXTRA_LIBS, and X_PRE_LIBS.
+
+	AC_PATH_X
+
+	# On some systems the X include directory may be found but not
+	# the library directory. In these cases we attempt to guess
+	# the lib directory.
+
+	if test -d "${x_includes}" -a ! -d "${x_libraries}"; then
+		x_libraries=`echo ${x_includes} | sed -e 's,include,lib,g'`
+	fi
+
+	# Reverse the test above to see if the lib directory has been
+	# defined but not the include directory.
+
+	if test -d "${x_libraries}" -a ! -d "${x_includes}"; then
+		x_includes=`echo "${x_libraries}" | sed -e 's,lib,include,g'`
+	fi
+
+	# If we found the include directory in the standard /usr/include, then
+	# don't bother to add it to our cpp line..it'll be found anyway. If
+	# it wasn't found then we'll assume /usr/X11R6/include.
+
+	if test "${x_includes}" != ""; then
+		if test "${x_includes}" != "/usr/include"; then
+			X_INCDIR="-I${x_includes}"
+		else
+			X_INCDIR="# -I${x_includes}"
+		fi
+	else
+		X_INCDIR="# -I/usr/X11R6/include"
+	fi
+
+	# Repeat pretty much the same thing for the library directory.  If
+	# it was found in /usr/lib or /lib, then comment it out, or if
+	# it wasn't found then assume /usr/X11R6/lib.
+
+	if test "${x_libraries}" != ""; then
+		if test "${x_libraries}" != "/usr/lib" -a "${x_libraries}" != "/lib"
+		then
+			X_LIBDIR="-L${x_libraries}"
+		else
+			X_LIBDIR="# -L${x_libraries}"
+		fi
+	else
+		X_LIBDIR="# -L/usr/X11R6/lib"
+	fi
+
+	# This link line may product more libraries than actually needed
+	# but hopefuly it'll work for most systems; besides the linker
+	# should clean things up for us.
+
+	X_LIBS="${X_WIDGETLIB} -lXt -lXext -lXmu ${X_PRE_LIBS} -lX11 ${X_EXTRA_LIBS}"
+fi
+
+AC_SUBST(DEF_X11)
+AC_SUBST(X_LIBS)
+AC_SUBST(X_INCDIR)
+AC_SUBST(X_LIBDIR)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(stropts.h memory.h stdlib.h time.h sys/time.h sys/types.h string.h strings.h fcntl.h unistd.h errno.h limits.h sys/param.h crypt.h shadow.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_MODE_T
+AC_TYPE_PID_T
+AC_TYPE_UID_T
+
+dnl Checks for library functions.
+AC_TYPE_SIGNAL
+AC_CHECK_FUNCS(sigaction strcasecmp strerror cftime strftime memcpy memmove localtime timelocal strchr gettimeofday get_process_stats crypt poll)
+AC_SIGSETJMP
+
+dnl
+dnl Checks function behaviour
+dnl
+AC_SYSV_SIGNALS
+AC_PROG_INSTALL
+
+AC_OUTPUT(Makefile src/Makefile scripts/install.sh scripts/make_wrapper.sh)

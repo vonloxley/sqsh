@@ -1,0 +1,65 @@
+File Naming Conventions
+-=-=-=-=-=-=-=-=-=-=-=-
+
+sqsh_*.[ch]     All files beginning with sqsh_*.[ch] are core functions to 
+                the shell, they define functions that are called or do call
+                user defined functions.
+
+cmd_*.[ch]      These are the source behind the commands that may be 
+                invoked by a user.
+
+var_*.[ch]      These are validation functions for setting and retrieving
+                environment variables.
+
+
+Modules
+-=-=-=-=-
+
+sqsh_fd.c     - Most libc functions that deal with file descriptors
+                or FILE structures are replaced here with sqsh equiv-
+                alents (they attempt to be a little smarter).  All
+                file access should be performed through these function.
+
+sqsh_global.c - Contains definitions for all global variables.  These
+                are such variables as the DBPROCESS connection to the
+                database, and the environment structure to contain all
+                environment variables.
+
+sqsh_init.c   - Where all globals defined in sqsh_global.[ch] are 
+                initialized to thier default values, this includes
+                setting up default values for system-supplied
+                environment variables.
+
+sqsh_fork.c   - Fork replacement function for starting a child process.
+                This is responsible for re-initializing any global
+                variables defined in sqsh_global.[ch] for use by the
+                child (for example, the child should not inherit the
+                parent's DBPROCESS pointer).
+
+sqsh_sigcld.c - Functions for queueing SIGCLD (or SIGCHLD) events for
+                later processing.  These functions are used in jobset_*()
+                functions and sqsh_popen() functions.
+
+Error Condititions
+-=-=-=-=-=-=-=-=-=-
+
+There are only three places in which actual printfs should be called:
+
+  1.  In any user-defined cmd_*() functions.
+  2.  In sqsh_main.c to report configuration errors, etc.
+  3.  Any asyncronous signal handlers (sqsh_sigcld.c: sigcld_handler(),
+      in particular).
+
+In all other functions and modules error conditions should be returned
+via return codes and setting error conditions with sqsh_set_error().
+
+All functions that don't fit criterea 1 or 2, above, should aways call
+sqsh_set_error() to identify an error condition, even if no error ocurres
+(in this case it would be sqsh_set_error( SQSH_E_NONE, NULL ).
+
+Shell Misfeatures
+-=-=-=-=-=-=-=-=-
+
+Unlike most shells, sqsh expands all variables on the command line first
+then tokenizes the command line, so if it is known or thought that a
+variable may contain white-space then it should be quoted.

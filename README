@@ -1,0 +1,39 @@
+                          Welcome to SQSH
+
+What is SQSH?
+-=-=-=-=-=-=-
+
+Sqsh (pronounced skwish) is short for SQshelL (pronounced s-q-shell),
+it is intended as a replacement for the venerable 'isql' program supplied
+by Sybase.  It came about due to years of frustration of trying to do
+real work with a program that was never meant to perform real work.
+
+Sqsh is much more than a nice prompt (a la 'dsql', from David B. Joyner),
+it is intended to provide much of the functionality provided by a good
+shell, such as variables, aliasing, redirection, pipes, back-grounding,
+job control, history, command substitution, and dynamic configuration.
+Also, as a by-product of the design, it is remarkably easy to extend
+and add functionality.
+
+Availability
+-=-=-=-=-=-=-
+
+Sqsh may be found on the following sites:
+
+    http://www.sqsh.org/
+
+If you have trouble reaching any of the sites above, you can
+send me e-mail at sgray@inventa.com.
+
+Licensing
+-=-=-=-=-=-
+
+99% of the software that I use is free, therefore I like to give back
+in kind. Sqsh is held under the GNU General Public License (GPL) and
+therefore may be freely distributed under the terms of this license.
+
+Building and Installing
+-=-=-=-=-=-=-=-=-=-=-=-
+
+Refer to the INSTALL file for directions on installation.  Silicon
+Graphics IRIX users please read the README.SGI included as well.

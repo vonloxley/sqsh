@@ -1,0 +1,23 @@
+o Add \rpc functionality to send remote procedure calls directly to a
+  SQL server or open server.
+
+o Add "suppress-dups" option to suppress duplicate values in columns. So
+  what no comes out as:
+
+     Column1   Column2   Column3
+     -------   -------   -------
+        A         B         C
+        A         B         G
+        A         D         H
+        A         D         I
+        E         F         J
+
+  becomes:
+
+     Column1   Column2   Column3
+     -------   -------   -------
+        A         B         C
+                            G
+                  D         H
+                            I
+        E         F         J

@@ -1,0 +1,3984 @@
+.\" $Id: sqsh.1,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $
+.\" Copyright (C) 1995, 1996 by Scott C. Gray
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program. If not, write to the Free Software
+.\" Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.\" You may contact the author :
+.\"   e-mail:  gray@voicenet.com
+.\"            grays@xtend-tech.com
+.\"            gray@xenotropic.com
+.\"
+.                 \" Cm - Command
+.de Cm            \" 	Define macro
+.B \e\\$1         \" 	Display the command prefixed by a `\', in bold
+..                \" End the macro
+.                 \" Ca - Command alias
+.de Ca            \" 	Define macro
+.B \\$1           \" 	Display the alias in bold
+..                \" End the macro
+.                 \" Va - Variable Name
+.de Va            \" 	Define macro
+.B $\\$1          \" 	Dollar, prefixing the variable name, in bold
+..                \" End the macro
+.                 \" Bf - Buffer Name
+.de Bf            \" 	Define macro
+.B \\$1           \" 	Buffer name in bold
+..                \" End the macro
+.fp 5 CR
+.TH SQSH 1 "04 Sep 1999"
+.ds )H Sqsh
+.ds ]W Version 2.0
+.\" 
+.\" ==========================================
+.SH NAME
+.\" ==========================================
+.\" 
+sqsh - Interactive database shell
+.\" 
+.\" ==========================================
+.SH SYNOPSIS
+.\" ==========================================
+.\" 
+.B sqsh [\fIoptions\fP] [\fIargs\fP...]
+.in +0.5i
+[ 
+.BI \-a " count"
+]
+.br
+[
+.BI \-A " packet_size"
+]
+.br
+[
+.BI \-b
+]
+.br
+[
+.BI \-B
+]
+.br
+[
+.BI -c " [cmdend]"
+]
+.br
+[
+.BI -C " sql"
+]
+.br
+[
+.BI -d " severity"
+]
+.br
+[
+.BI -D " database"
+]
+.br
+[
+.BI -e
+]
+.br
+[
+.BI -E " editor"
+]
+.br
+[
+.BI -f " severity"
+]
+.br
+[
+.BI -h
+]
+.br
+[
+.BI -i " filename"
+]
+.br
+[
+.BI -H " hostname"
+]
+.br
+[
+.BI -I " interfaces"
+]
+.br
+[
+.BI -J " charset"
+]
+.br
+[
+.BI -k " keywords"
+]
+.br
+[
+.BI -l " debug_flags"
+]
+.br
+[
+.BI -L " var=value"
+]
+.br
+[
+.BI -m " style"
+]
+.br
+[
+.BI -o " filename"
+]
+.br
+[
+.BI -p
+]
+.br
+[
+.BI -P " [password]"
+]
+.br
+[
+.BI  -r " [sqshrc[:sqshrc ...]]"
+]
+.br
+[
+.BI  -s " colsep" 
+]
+.br
+[
+.BI  -S " server" 
+]
+.br
+[
+.BI  -t " [filter]" 
+]
+.br
+[
+.BI  -U " username"
+]
+.br
+[
+.BI  -v
+]
+.br
+[
+.BI  -w " width"
+]
+.br
+[
+.BI  -X
+]
+.br
+[
+.BI  -y " directory"
+]
+.br
+[
+.BI  -z " language"
+]
+.in
+.\" 
+.\" ==========================================
+.SH DESCRIPTION
+.\" ==========================================
+.\" 
+.B Sqsh
+(pronounced skwish) is short for \fBSQ\fPshel\fBL\fP (pronounced s-q-shell),
+and is intended as a replacement for the venerable `isql' program supplied
+by Sybase.  It came about due to years of frustration of trying to do
+real work with a program that was never meant to perform real work.
+.PP
+\fISqsh\fP is much more than a nice prompt,
+it is intended to provide much of the functionality provided by a good
+shell, such as variables, aliasing, redirection, pipes, back-grounding,
+job control, history, command substitution, and dynamic configuration.
+Also, as a by-product of the design, it is remarkably easy to extend and add
+functionality.
+.\"
+.\" ==========================================
+.SH OPTIONS
+.\" ==========================================
+.\"
+The following options may be used to adjust some of the behavior of
+\fIsqsh\fP, however a large portion of the configuration options are
+available only through environment variables which may be set at runtime
+or via a .sqshrc file.
+.PP
+Options may also be supplied in the \fBSQSH\fP environment variable.
+This variable is parsed prior to parsing the command line, so in most
+cases the command line will override the contents of the variable.
+Be aware that for options which are allowed to supplied multiple times,
+such as \fB-c\fP, supplying them both in a variable and on the command
+line will be the same as supplying them multiple times on the command
+line.
+.\"
+.\" -a count
+.\"
+.TP 15
+.B -a \fIcount\fP
+Sets the maximum \fIcount\fP of failures (as determined by the
+.Va thresh_fail
+variable) that may occur before \fIsqsh\fP will abort.  Setting
+this to 0 indicates that \fIsqsh\fP should not exit on errors.  This
+value defaults to 0 and may also be set using the
+.Va thresh_exit
+variable.  See section \fBEXIT STATUS\fP for details.
+.\"
+.\" -A packetsize
+.\"
+.TP
+.B -A \fIpacketsize\fP
+Specifies the size of the network TDS packets used to communicate with
+the SQL server.  This value must be between 512 and 2048, and be a 
+multiple of 512. Check your SQL Server configuration to determine
+supported packet sizes.  This value may also be specified at run-time
+using the
+.Va packet_size
+variable.
+.\"
+.\" -b
+.\"
+.TP
+.B -b
+Suppress the banner message upon startup. This is unnecessary in cases
+where stdout has been redirected to a file. This option may also be
+set via the
+.Va banner
+variable.
+.\"
+.\" -B
+.\"
+.TP
+.B -B
+Turns off all buffering of stdin, stdout, and stderr.  This feature
+allows sqsh to be run from an interactive control script such as
+chat and expect.
+.\"
+.\" -c [cmdend]
+.\"
+.TP
+.B -c [\fIcmdend\fP]
+Internally \fIsqsh\fP provides the command
+.Cm go
+to send a batch of SQL to the database and provides a single alias,
+\fBgo\fP for this command.  Each time \fIcmdend\fP is supplied a
+new alias for
+.Cm go
+is established.
+.\"
+.\" -C sql
+.\"
+.TP
+.B -C \fIsql\fP
+Causes the \fIsql\fP command to issued by sqsh, similar to the
+same behavior exhibited by the \fB-i\fP flag.  This \fIsql\fP statment
+may not contain double quotes (this limitation will be lifted
+in future releases of sqsh).
+.\"
+.\" -d severity
+.\"
+.TP
+.B -d \fIseverity\fP
+Sets the minimum SQL Server error severity that will be displayed to the
+user.  The default is 0, and valid ranges are from 0 to 22.  This may also
+be set using the
+.Va thresh_display
+variable. See section \fBEXIT STATUS\fP.
+.\"
+.\" -D database
+.\"
+.TP
+.B -D \fIdatabase\fP
+Causes \fIsqsh\fP to attempt to start with your database context set
+to \fIdatabase\fP rather than your default database (usually master).
+This may also be set using the
+.Va database
+variable.
+.\"
+.\" -e
+.\"
+.TP
+.B -e
+Includes each command issued to \fIsqsh\fP to be included in the
+output.  This option may also be set via the
+.Va echo
+variable (which is unrelated to the
+.Cm echo
+command).
+.\"
+.\" -E editor
+.\"
+.TP
+.B -E \fIeditor\fP
+Set the default editor to \fIeditor\fP.  This may also be set using the
+UNIX environment variable
+.Va EDITOR
+to the name of the editor desired.
+.\"
+.\" -f severity
+.\"
+.TP
+.B -f \fIseverity\fP
+Sets the minimum \fIseverity\fP level considered a failure by \fIsqsh\fP.
+This is the same as setting the 
+.Va thresh_fail
+variable.  See section \fBEXIT STATUS\fP for details.  
+.\"
+.\" -h
+.\"
+.TP
+.B -h
+Turns off column headers and trailing "(# rows affected)" from batch
+output.
+.\"
+.\" -i filename
+.\"
+.TP
+.B -i \fIfilename\fP
+Read all input from \fIfilename\fP rather than from stdin.
+.\"
+.\" -H hostname
+.\"
+.TP
+.B -H \fIhostname\fP
+Sets the client hostname as reported in sysprocesses.  This may
+also be set via the
+.Va hostname
+variable.
+.\"
+.\" -I interfaces
+.\"
+.TP
+.B -I \fIinterfaces\fP
+When a connection is established to the database, the \fIinterfaces\fP file
+is used to turn the value of \fB$DSQUERY\fP into the hostname and port
+to which the connection will be made, by default this is located in
+\fB$SYBASE\fP/interfaces.  This flag allows this default to be overridden.
+.\"
+.\" -J charset
+.\"
+.TP
+.B -J \fIcharset\fP
+Specifies the character set to be used on the client side to communicate
+with SQL Server.  This may also be set using the
+.Va charset
+environment variable.
+.\"
+.\" -k keywords
+.\"
+.TP
+.B -k \fIkeywords\fP
+Specifies a file containing a list of keywords to be used for keyword
+tab completion, if readline support has been compiled into \fIsqsh\fP.
+This file may also be set via the
+.Va keyword_file
+variable, which defaults to \fB$HOME/.sqsh_words\fP.
+.\"
+.\" -l debug_flags
+.\"
+.TP
+.B -l \fIdebug_flags\fP
+If \fIsqsh\fP has been compiled with -DDEBUG, this option may be used
+to turn on and off debugging options.  See the
+.Va debug
+variable, below.
+.\"
+.\" -L var=value
+.\"
+.TP
+.B -L \fIvar\fP=\fIvalue\fP
+Sets the value of
+.Va var 
+to \fIvalue\fP.  This may be used to set the value of any \fIsqsh\fP
+variable even if an explicit command line variable is supplied for
+setting the variable.  The \fB-L\fP flag may be used to set the value of 
+non-configuration variables as well.
+.\"
+.\" -m style
+.\"
+.TP
+.B -m \fIstyle\fP
+Changes the current display style to \fIstyle\fP.  Currently
+supported styles are \fBhoriz\fP, \fBvert\fP, \fBbcp\fP, \fBhtml\fP, 
+\fBmeta\fP, \fBpretty\fP and \fBnone\fP. The current display style may 
+also be set using the
+.Va style
+variable or via the \fB-m\fP flag to the
+.Cm go
+command.
+.\"
+.\" -o filename
+.\"
+.TP
+.B -o \fIfilename\fP
+Redirects all output to \fIfilename\fP rather than stdout.
+.\"
+.\" -p
+.\"
+.TP
+.B -p
+Display performance statistics upon completion of every SQL batch.  This
+option may also be turned on via the
+.Va statistics
+variable, or by supplying the \fB-p\fP flag to the
+.Cm go
+command.
+.\"
+.\" -P [password]
+.\"
+.TP
+.B -P [\fIpassword\fP]
+The Sybase \fIpassword\fP for \fIusername\fP required to connect to
+\fIserver\fP (default, NULL).  The \fIpassword\fP may also be set
+via \fB$password\fP. Supplying a password of `-' causes the password
+to be read from the first line of stdin.
+.sp
+It should be noted that supplying your password
+on the command line is somewhat of a security hole, as any other user
+may be able to discover your password using \fBps(1)\fP.  It is recommended
+that your default password be stored in a .sqshrc file which is not
+readable by anyone other than yourself.
+.\"
+.\" -r [sqshrc]
+.\"
+.TP 
+.B -r [\fIsqshrc[:sqshrc ...]\fP]
+Specifies an alternate .\fIsqshrc\fP file to be processed, rather than
+the default.  If no \fIsqshrc\fP is supplied
+following \fB-r\fP, then no initialization files are processed.
+This flag \fBmust\fP be the first argument supplied on the command
+line, all other instances will be ignored.
+.\"
+.\" -s colsep
+.\"
+.TP
+.B -s \fIcolsep\fP
+Causes the string \fIcolsep\fP to be used to delimit SQL column output
+columns, this defaults to " ".
+.\"
+.\" -S server
+.\"
+.TP
+.B -S \fIserver\fP
+The name of the Sybase \fIserver\fP to connect, the default of this
+is the external environment variable \fB$DSQUERY\fP.  This value may
+also be set via the internal variable \fB$DSQUERY\fP.
+.\"
+.\" -t [filter]
+.\"
+.TP
+.B -t [\fIfilter\fP]
+Enables filtering of command batches through an external program,
+\fIfilter\fP, prior to being sent to the SQL Server.  If \fIfilter\fP
+is not supplied, then
+.Va filter_prog
+is used (default is `m4 -'). This value may also be set via the
+.Va filter
+and
+.Va filter_prog
+variables.
+.\"
+.\" -U username
+.\"
+.TP
+.B -U \fIusername\fP
+The Sybase \fIusername\fP to connect to the database as, this defaults to
+the username of the user running \fIsqsh\fP.  The \fIusername\fP may also
+be set via the \fB$username\fP variable.
+.\"
+.\" -v
+.\"
+.TP
+.B -v
+Displays the version number,
+.Va version,
+and exits.
+.\"
+.\" -w width
+.\"
+.TP
+.B -w \fIwidth\fP
+The maximum output \fIwidth\fP of a displayed result set, this defaults
+to 80 (the maximum for this value is 256).
+.\"
+.\" -X
+.\"
+.TP
+.B -X
+Initiates the login connection to the server with client-side password
+encryption (if supported). If either SQL Server does not recognize
+this option, or if the version of DB-Lib used to compile \fIsqsh\fP
+does not support this option, then it will be ignored. This option may
+also be set using the
+.Va encryption 
+environment variable.
+.\"
+.\" -y
+.\"
+.TP
+.B -y \fIdirectory\fP
+Specifies a SYBASE \fIdirectory\fP to use other than the value of
+.Va SYBASE
+in order to find the interfaces file.
+.\"
+.\" -z
+.\"
+.TP
+.B -z \fIlanguage\fP
+Specifies an alternate \fIlanguage\fP to display \fIsqsh\fP prompts
+and messages.  Without the \fB-z\fP flag, the server's default language
+will be used.  This may also be set using with the
+.Va language
+variable.
+.\"
+.\" args
+.\"
+.TP
+.B \fIargs\fP
+If sqsh is run with the \fB-i\fP flag specifying an input file to
+be processed (rather then initiating an interactive session), arguments
+may be supplied on the command line to be passed to the input file.
+These arguments may be accessed using the variables \fB${0}\fP, \fB${1}\fP, ...
+(see the \fBVariables\fP section, below, for more information).
+.\" 
+.\" ==========================================
+.SH INITIALIZATION
+.\" ==========================================
+.\" 
+Upon startup, \fIsqsh\fP initializes all internal environment variables,
+commands, and aliases to their default values, it then looks in the
+system-wide configuration file (usually /usr/local/etc/sqshrc), followed
+by a local configuration file \fB$HOME\fP/.sqshrc (this may be overridden
+via the SQSHRC external environment variable).  If this file is found 
+it is executed just like a script would be using the \fB-i\fP flag.
+.PP
+The \fI.sqshrc\fP file may contain anything that could normally be typed at
+the prompt, however it should be noted that at the time this
+file is read \fIsqsh\fP has yet to establish a connection to the database,
+however most commands that perform database activity, such as
+.Cm go
+will attempt to establish a database connection when executed (it may
+also prompt you for a password if necessary).  Also, if database activity
+is required within this startup file, the
+.Cm connect
+command (see \fBCOMMANDS\fP, below) may be executed.
+.PP
+After the \fI.sqshrc\fP file has been executed, \fIsqsh\fP then parses
+any command line options (thus any variables set in your \fI.sqshrc\fP
+file may be overridden by command line options). Following that, if
+\fIsqsh\fP is run in interactive mode (i.e. without \fB-i\fP and if
+stdin is attached to a tty), it then looks for \fI.sqsh_history\fP and
+loads the contents of that file into this history buffer (see \fBBUFFERS\fP,
+below).
+.PP
+Immediately prior to establishing a connection to the database (either
+during startup, or by an explicit
+.Cm connect
+or
+.Cm reconnect
+command), the file \fB$HOME/.sqsh_session\fP is executed.  The
+name of this file may be overridden using the
+.Va session
+variable.
+.\" 
+.\" ==========================================
+.SH COMMAND LINE
+.\" ==========================================
+.\" 
+When a line is first read by \fIsqsh\fP, the first word is separated from
+the line.  This word is then expanded of all variables (see \fBVariable
+Substitution\fP, below), followed by command expansion (see \fBCommand
+Substitution\fP, below).  The first word of the resulting string is then
+analyzed to see if it is either a valid \fIsqsh\fP command or alias.
+.PP
+The \fIsqsh\fP command line follows many of the same rules as Bourne
+shell, allowing file redirection, pipelining, command substitution,
+and backgrounding via the same syntax.
+.\"
+.\" ------------------------------------------------------------
+.SS Comments
+.\" ------------------------------------------------------------
+.\"
+Any line beginning with a \fB#\fP following by a non-alphanumeric
+character (any character other than 0-9, a-z, A-Z, and _) causes
+the entire line to be ignored.  Because of the possible collision
+with TSQL temp-table names, the line will not be ignored if the
+first character following the \fB#\fP, is alphanumeric.
+.\"
+.\" ------------------------------------------------------------
+.SS Quoting
+.\" ------------------------------------------------------------
+.\"
+Quoting is used to prevent the interpretation of special keywords or 
+characters to sqsh, such as white-space, variable expansion, or command
+substitution.  There are three types of quoting, \fIescape\fP,
+\fIsingle-quotes\fP, and \fIdouble-quotes\fP.
+.PP
+Enclosing characters in single quotes preserves the literal interpretation
+of each character contained within the quotes.  A single quote may not
+appear within single quotes, even when preceded by an escape. For example:
+.sp
+.RS
+.ft 5
+.nf
+1> \\echo I can not expand '$username'
+.fi
+.ft 1
+.RE
+.sp
+outputs
+.sp
+.RS
+.ft 5
+.nf
+I can not expand $username
+.fi
+.ft 1
+.RE
+.PP
+The characters \e\e are used to escape the meaning (and thus prevent
+the interpretation) of the character immediately following them.  
+The \e character itself may be escaped. For example:
+.sp
+.RS
+.ft 5
+.nf
+1> \\echo I can\e\e't expand '$username'
+.fi
+.ft 1
+.RE
+.sp
+outputs
+.sp
+.RS
+.ft 5
+.nf
+I can't expand $username
+.fi
+.ft 1
+.RE
+.PP
+The escape character may also be used to escape a new-line in
+order to perform a line continuation, in this case the new-line
+is discarded and the continued line is automatically appended
+to the previous line, for example:
+.sp
+.RS
+.ft 5
+.nf
+1> \\echo Hello \e\e
+--> world!
+Hello world!
+.fi
+.ft 1
+.RE
+.PP
+Enclosing characters in double quotes preserves the literal meaning
+of all characters within them with the exception of \fB$\fP, \fB`\fP,
+and \fB\e\e\fP.  A double quote may be contained within double quotes
+by escaping it.
+.sp
+.RS
+.ft 5
+.nf
+1> \\echo "\e\e"I can't deny it, I like $username\e\e", she said."
+.fi
+.ft 1
+.RE
+.sp
+prints out
+.sp
+.RS
+.ft 5
+.nf
+"I can't deny it, I like gray", she said.
+.fi
+.ft 1
+.RE
+.sp
+.\"
+.\" ------------------------------------------------------------
+.SS Expansion
+.\" ------------------------------------------------------------
+.\"
+After a line of input has been read, \fIsqsh\fP attempts to expand
+the line of any aliases (see \fBAliasing\fP, below), following
+that it attempts to determine if the line begins with a command
+keyword.  Once a line has been determined to contain a command
+name it has two types of expansion performed up it: \fIvariable
+substitution\fP, followed by \fIcommand substitution\fP respectively.
+Following this expansion the command line is separated into words and
+the command is executed.
+.\"
+.\" ------------------------------------------------------------
+.SS Variable Substitution
+.\" ------------------------------------------------------------
+.\"
+The character $ is used to indicate variable substitution or expansion
+within a word. These variables may be assigned values by the
+.Cm set
+command like so:
+.sp
+.RS
+.ft 5
+.nf
+1> \\set \fIname\fP=\fIvalue\fP
+.fi
+.ft 1
+.RE
+.sp
+\fIname\fP may be a character or underscore followed by any combination
+of characters, digits, or underscore, and may not contain any special
+characters, such as (') and (").  The restriction on the first character
+being a digit is introduced because SQL allows the representation of
+money datatypes as $nn.nn where n is a digit.
+.PP
+\fIvalue\fP
+may contain anything, however if it is to include white-space, then it
+must be quoted (see \fBWords & Quoting\fP, above).  Note that in order to
+prevent the expansion of a variable use either single quotes, or two \e's,
+like thus:
+.sp
+.RS
+.ft 5
+.nf
+1> \\echo \e\e$name
+.br
+$name
+.fi
+.ft 1
+.RE
+.PP
+Variables may be referenced in one of two ways:
+.TP 15
+.B $\fIvariable\fP
+In this manner all characters, digits, and underscores are treated as the
+\fIname\fP of the variable until another type of character is reached
+(either a special character, or a white-space).
+.TP
+.B ${\fIvariable\fP}
+The braces are required only when \fIvariable\fP is followed by a letter,
+digit, or underscore that is not to be interpreted as part of its name.
+Note that the same effect may be achieved using double quotes.
+.PP
+It should be noted that because the variables are expanded prior to
+breaking the command line into words, if the contents of the variable
+contain white spaces, they are treated as significant by the parser.
+In the following example:
+.sp
+.RS
+.ft 5
+.nt
+1> \\set x="1 2 3"
+.br
+2> \\echo $x
+.fi
+.ft 1
+.RE
+.sp
+the
+.Cm echo
+command receives three arguments, "1", "2", and "3", although
+it looks as if only one argument was passed to it.  This behavior
+is consistent with most shells (such as csh, bourne shell, etc.).
+.\"
+.\" ------------------------------------------------------------
+.SS Command Substitution
+.\" ------------------------------------------------------------
+.\"
+\fISqsh\fP supports a second form of expansion called \fIcommand
+substitution\fP.  This this form of expansion the output of an
+external UNIX command may be substituted on the command line. This
+expansion may be achieved by placing the command line to be
+executed in back-quotes (`). For example:
+.sp
+.RS
+.ft 5
+.nt
+1> \\set password=`/sybase/bin/getpwd $DSQUERY`
+.br
+1> \\echo $password
+.br
+ilikepickles
+.fi
+.ft 1
+.RE
+.sp
+This this example, the external program \fB/sybase/bin/getpwd\fP is
+executed with the current contents of the $DSQUERY environment
+variable, the entire expression is then replaced with the output
+of \fBgetpwd\fP (\fBilikepickles\fP) prior to executing the
+.Cm set
+command.
+.PP
+By default, the output of the substituted command is first broken
+into words according to the contents of the
+.Va ifs
+variable prior to assembling together back into the command line. So,
+by overriding the contents of
+.Va ifs
+you may affect the behavior of the substitution process.  For example:
+.sp
+.RS
+.ft 5
+.nt
+1> \\set ifs=":"
+.br
+1> \\echo `echo hello:how:are:you`
+.br
+hello how are you
+.fi
+.ft 1
+.RE
+.sp
+This mechanism is frequently useful for parsing input files, such
+as \fB/etc/passwd\fP into fields.
+.\"
+.\" ------------------------------------------------------------
+.SS Input/Output Redirection
+.\" ------------------------------------------------------------
+.\"
+As with standard Bourne shell (and most other shells, for that matter),
+a command's input and output may be redirected using a special notation
+interpreted by the shell. The following may appear anywhere on the command
+line, but only redirection that is specified \fIprior\fP to a pipe (|)
+actually has any effect on the behavior of internal \fIsqsh\fP
+commands (refer to \fBPipes\fP, below).
+.TP 15
+.B <\fIword\fP
+Use the file \fIword\fP as the standard input for the command. Typically
+very few \fIsqsh\fP commands actually read anything from stdin, so this
+will usually have no effect (see the
+.Cm loop
+command).
+.TP
+.B [\fIn\fP]>\fIword\fP
+Associate the output of file descriptor \fIn\fP (stdout, by default)
+with file \fIword\fP. If this file does not exist it is created; otherwise
+it is truncated to zero length.
+.TP
+.B [\fIn\fP]>>\fIword\fP
+Append the the output of file descriptor \fIn\fP (stdout, by default) to
+file \fIword\fP, creating it if it does not exist.
+.TP
+.B [\fIm\fP]>&\fIn\fP
+Redirect the output of file descriptor \fIm\fP (stdout by default),
+to same output as file descriptor \fIn\fP.
+.PP
+The order in which redirections are specified on the command line is
+significant, as the redirections are evaluated left-to-right. For
+example:
+.sp
+.RS
+.ft 5
+.nf
+1> select * from select  /* Syntax error */
+.br
+2> \\go >/tmp/output 2>&1
+.br
+1>
+.fi
+.ft 1
+.RE
+.sp
+This statement first redirects the standard output of the
+.Cm go
+command
+to the file /tmp/output, then redirects the stderr to the same file.
+So, when the commands fails, the error output will be found in the
+file /tmp/output.
+.PP
+However, by changing the order of redirection, you can completely
+change the meaning:
+.sp
+.RS
+.ft 5
+.nf
+1> select * from select
+.br
+2> \\go 2>&1 >/tmp/output
+.br
+Msg 156, Level 15, State 1
+.br
+Server 'SQSH_TEST', Line 1
+.br
+Incorrect syntax near the keyword 'select'.
+.br
+.fi
+.ft 1
+.RE
+.sp
+In this case, error output will be sent to stdout, while what would
+have gone to stdout is redirected to /tmp/output (in this
+case /tmp/output will be empty).
+.PP
+Please read the section on \fBBackground Jobs\fP, below, for detailed info
+on the interaction between file redirection and background jobs.
+.\"
+.\" ------------------------------------------------------------
+.SS Pipes
+.\" ------------------------------------------------------------
+.\"
+A \fIpipeline\fP is a sequence of one or more commands separated by a `|',
+each command using the stdout of the preceding program for its own stdin.
+However the first command in the \fIpipeline\fP must be a \fIsqsh\fP command,
+and all other commands must be external (or UNIX) programs.  Any
+\fIsqsh\fP command may be run through a pipeline, although for many of them
+(such as the
+.Cm set
+command) it doesn't really make any sense to do this.  The
+following is an example of a \fIpipeline\fP:
+.sp
+.RS
+.ft 5
+.nf
+1> select * from syscolumns
+.br
+2> \\go | more
+.fi
+.ft 1
+.RE
+.sp
+This command causes the result set generated by the
+.Cm go
+command to be sent to the \fBmore(1)\fP program, which then sends it to your
+screen, pausing at each screen full of data (this is the primary reason
+that I wrote \fIsqsh\fP).
+.PP
+There are several peculiarities in the way in which \fIsqsh\fP deals
+with \fIpipelines\fP as opposed to the way in which standard Bourne
+shell treats them.
+.PP
+Everything following the first occurrence of a pipe (|) character is broken
+into white-space delimited words, including such special shell commands
+as `2>&1' and other occurrences of pipes.  If there are any variables 
+contained in these words they are expanded following the same quoting
+rules as described in \fBWords & Quoting\fP, above, with the one
+exception that all quotes are left in place.  These words are then
+re-assembled into a single string and shipped off to /bin/sh for processing.
+.PP
+In short, \fIsqsh\fP makes no attempt to interpret what follows the
+first pipe, instead it is shipped off to a "real" shell to do the work.
+The rationale behind this is that I was lazy and didn't feel like
+writing all of the same bizarre variable handling, &&'ing, ||'ing,
+grouping, and variable expansion rules that Bourne shell supports, and
+instead I let Bourne do the dirty work.
+.PP
+The advantage of this method is that you can do some very complex stuff
+after the pipeline, such as:
+.sp
+.RS
+.ft 5
+.nf
+1> select * from syscolumns
+.br
+2> \\go | (cd /tmp; compress -c > syscolumsn.Z)
+.fi
+.ft 1
+.RE
+.sp
+Not that I can think of any real reason to do this...but you can if you
+want to.
+.\"
+.\" ------------------------------------------------------------
+.SS Background Jobs
+.\" ------------------------------------------------------------
+.\"
+Backgrounding provides a mechanism whereby you may run any 
+\fIsqsh\fP command as a background process and continue working
+while it runs.  \fISqsh\fP offers two types of backgrounding:
+.TP 15
+.B \fIDeferred\fP
+In this mode \fIsqsh\fP redirects all output of the background
+job to a temporary file (located in the directory \fB$tmp_dir\fP)
+while the job is running, so that the output is not intermixed with
+what you are currently working on.  When the job completes you
+are notified of the process completion and the output may be
+viewed using the
+.Cm show
+command.
+.TP
+.B \fINon-Deferred\fP
+This corresponds to the common idea of a background process under
+UNIX.  In this mode the output of the job is not implicitly redirected
+for you, and thus may become intermingled with what you are currently
+working.
+.PP
+The mode selection you choose is selectable via the
+.Va defer_bg
+variable (which defaults to `1', or `On').  Typically the only reason
+to not use \fIdeferred\fP mode is to prevent large result sets from
+filling up your file system.
+.PP
+To specify that a job be run in the background, simply append a &
+to the end of the command line, as:
+.sp
+.RS
+.ft 5
+.nf
+1> sp_long_arduous_proc 1, 30
+.br
+2> \\go &
+.br
+Job #1 running [xxxx]
+.br
+1>
+.fi
+.ft 1
+.RE
+.sp
+When \fIsqsh\fP encounters the & on the end of the command line it
+spawns a child process (with a Unix process id of \fIxxxx\fP) then
+the child process calls the
+.Cm go\
+\. The
+.Cm go
+command then
+establishes a new connection to the database (using the current
+values of the
+.Va DSQUERY\
+,
+.Va username\
+, and
+.Va password
+variables)
+and executes the shown query.
+.PP
+While the job is executing the commands
+.Cm jobs\
+\,
+.Cm wait\
+\,
+and
+.Cm kill
+may be used to monitor or alter a currently running
+jobs (see section \fBCOMMANDS\fP, below).  When any jobs complete
+\fIsqsh\fP will display a notification, such as:
+.sp
+.RS
+.ft 5
+.nf
+1> select count(*) from <return>
+.br
+Job #1 complete (output pending)
+.br
+2>
+.fi
+.ft 1
+.RE
+.sp
+When a job completes, if it had no output, it is immediately considered
+terminated and will not show up in the current list of running jobs.
+However if the complete job has pending output, it will continue to
+be displayed as a running job (with the
+.Cm jobs
+command) until a
+.Cm show
+is used to display the output of the job.
+.PP
+There is a known bug with job backgrounding when used in conjunction
+with pipes, please refer to the \fBBUGS\fP section at the end of the
+manual.
+.\" 
+.\" ==========================================
+.SH BUFFERS
+.\" ==========================================
+.\" 
+In normal \fBisql\fP only a two buffer are maintained; the buffer into
+which you are currently typing, and a buffer that contains the
+last batch executed (this is kept around for when you run `vi', or `edit').
+.PP
+\fISqsh\fP maintains several distinct sets of buffers:
+.TP 15
+.B Work Buffer
+This buffer corresponds directly to the \fBisql\fP work buffer.  It
+is the buffer into which you enter the current batch prior to sending
+it to the database.
+.TP
+.B History Buffer
+This is actually a chain of 0 or more buffers (configurable by the
+\fB$histsize\fP variable) of the last \fB$histsize\fP batches that
+have been run.  This buffer is only maintained when \fIsqsh\fP is
+run in interactive mode; that is, batches executed using the \fB-i\fP
+flag, or executed via redirection from the UNIX prompt will not
+be maintained in history (after all, they are already in a file somewhere).
+.sp
+If the variable \fB$histsave\fP is True (see section \fBSPECIAL
+VARIABLES\fP), and \fIsqsh\fP is in interactive mode, then the
+current history buffer is written to \fB$HOME\fP/.sqsh_history
+when the you exit.  This file is then read back into \fIsqsh\fP
+the next time it is started in interactive mode.
+.TP
+.B Named Buffers
+At any time during a session the \fBWork Buffer\fP, or any of the
+\fBHistory Buffers\fP may by copied into a named buffer using the
+.Cm buf-copy
+command (see section \fBCOMMANDS\fP, below).  These
+buffers are lost when you exit (however you may use the
+.Cm buf-save
+command to save named buffers to a file).
+.\"
+.\" ------------------------------------------------------------
+.SS Buffer Short-Hand
+.\" ------------------------------------------------------------
+.\"
+Many commands allow all of these buffers to be referenced in a
+short-hand fashion, very similar to the way that \fBcsh(1)\fP
+references its commands history.  Any of these shorthands may
+by used for any \fIbuffer\fP parameter described in the \fBCOMMANDS\fP
+section:
+.TP 10
+.B !.
+The current work buffer.
+.TP
+.B !!
+The last command executed (note, this is not available in non-interactive
+mode as it does not maintain a history).
+.TP
+.B !+
+The next available history entry.  This is a write-only buffer, so typically
+only applies to such commands as
+.Cm buf-copy\
+\.
+.TP
+.B !\fIn\fP
+Refers to history #\fIn\fP.  Each time an entry is written to history it
+is assigned an increasing number from the last entry, with this short-hand
+you may reference any given history.
+.TP
+.B !\fIbuf_name\fP
+Just for consistency this is supplied as a reference to named buffer
+\fIbuf_name\fP, however \fIbuf_name\fP without the leading `!' is also
+considered correct.
+.TP
+.B \fIbuf_name\fP
+Refers to the named buffer \fIbuf_name\fP.
+.\"
+.\" ------------------------------------------------------------
+.SS Variables
+.\" ------------------------------------------------------------
+.\"
+Variables may also be contained within work buffers. Under these 
+circumstances the variables remain unexpanded until the buffer is
+sent to the database (via the
+.Cm go
+command), during which time
+they are expanded and replaced within the buffer.  This behavior may be
+altered via the \fB$expand\fP variable (see \fBSpecial Variables\fP, below).
+.PP
+The following is an example of using variables within a buffer:
+.sp
+.RS
+.ft 5
+.nf
+1> \\set table_name=syscolumns
+.br
+1> select count(*) from $table_name
+.br
+2> \\go
+.fi
+.ft 1
+.RE
+.sp
+This is the equivalent of performing the query:
+.sp
+.RS
+.ft 5
+.nf
+1> select count(*) from syscolumns
+.br
+2> \\go
+.fi
+.ft 1
+.sp
+.RE
+directly.  Typically this feature is useful for reusing large complex
+\fBwhere\fP clauses, or long column names.
+.PP
+Quoting rules apply the same in SQL buffers as they do in command lines.
+That is, any variables contained within double quotes (") are expanded
+and variables contained within single quotes (') are left untouched. Thus:
+.sp
+.RS
+.ft 5
+.nf
+1> select "$username", '$username'
+.br
+2> \\go
+.fi
+.ft 1
+.RE
+.sp
+yields the results
+.sp
+.RS
+.sp
+.ft 5
+.nf
+ ---- ---------
+.br
+ gray $username
+.sp
+(1 row affected)
+.fi
+.ft 1
+.RE
+.sp
+.\"
+.\" ------------------------------------------------------------
+.SS Command Substitution
+.\" ------------------------------------------------------------
+.\"
+As with the command line, the output of UNIX commands may also be
+substituted within a SQL buffer upon execution (once again, only
+if the
+.Va expand
+variable is set to 1, or true).  In this circumstance the command
+contained with backquotes (`) is replaced with its output prior
+to forwarding the buffer to SQL server.  For example:
+.sp
+.RS
+.ft 5
+.nf
+1> select count(*) from `echo syscolumns`
+.br
+2> \\go
+.fi
+.ft 1
+.sp
+.RE
+Causes the strings `echo syscolumns` to be replaced by the
+word \fIsyscolumns\fP prior to executing the command.  It should
+be noted that the contents of the substituted command are
+only executed at the time of the
+.Cm go
+command, not when the line of SQL is input.
+.\" 
+.\" ==========================================
+.SH FLOW-OF-CONTROL
+.\" ==========================================
+.\" 
+New with version 2.0 of sqsh, is the ability to perform basic
+flow-of-control and functions using the
+.Cm if,
+.Cm while,
+.Cm do,
+and
+.Cm func
+commands.
+.\"
+.\" ------------------------------------------------------------
+.SS Blocks & SQL Buffers
+.\" ------------------------------------------------------------
+.\" 
+All \fIsqsh\fP flow-of-control commands are block-based.  That is,
+if the test expression of the command is met, then a block of 
+sqsh-script will be executed.  For example, the definition of
+the
+.Cm if
+command is:
+.sp
+.RS
+.ft 5
+.nf
+\\if \fIexpression\fP
+   \fIblock\fP
+\\fi
+.fi
+.ft 1
+.RE
+.sp
+This \fIblock\fP may be any number of lines of sqsh commands,
+SQL, or flow-of-control statements to be executed if the \fIexpression\fP
+evaluates to a success condition (0).
+.PP
+Each \fIblock\fP has its own SQL buffer for the duration that
+the \fIblock\fP is executed.  That is, the following statements:
+.sp
+.RS
+.ft 5
+.nf
+1> /*
+2> ** IMPROPER USAGE OF IF BLOCK
+3> */
+4> SELECT COUNT(*) FROM
+5> \\if [ $x -gt 10 ]
+6>   sysobjects
+7> \\else
+8>   sysindexes
+9> \\fi
+4> go
+.fi
+.ft 1
+.RE
+.sp
+will yield:
+.sp
+.RS
+.ft 5
+.nf
+Msg 102, Level 15, State 1
+Server 'bps_pro', Line 1
+Incorrect syntax near 'FROM'.
+.fi
+.ft 1
+.RE
+.sp
+because the string 'sysobjects' or 'sysindexes' were inserted
+into their own SQL buffers. These buffers are discarded as
+soon as the end of the block was reached, and since a 
+.Cm go
+command was not contained within the block, no additional 
+errors were generated.
+.PP
+Thus, the correct way to write the above expression would be:
+.sp
+.RS
+.ft 5
+.nf
+1> /*
+2> ** PROPER USAGE OF IF BLOCK
+3> */
+4> \\if [ $x -gt 10 ]
+5>   SELECT COUNT(*) FROM sysobjects
+6>   go
+7> \\else
+8>   SELECT COUNT(*) FROM sysindexes
+9>   60
+10> \\fi
+4> go
+.fi
+.ft 1
+.RE
+.sp
+or, even:
+.sp
+.RS
+.ft 5
+.nf
+1> /*
+2> ** PROPER USAGE OF IF BLOCK
+3> */
+4> \\if [ $x -gt 10 ]
+5>   \\set table_name=sysobjects
+7> \\else
+5>   \\set table_name=sysindexes
+6> \\fi
+4> SELECT COUNT(*) FROM $table_name
+5> go
+.fi
+.ft 1
+.RE
+.sp
+Also, note that the line number displayed in the sqsh prompt resets
+to the current position in the outer SQL buffer after reaching the
+.Cm fi
+terminator.
+.\"
+.\" ------------------------------------------------------------
+.SS Expressions
+.\" ------------------------------------------------------------
+.\" 
+All flow-of-control statements in sqsh take an \fIexpression\fP
+to determine which \fIblock\fP of code to execute.  Just like
+UNIX's Bourne Shell, this \fIexpression\fP is simply an operating
+system program that is executed by sqsh.  If the command returns
+a success status (calls exit(0)), then it is considered successfull.
+.PP
+For example, with following statement:
+.sp
+.RS
+.ft 5
+.nf
+\\while test $x -lt 10
+   \fIblock\fP
+\\done
+.fi
+.ft 1
+.RE
+.sp
+will execute the contents of \fIblock\fP while the current value 
+of $x is less than 10.  Note that 'test' is a standard UNIX program
+to perform basic string or numeric comparisons (among other things).
+Also, unlike many shells, sqsh has no built-in version of 'test'.
+.PP
+Sqsh does, however, support the standard short form of 'test':
+.sp
+.RS
+.ft 5
+.nf
+\\while [ $x -lt 10 ]
+   \fIblock\fP
+\\done
+.fi
+.ft 1
+.RE
+.sp
+With this expression the open brace ('[') is replaced by the sqsh
+parser with 'test', and the close brace (']') is discarded. 
+.\"
+.\" ------------------------------------------------------------
+.SS Unsupported Expressions
+.\" ------------------------------------------------------------
+.\" 
+Currently sqsh does not support the standard shell predicate
+operators '&&' and '||'.  These can be performed like so:
+.sp
+.RS
+.ft 5
+.nf
+\\if sh -c "cmd1 && cmd2"
+   \fIblock\fP
+\\done
+.fi
+.ft 1
+.RE
+.sp
+.\" 
+.\" ------------------------------------------------------------
+.SS \\\if statement
+.\" ------------------------------------------------------------
+.\" 
+The
+.Cm if
+command performs conditional execution of a sqsh \fIblock\fP 
+based upon the outcome of a supplied expression:
+.sp
+.RS
+.ft 5
+.nf
+\\if \fIexpr1\fP
+   \fIblock1\fP
+\\elif \fIexpr2\fP
+   \fIblock2\fP
+\\else
+   \fIblock3\fP
+\\fi
+.fi
+.ft 1
+.RE
+.sp
+In this example, if expression \fIexpr1\fP evaluates to true,
+then the block \fIblock1\fP is evaluated.  Otherwise, if the
+expression \fIexpr2\fP evaluates to true, then block \fIblock2\fP
+is evaluated. Finally, if all other tests fail \fIblock3\fP is
+evaluated.
+.PP
+Note that, unlike Bourne Shell, every
+.Cm if
+command must be accompanies by a trailing
+.Cm fi
+statement.  Also the sqsh parser is not terribly intelligent: The
+\\else and \\fi statements must be the only contents on the line
+in which they appear, and they may not be aliased to another 
+name.
+.\" 
+.\" ------------------------------------------------------------
+.SS \\\while statement
+.\" ------------------------------------------------------------
+.\" 
+The
+.Cm while
+command executes a \fIblock\fP of sqsh code for the while a supplied
+expression remains true.
+.sp
+.RS
+.ft 5
+.nf
+\\while \fIexpr\fP
+   \fIblock\fP
+\\done
+.fi
+.ft 1
+.RE
+.sp
+In this example, while the expression \fIexpr\fP evaluates to true,
+then the block \fIblock\fP is evaluated. 
+.sp
+The 
+.Cm break
+statement may be used to break out of the inner-most
+.Cm while
+or 
+.Cm for
+loop (more on
+.Cm for
+below).
+.\" 
+.\" ------------------------------------------------------------
+.SS \\\for statement
+.\" ------------------------------------------------------------
+.\" 
+The
+.Cm for
+command executes a \fIblock\fP of sqsh code for each \fIword\fP
+supplied:
+.sp
+.RS
+.ft 5
+.nf
+\\for \fIvar\fP in \fIword\fP ...
+   \fIblock\fP
+\\done
+.fi
+.ft 1
+.RE
+.sp
+For each \fIword\fP supplied, the value of the variable
+.Va var
+is set to the word and the \fIblock\fP of code is executed.
+Execution ends when there are no more words in the list.
+.sp
+As with
+.Cm while
+the
+.Cm break
+statement may be used to break out of the inner-most execution
+loop.
+.\" 
+.\" ------------------------------------------------------------
+.SS \\\do command
+.\" ------------------------------------------------------------
+.\" 
+The
+.Cm do
+command is kind of a cross between a statement and a command.
+It is a form of
+.Cm go
+(see below for details on the
+.Cm go
+command) in which a \fIblock\fP of sqsh code may be executed for
+each row of data returned from the query.  When the \fIblock\fP is
+executed, special sqsh variables #[0-9]+ (a hash followed by a number)
+may be used to reference the values in the returned query. For example
+the following command:
+.sp
+.RS
+.ft 5
+.nf
+SELECT id, name FROM master..sysdatabases
+\\do
+   \\echo "Checkpointing database #2, dbid #1"
+   use #2
+   go
+   checkpoint
+   go
+\\done
+.fi
+.ft 1
+.RE
+.sp
+would cause a CHECKPOINT command to be issued in each database
+on the server.
+.\"
+.\"   \do [-U user] [-P pass] [-S server]
+.\"
+.TP 5
+Command line options
+The
+.Cm do
+command establishes a new connection to be used by the
+\fIblock\fP of code when executed.  By default, this connection
+is established to the current server (the current setting of
+\fB$DSQUERY\fP), using the current username (\fB$username\fP)
+and the current password (\fB$password\fP).  This behavior may,
+however, be overridden using command line options:
+.RS
+.TP 5
+.B -U \fIusername\fP
+Establishes the connection to the server as the supplied \fIusername\fP.
+.TP
+.B -P \fIpassword\fP
+Establishes the connection to the server using the supplied \fIpassword\fP
+(which is hopefully a valid password for the supplied \fIusername\fP).
+.TP
+.B -S \fIserver\fP
+Establishes the connection to the supplied \fIserver\fP.
+.TP
+.B -n
+Do not create a connection for use by the
+.Cm do
+loop.  This flag is mutually exclusive with the above flags. With
+this flag enabled, attempts to perform database commands within the
+\fIblock\fP will generate a flurry of CT-Library errors.
+.RE
+.TP 5
+Column variables
+As mentioned above, the values of the columns in the current result
+set may be determined using the special #[0-9]+ variables.  Thus,
+the variable #1 would contain the value of column number one of the
+current result set, and #122 could contain the value of the 122'nd
+column (column numbers begin at 1).
+.sp
+In the case of nested
+.Cm do
+loops, values in previous nesting levels may be referred to by 
+simply appending an addition `#' for each previous nesting level,
+like so:
+.sp
+.RS
+.ft 5
+.nf
+SELECT id, name FROM sysobjects
+\\do
+   SELECT indid, name FROM sysindexes WHERE id = #1
+   \\do
+      \\echo "Table ##2 (objid ##1) has index #2 (indid #1)"
+   \\done
+\\done
+.fi
+.ft 1
+.sp
+obviously, this isn't the way you would do this query in real
+life, but you get the idea.
+.sp
+When expanding columns with NULL values, the column variable will
+expand to an empty string (`').  Also, references to non-existant
+columns, such as #0, will result in an empty string (`').
+.sp
+As with regular sqsh variables (those referenced with a `$'),
+column variables will not be expanded when contained within
+single quotes.
+.RE
+.TP 5
+Aborting
+If the
+.Cm break
+or
+.Cm return
+commands are issued during the processing of a
+.Cm do
+loop, the current query will be canceled, the connection used
+by the loop will be closed (unless the \fB-n\fP flag was supplied)
+and the
+.Cm do
+loop will abort.
+.RE
+.\" 
+.\" ------------------------------------------------------------
+.SS \\\func command
+.\" ------------------------------------------------------------
+.\" 
+The
+.Cm func
+command is used to define a reusable block of \fIsqsh\fP code as
+a function.  Functions are defined like so:
+.sp
+.RS
+.ft 5
+.nf
+\\func stats
+   \\if [ $# -ne 1 ]
+      \\echo "use: stats [on | off]"
+      \\return 1
+   \\fi
+   set statistics io ${1}
+   set statistics time ${1}
+   go
+\\done
+.fi
+.ft 1
+.RE
+.sp
+In this example a new function is established called \fIstats\fP that
+expects a single argument, either "on" or "off".  Using this argument,
+\fIstats\fP will enable or disable time-based and I/O-based statistics.
+.PP
+Once established, the function may be called like so:
+.sp
+.RS
+.ft 5
+.nf
+\\call stats on
+.fi
+.ft 1
+.RE
+.sp
+Causing all instances of ${1} to be replaced with the first command
+line argument to \fIstats\fP.
+.TP 5
+Command line options
+Currently only one command line argument is available to the
+.Cm func
+command.
+.RS
+.TP 5
+.B -x
+Causes the function to be exported as a \fIsqsh\fP command.  That
+is, the function may be invoked directly without requiring the
+.Cm call
+command.  This behavior is optional because command names can 
+potentially conflict with T-SQL keywords.  When using this flag
+it is recommended that you prepend a backslash (\\) to your
+function name.
+.RE
+.TP 5
+Function variables
+As shown in the example above, several special variables are 
+available for use within the body of the function. These
+are:
+.RS
+.TP 5
+.B $#
+Expands to the number of arguments supplied to the function when
+invoked.
+.TP
+.B ${0}..${\fINN\fP}
+Expands to positional arguments to the function. ${0} is the name
+of the function being invoked, ${1} is the first argument, ${2} the
+second and so-on, up to argument \fINN\fP.
+.sp
+Note that, unlike most shells, \fIsqsh\fP requires that function
+arguments be referred to using the special curley brace syntax (${1},
+rather than $1). The reason for this is that $1 is a valid MONEY value
+and using the curely braces gets rid of this ambiguity.
+.TP
+.B $?
+After the invokation of a function, this will contain its return value
+(see below).
+.RE
+.TP 5
+Return value
+A value may be returned from a function via the 
+.Cm return
+command. Like so:
+.sp
+.RS
+.RS
+.ft 5
+.nf
+\\return \fIN\fP.
+.fi
+.ft 1
+.RE
+.sp
+Where \fIN\fP is a positive value.  This return value is available
+to the caller of the function via the
+.Va ?
+variable.  As convention, a return value of 0 is used to indicate
+a success.
+.sp
+If
+.Cm return
+is not explicitly called, the default return value is the current
+value of the
+.Va ?
+variable (which is set to 0 upon entry of the function).  Thus,
+if any SQL statements are invoked within the function, the default
+return value of
+.Va ?
+will be the last error code returned during the processing of the
+SQL statement.
+.\" 
+.\" ==========================================
+.SH COMMANDS
+.\" ==========================================
+.\" 
+.\" ------------------------------------------------------------
+.SS Read-Eval-Print
+.\" ------------------------------------------------------------
+.\" 
+The read-eval-print loop is the heart of the \fIsqsh\fP system and is
+responsible for prompting a user for input and determining what should
+be done with it.  Typically this loop is for internal use only, however
+they are open to the user because there are some creative things that can
+be done with them.
+.\"
+.\"   \loop [-i] [-n] [-e sql] [file]
+.\"
+.TP 5
+\fB\eloop [-i] [-n] [-e sql] [\fIfile\fP]\fP
+The
+.Cm loop
+command reads input either from a file, a supplied SQL statement, or
+from a user (see the options below), determining whether the current
+line is a portion of a TSQL statement or a \fBsqsh\fP command, and
+performing the appropriate action.  When run in an interactive mode
+.Cm loop
+is also responsible for displaying the current prompt (see
+.Va prompt
+below).
+.sp
+.Cm loop
+completes when all input has been depleted (end-of-file is encountered)
+or when a command, such as 
+.Cm exit
+requests that 
+.Cm loop
+exit.
+.RS
+.TP 5
+.B -i
+Normally, if \fIfile\fP is supplied and does not exist,
+.Cm loop
+will return with an error condition, usually causing sqsh to
+exit.  By supplying the \fB-i\fP flag, control will be returned
+to the calling loop as if end-of-file had been reached (that is,
+with no error condition).
+.TP
+.B -n
+By default,
+.Cm loop
+will automatically attempt to connect to the database if a 
+connection has not already been established via the
+.Cm connect
+command.  The \fB-n\fP flag disables this behavior allowing
+.Cm loop
+to process commands that do not require database support.
+.TP
+.B -e \fIsql\fP
+Causes
+.Cm loop
+to process the contents of \fIsql\fP as if the user had typed it at the
+prompt and an implicit call to
+.Cm go
+is automatically appended to the statement.  If multiple instances
+of \fB-e\fP are supplied, they are all sent as a single batch to
+the SQL Server for processing.  This option may not be 
+used in combination with a \fIfile\fP name as well.
+.TP
+.B \fIfile\fP
+Specifies the name of a \fIfile\fP to be used as input rather than
+reading input from the user or from the \fB-e\fP flag.
+.RE
+.\" 
+.\" ------------------------------------------------------------
+.SS Database Access
+.\" ------------------------------------------------------------
+.\" 
+Given the size and complexity of \fIsqsh\fP (just look at the length
+of this man page), it is amazing how few database manipulation commands
+that there actually are.  The following are commands that affect or
+use the current database connection:
+.\"
+.\"   \connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile]
+.\"
+.TP 5
+\fB\econnect [-c] [-D \fIdb\fP] [-S \fIsrv\fP] [-U \fIuser\fP] [-P \fIpass\fP] [-I \fIifile\fP]\fP
+This command is used primarily for internal use to establish a connection
+to a database.  If a connection is already established it has no effect,
+however if a connection has not been established and \fB$password\fP has
+not been supplied, then the password is requested and a connection is
+established. \fB\\connect\fP Accepts the following parameters:
+.RS
+.TP 5
+.B -c
+By default, the
+.Cm connect
+command uses the contents of
+.Va database
+to determine the database context that should be used upon establishing
+the connection (this is used by
+.Cm reconnect
+to preserve the current database context upon reconnection).  The \fB-c\fP
+flag suppresses this behavior and the default database context of login
+is used instead.
+.TP
+.B -D \fIdb\fP
+Causes
+.Cm connect
+to attempt to automatically switch the database context to \fIdb\fP
+after establishing the connection. Using this flag is identical to
+setting the
+.Va database
+variable prior to establishing the connection.
+.TP
+.B -S \fIsrv\fP
+The name of the Sybase \fIserver\fP to connect, this defaults to
+.Va DSQUERY
+if not supplied.
+.TP
+.B -U \fIuser\fP
+The Sybase \fIuser\fP to connect to the database as, this defaults to
+.Va username
+variable if not supplied.
+.TP
+.B -P \fIpass\fP
+The \fIpassword\fP for \fIuser\fP required to connect to \fIserver\fP.
+This defaults to
+.Va password
+if not supplied.
+.TP
+.B -I \fIifile\fP
+The full path of an alternate Sybase \fIinterfaces\fP file to use.
+.RE
+.\"
+.\"   \reconnect [-D dbase] [-S srv] [-U user] [-P pass] [-I ifile]
+.\"
+.TP 5
+\fB\ereconnect [-c] [-D \fIdb\fP] [-S \fIsrv\fP] [-U \fIuser\fP] [-P \fIpass\fP] [-I \fIifile\fP]\fP
+The
+.Cm reconnect
+command may be used to force a reconnection to the
+database using a new username, servername, or password (if desired).  If
+this command fails, the current connection remains (if there is any), however
+if it succeeds then the current connection is closed and the new
+connection becomes the only active one.
+.sp
+All arguments that are accepted by
+.Cm connect
+are also accepted
+by
+.Cm reconnect
+(in fact
+.Cm reconnect
+uses
+.Cm connect
+to establish the new connection).
+.\"
+.\"   \go [options] [xacts]
+.\"
+.TP 5
+\fB\ego [options] [\fIxacts\fP]\fP
+Sends the contents of the \fBWork Buffer\fP to the database, establishing
+a new connection to the database if one does not already exist (by
+calling the
+.Cm connect
+above).  It them displays the results of the
+query back to stdout and returns, causing the \fBWork Buffer\fP to be
+cleared and moved to the end of the \fBHistory Buffer\fP.
+.sp
+If the \fBWork Buffer\fP is empty and the
+.Va repeat_batch
+variable is set to "On",
+.Cm go
+will attempt to re-run the last command executed (this will only work
+in interactive mode if history support is enabled).
+.sp
+.Cm go
+accepts the following arguments:
+.RS
+.TP 5
+.B -d \fIdisplay\fP
+If X11 support is compiled into \fIsqsh\fP, and X display mode is
+being used (see \fB-x\fP, below), then \fIdisplay\fP will be used
+as the X display area for the result set.  By default the environment
+variable 
+.Va DISPLAY
+is assumed.
+.TP
+.B -f
+Turns off the display of the footer message "(%d rows affected)". Footer
+messages may also be turned off via the
+.Va footers
+variable.
+.TP
+.B -h
+Turns off all column headers. These may also be turned off via
+the
+.Va headers
+variable.
+.TP
+.B -m \fIstyle\fP
+Temporarily changes the  display style to \fIstyle\fP for the duration 
+of the command. Currently supported styles are \fBhoriz\fP (or \fBhor\fP
+or \fBhorizontal\fP), \fBvert\fP (or \fBvertical\fP), \fBbcp\fP, \fBhtml\fP,
+\fBmeta\fP, \fBpretty\fP and \fBnone\fP. The display style may be permanently 
+set via the
+.Va style
+variable or the \fB-m\fP command line flag.
+.TP
+.B -n
+Turns off variable expansion in the \fBWork Buffer\fP prior to sending
+it to the server, this may also be turned off via the
+.Va expand
+variable.
+.TP
+.B -p
+Turns on output of performance statistics when the result set has been
+successfully returned from the server.  This may also be turned on via
+the \fB-p\fP command line argument to sqsh, or the
+.Va statistics
+variable.
+.TP
+.B -s \fIsec\fP
+If the value of \fIxacts\fP is greater than 1, this causes \fIsqsh\fP
+to sleep for \fIsec\fP seconds before executing the next transaction.
+Note that the time spent sleeping is excluded from the statistical
+information displayed with the \fB-p\fP flag.
+.TP
+.B -t [\fIfilter\fP]
+Filters the command batch through an external program,
+\fIfilter\fP, prior to being sent to the SQL Server.  If \fIfilter\fP
+is not supplied, then
+.Va filter_prog
+is used (default is `m4 -'). This value may also be set via the
+.Va filter
+and
+.Va filter_prog
+variables.
+.TP
+.B -w \fIwidth\fP
+Overrides the value of
+.Va width
+for the life of the query (see
+.Va width
+below).
+.TP
+.B -x [\fIxgeom\fP]
+Turns on the X11 display filter (only if X11 support is comiled
+into \fIsqsh\fP), which causes the result set to be sent to a 
+separate window.  If \fIxgeom\fP is supplied, then this value 
+will be used as
+.Va xgeom
+for the life of the query (see
+.Va xgeom
+below).
+.TP
+.B \fIxacts\fP
+Specifies number of times the contents of the \fIWork Buffer\fP should
+be executed.  Note that, similar to isql, a result set will only be
+displayed during the final execution of the batch.  Also, the contents
+of the \fIWork Buffer\fP are only expanded once, prior to the first
+execution, so the contents of the buffer will not change between
+subsequent executions.
+.RE
+.\"
+.\"   \bcp [-A packetsize] [-b batchsize] [-I interfaces] [-J charset]
+.\"        [-m maxerrors] [-P password] [-S server] [-U username]
+.\"        [-X] table_name
+.\"
+.TP 5
+\fB\ebcp \
+[bcp_options] \
+\fItable\fP\fP
+The
+.Cm bcp
+commands acts as a sort of enhanced
+.Cm go
+command that redirects the result set(s) of the batch to another
+server via the bcp protocol.  While it is possible to
+.Cm bcp
+the result set back to the current server (the
+.Va DSQUERY
+variable), this is achieved more easily via a SELECT INTO.
+.sp
+The nitty-gritty details of
+.Cm bcp
+go like this: First the current SQL batch is expanded (unless
+the
+.Va expand
+variable is set to 0) and shipped off to the database for processing.
+If all goes well, a new connection is established to the destination
+database (as specified via $DSQUERY or the \fB-S\fP flag) to transfer
+the result set using bcp.  Then, the output of the source database
+connection is bound to the new bcp connection and data transfer is
+performed.
+.sp
+.Cm bcp
+can handle multiple result sets without any problem (including result
+sets returned from stored procedures, etc.) provided that all of the
+result sets are valid for the destination table.
+.sp
+The equivalent of a "bcp out" may be performed using the \fBbcp\fP
+display style setting and file redirection (see the
+.Va style
+variable).
+.RS
+.TP 5
+.B -A \fIpacket\fP
+Specifies the TDS packet size used to communicate with the
+destination server.  If not supplied this defaults to the
+value the
+.Va packet_size
+variable, or (if that is not set), the default server packet
+size (usually 512 bytes).
+.TP
+.B -b \fIbatch_size\fP
+The number of records transferred in a single transaction between
+servers.  Note that reaching the end of a result causes the batch
+to be transferred, regardless of the value of \fIbatch_size\fP.
+The default is the entire result set.
+.TP
+.B -I \fIifile\fP
+The full path of an alternate Sybase \fIinterfaces\fP file to use.
+.TP
+.B -J \fIcharset\fP
+Specifies the default \fIcharset\fP used to communicate with the
+SQL Server.  This defaults to the current character set (the value
+of the
+.Va charset
+variable).
+.TP
+.B -m \fImaxerr\fP
+The maximum number of batches that may fail before
+.Cm bcp
+gives up the ghost (default is 10). Note, that this only refers to
+failures within a given batch. When performing a bcp of multiple
+result sets to a server, if a given result set has, say, too many
+columns or bad data types, then the entire bcp process is aborted
+regardless of the value of \fImaxerr\fP.
+.TP
+.B -N
+Indicates that the value for an identity column in the destination
+table is being supplied within the result set.
+.TP
+.B -P \fIpass\fP
+The \fIpassword\fP for \fIuser\fP required to connect to \fIserver\fP.
+This defaults to
+.Va password
+if not supplied.
+.TP
+.B -S \fIserv\fP
+The name of the Sybase \fIserver\fP to connect, this defaults to
+.Va DSQUERY
+if not supplied.
+.TP
+.B -U \fIuser\fP
+The Sybase \fIuser\fP to connect to the database as, this defaults to
+.Va username
+variable if not supplied.
+.TP
+.B -X
+Causes password negotiation with the destination server to be 
+performed using client-side encryption.
+.TP
+.B \fItable\fP
+As with regular \fBbcp\fP, \fItable\fP may be either a fully or partially
+specified table name in the destination server.  Note, that since a new
+database connection is established during the bcp processes that the
+database context of the connection may not be the same as the current
+context, so it is usually safest to fully specify the table name in
+the form database.owner.table.
+.RE
+.\"
+.\"   \rpc [rpc_options] rpc_name [[parm_options] [@var=]value ...]
+.\"
+.TP 5
+\fB\erpc \
+[rpc_opt] \
+\fIrpc_name\fP \
+[[parm_opt] [\fI@var\fP=]\fIvalue\fP ...]
+The
+.Cm rpc
+command is used to directly invoke a stored procedure call in the
+connected server.  This command is particularly useful for communicating
+with an Open Server that does not directly support language calls.
+.sp
+.Cm rpc
+invokes the remote procedure \fIrpc_name\fP with one or more parameters
+that may be named (using \fI@var\fP) or anonymous (by not supplying
+a name).
+.sp
+Unfortunately, due to the fact that Sybase's implementation of RPC's, 
+does not directly support most implicit data type conversions (mainly
+between VARCHAR (the string you supply on the command line) and the
+most other data types (that the remote procedure is expecting), the
+syntax for the
+.Cm rpc
+command is somewhat complex.  However, in short here is how things work:
+.sp
+As the
+.Cm rpc
+command line is being parsed, \fIsqsh\fP attempts to guess the data type
+of the parameter \fIvalue\fP based on the format (for example if it
+contains only digits, it is assumed to be an integer), \fIsqsh\fP then
+performs an explicit data type conversion prior to calling the remote
+procedure call.  If \fIsqsh\fP guesses wrong, several flags are supplied
+to force it to perform the correct data type conversion (see \fBparm_opt\fP).
+.sp
+\fBDisplay Options\fP
+.sp
+The following options may be supplied anywhere on the command line and
+are used to affect the manner in which the result set(s) returning from
+the remote procedure call are displayed:
+.RS
+.TP 5
+.B -d \fIdisplay\fP
+If X support is compiled into sqsh, the value of \fIdisplay\fP is used
+as the X windows DISPLAY variable.  Note, this is usually supplied
+with the \fB-x\fP flag, below.
+.TP
+.B -f
+Turns off the display of the footer message "(%d rows affected)". Footer
+messages may also be turned off via the
+.Va footers
+variable.
+.TP
+.B -h
+Turns off all column headers. These may also be turned off via
+the
+.Va headers
+variable.
+.TP
+.B -m \fIstyle\fP
+Temporarily changes the  display style to \fIstyle\fP for the duration 
+of the command. Currently supported styles are \fBhoriz\fP (or \fBhor\fP
+or \fBhorizontal\fP), \fBvert\fP (or \fBvertical\fP), \fBbcp\fP, \fBhtml\fP,
+\fBmeta\fP, \fBpretty\fP and \fBnone\fP. The display style may be 
+permanently set via the
+.Va style
+variable or the \fB-m\fP command line flag.
+.TP
+.B -w \fIwidth\fP
+Temporarily sets the output width to \fIwidth\fP. The output width may be
+perminantly set via the
+.Va width
+varable.
+.TP
+.B -x [\fIxgeom\fP]
+Sends output to a separate X window.  If \fIxgeom\fP is supplied, then
+the X window uses this geometry (see
+.Va xgeom
+for details).
+.RE
+.RS
+.sp
+\fBParameter Options\fP
+.sp
+The following options may be supplied immediatly prior to specifying
+a parameter \fIvalue\fP and are used to affect the way in which \fIsqsh\fP
+interprets the contents of the \fIvalue\fP prior to calling the
+remote procedure.  Although \fIsqsh\fP will allow any combination
+of these parameters to be combined, it only really makes sense to combine
+the \fB-x\fP flag with any other flag.
+.TP 5
+.B -b
+Indicates that the \fIvalue\fP that is specified should be converted to
+VARBINARY before calling \fIrpc_name\fP.  This flag is implicit
+(i.e. you need not supply it) if \fIvalue\fP starts with "0x" and contains
+only digits.
+.TP
+.B -c
+Indicates that the \fIvalue\fP that is specified should be converted to
+VARCHAR prior to calling \fIrpc_name\fP.  This flag is implicit if 
+\fIvalue\fP does not match any of the implicit conversions for the
+other data types.
+.TP
+.B -d
+Indicates that the \fIvalue\fP that is specified should be converted to
+double (float) before calling \fIrpc_name\fP.  This flag is implicit
+if \fIvalue\fP is in valid floating point notation (e.g, 0.1, .1, 1.4e10, or
+4e10).
+.TP
+.B -i
+Indicates that the \fIvalue\fP that is specified should be converted to
+integer (int) before calling \fIrpc_name\fP.  This flag is implicit
+if \fIvalue\fP contains only digits (and, optionally, a leading sign).
+.TP
+.B -y
+Indicates that the \fIvalue\fP that is specified should be converted to
+money before calling \fIrpc_name\fP.  This flag is implicit
+if \fIvalue\fP begins with a "$", and contains only digits and, optionally,
+a decimal.
+.TP
+.B -n
+Indicates that the \fIvalue\fP that is specified should be converted to
+numeric before calling \fIrpc_name\fP. This flag is never
+implicit, as \fIvalue\fP would always match either int (\fB-i\fP) or
+float (\fB-d\fP); however, both of these types will implicitly be
+converted to a numeric as necessary by the procedure call.
+.TP
+.B -u
+Indicates that \fIvalue\fP should be ignored and treated as a NULL value,
+This flag is implicit if \fIvalue\fP is "".
+.RE
+.\"
+.\" ------------------------------------------------------------
+.SS Buffers
+.\" ------------------------------------------------------------
+.\"
+The following commands may be used to create, destroy, or manipulate
+the various buffers described in the \fBBUFFERS\fP section, above.
+.\"
+.\"   \reset
+.\"
+.TP 5
+\fB\ereset\fP
+The
+.Cm reset
+command corresponds directly to the \fIisql\fP `reset' command, returning
+a request to the read-eval-print loop to clear the contents of the current
+\fBWork Buffer\fP and, if you are running in interactive mode, place a
+copy of the buffer into the \fBHistory Buffer\fP.  The alias
+.Ca reset
+is automatically established upon start-up of \fIsqsh\fP for backward
+compatibility with \fIisql\fP.
+.\"
+.\"   \redraw
+.\"
+.TP
+.Cm redraw
+Returns a request back to the current read-eval-print loop for it
+to redisplay the current \fBWork Buffer\fP.  If run from non-interactive
+mode, this command has no effect.
+.\"
+.\"   \history
+.\"
+.TP
+.Cm history
+Displays the last
+.Va histsize
+batches that have either been sent to the database via the
+.Cm go
+command or cleared from the \fBWork Buffer\fP via the
+.Cm reset
+command.
+.\"
+.\"   \buf-copy dst-buffer [src-buffer]
+.\"
+.TP
+\fB\ebuf\-copy \fIdst\-buffer\fP [\fIsrc\-buffer\fP]\fP
+Copies the contents of \fIsrc-buffer\fP (defaults to \fB!.\fP,
+the \fBWork Buffer\fP, if not supplied), to \fIdst\-buffer\fP.
+Refer to \fBBUFFERS\fP for information on buffer naming conventions.
+.\"
+.\"   \buf-get buffer
+.\"
+.TP
+\fB\ebuf\-get \fIbuffer\fP\fP
+The
+.Cm buf\-get
+command is supplied as a shorthand method of running
+.Cm buf\-copy
+\.
+It is the equivalent of running:
+.sp
+.RS
+.RS
+.ft 5
+.nf
+\ebuf-append !. \fIbuffer\fP
+.fi
+.ft 1
+.RE
+.RE
+.\"
+.\"   \buf-append dst-buffer src-buffer
+.\"
+.TP
+\fB\ebuf\-append \fIdst\-buffer\fP [\fIsrc\-buffer\fP]\fP
+Appends the contents of \fIsrc\-buffer\fP (defaults to !.) to the
+contents of \fIdst\-buffer\fP, if it exists.  If \fIdst-buffer\fP
+doesn't exist it is created.
+.\"
+.\"   \buf-save [-a] filename [src-buffer]
+.\"
+.TP
+\fB\ebuf\-save [-a] \fIfilename\fP [\fIsrc\-buffer\fP]\fP
+Saves the contents of \fIsrc\-buffer\fP (defaults to !.) to
+\fIfilename\fP. If the \fB-a\fP flag is supplied the contents are
+appended to \fIfilename\fP rather than overwriting the current contents.
+.\"
+.\"   \buf-load [-a] filename [dst-buffer]
+.\"
+.TP
+\fB\ebuf\-load [-a] \fIfilename\fP [\fIdst\-buffer\fP]
+Copies the contents of \fIfilename\fP in \fIdst\-buffer\fP (defaults to !.).
+If the \fB-a\fP flag is supplied, the contents of \fIfilename\fP
+are appended to \fIdst-buffer\fP.  Note that it is illegal to attempt 
+to write to the contents of the history buffer.
+.\"
+.\"   \buf-show [buffer]
+.\"
+.TP
+\fB\ebuf\-show\fP [\fIbuffer\fP]
+Displays the contents of the named \fIbuffer\fP.  If \fIbuffer\fP is
+not supplied, then the contents of all named buffers are displayed.  This
+command is slightly different from the commands above in that it is
+only legal to supply a \fBNamed Buffer\fP \fIbuffer\fP, \fBHistory Buffers\fP,
+and the \fBWork Buffer\fP will have no results.
+.\"
+.\"   \buf-edit [-r read-buf] [-w write-buf]
+.\"
+.TP
+\fB\ebuf\-edit\fP [-r \fIread\-buf\fP] [-w \fIwrite\-buf\fP]\fP
+The
+.Cm buf\-edit
+command is used to edit the contents of a buffer and place the changes
+into another buffer.  This command may only be run while in interactive
+mode. If \fIread\-buf\fP is not supplied then the buffer to be edited
+defaults to !., if it is not empty, otherwise it defaults to !!.  If
+\fIwrite\-buf\fP is not supplied then the edited buffer is written back
+to !..
+.sp
+By default,
+.Cm buf\-edit
+uses the environment variable
+.Va EDITOR
+first, followed by
+.Va VISUAL
+to determine which editor to use, defaulting to `vi' if the variable
+is not set.  
+.sp
+It is important to note that as of release 1.2, 
+.Cm buf\-edit
+is no longer able to use the name of an alias to it as the name of
+the editor to launch. This is primarily due to the change in the
+behavior of alias' (see section \fBAliasing\fP, below, for details).
+.sp
+The commands
+.Ca edit\
+\,
+.Ca vi\
+\,
+and
+.Ca emacs
+are automatically established upon startup of \fIsqsh\fP for backward
+compatibility with \fIisql\fP.
+.\"
+.\" ------------------------------------------------------------
+.SS Variables
+.\" ------------------------------------------------------------
+.\"
+The following command(s) are used to manipulate the contents of internal
+variables and environment variables.  There aren't many of them right
+now, but there may be more in the future.
+.\"
+.\"   \set [-x] [name=value ...] 
+.\"
+.TP 5
+\fB\eset [-x] [\fIname\fP=\fIvalue\fP ...]\fP
+If no arguments are supplied to
+.Cm set
+then the current values of all variables are displayed.  Otherwise
+the variable \fIname\fP is set to \fIvalue\fP.  Note that some
+internal variables (see \fBSPECIAL VARIABLES\fP) may only be set
+with certain \fIvalue\fPs, so this action may fail, leaving the
+previous contents on \fIname\fP in tact.  The \fB-x\fP flag causes
+the variable to be exported to the environment of any programs
+launched from \fIsqsh\fP.
+.\"
+.\" ------------------------------------------------------------
+.SS Job Control
+.\" ------------------------------------------------------------
+.\"
+The following commands are used to view the status of, or manipulate
+background jobs that are currently running, these correspond roughly
+to the commands supplied by such shells as \fBcsh(1)\fP.
+.\"
+.\"   \jobs
+.\"
+.TP 5
+.Cm jobs
+Displays the status of any currently running jobs, including whether
+or not these jobs have pending output, how long they have been running,
+and when they were started.
+.\"
+.\"   \wait [job_id]
+.\"
+.TP
+\fB\ewait [\fIjob_id\fP]\fP
+Will pause until job designated by \fIjob_id\fP completes.  If \fIjob_id\fP
+is a negative number then
+.Cm wait
+will pause until \fIany\fP pending jobs completes.  If there are no jobs
+pending, or \fIjob_id\fP does not belong to a running job, then an
+error message is displayed.
+.\"
+.\"   \kill job_id
+.\"
+.TP
+\fB\ekill \fIjob_id\fP\fP
+Terminates the job specified by \fIjob_id\fP, throwing away any output
+that may be deferred for the job. If \fIjob_id\fP is not
+a running job then an error message is displayed.
+.\"
+.\"   \show job_id
+.\"
+.TP
+\fB\eshow \fIjob_id\fP\fP
+Displays the deferred output of completed background job \fIjob_id\fP
+and removes the job from the list of pending jobs (removing the
+defer file in the process).  If \fIjob_id\fP is still running,
+or is not a valid complete job, then an error message is displayed.
+.\"
+.\" ------------------------------------------------------------
+.SS Aliasing
+.\" ------------------------------------------------------------
+.\"
+As of release 1.2, \fIsqsh\fP supports full \fIcsh\fP-style command
+aliasing.  With this feature, \fIsqsh\fP checks the first word of
+each line, \fIprior to any form of expansion\fP, to see if it matches
+the name of an existing alias.  If it does, the command is reprocessed
+with the alias definition replacing its name.  Unlike \fIcsh\fP, however,
+only one form of history substitution is available within an alias:
+the `\fB!*\fP' entry, indicating the current line being expanded. If
+no history expansion is called for, the arguments on the command line
+remain unchanged.
+.PP
+Like \fIcsh\fP, aliases are not recursively expanded, so it is perfectly
+legal to create an alias that expands to a command by the same name.
+.PP
+The following command is used to create an alias:
+.\"
+.\"   \alias [alias_name=[alias_body]]
+.\"
+.TP 5
+\fB\ealias [\fIalias_name\fP=\fIalias_body\fP]\fP
+If no arguments are supplied to the
+.Cm alias
+command, then the list of aliases currently in effect is displayed.
+Otherwise, it creates a new alias with a name of \fIalias_name\fP
+and a body of \fIalias_body\fP; if \fIalias_name\fP already exists
+the body of the existing \fIalias_name\fP is replaced with the
+new definition.  
+.sp
+After defining the new alias, whenever \fIsqsh\fP encounters
+a line beginning with \fIalias_name\fP, the remainder of the line
+is replaced with \fIalias_body\fP before any further processing is
+performed.
+.sp
+If the string `\fB!*\fP' exists anywhere within \fIalias_body\fP,
+the arguments supplied to the alias are inserted at that point,
+otherwise the argument are appended to the end of the alias
+definition.  For example:
+.sp
+.RS
+.RS
+.ft 5
+.nf
+1> \\alias hi='\\echo !* said hello'
+.br
+1> hi Scott
+.br
+Scott said hello
+.fi
+.ft 1
+.RE
+.sp
+where as if the alias does not include the \fB!*\fP keyword, then
+it behaves like so:
+.sp
+.RS
+.ft 5
+.nf
+1> \\alias hi='\\echo said hello'
+.br
+1> hi Scott
+.br
+said hello Scott
+.fi
+.ft 1
+.RE
+.sp
+It is perfectly legal to include a \fB!*\fP more than once within
+a given \fIalias_body\fP.  Currently there is no way to escape
+the string \fB!*\fP, if you really need this feature send me mail.
+.RE
+.\"
+.\"   \unalias alias_name
+.\"
+.TP
+\fB\eunalias \fIalias_name\fP
+Removes \fIalias_name\fP.
+.\"
+.\" ------------------------------------------------------------
+.SS Miscellaneous
+.\" ------------------------------------------------------------
+.\"
+The left over commands.
+.\"
+.\"   \exit
+.\"
+.TP
+.Cm exit
+The
+.Cm exit
+command requests that current read-eval-print loop cease processing.  When
+the last loop returns, \fIsqsh\fP \fBexit(1)\fPs.
+.\"
+.\"   \abort
+.\"
+.TP
+.Cm abort
+Causes all nested read-eval-print loops to abort processing, causing
+\fIsqsh\fP to exit with an exit value of 254 (see section \fBEXIT STATUS\fP).
+.\"
+.\"   \read [-a] [-n] [-h] var_name
+.\"
+.TP
+\fB\eread [-a] [-n] [-h] \fIvar_name\fP\fP
+Reads a line of input from the user, placing the text of the line
+in the variable \fIvar_name\fP.  If the \fB-n\fP is used, then the
+trailing new-line is left on the line of text, and if \fB-a\fP is
+supplied, then the text of the line is appended to the existing
+value of \fIvar_name\fP.  The \fB-h\fP flag turns off echoing of
+typed characters back to the user.
+.\"
+.\"   \sleep seconds
+.\"
+.TP
+\fB\esleep \fIseconds\fP\fP
+Causes \fIsqsh\fP too pause for \fIseconds\fP.  This is useful within
+scripts of batches need to need to pause briefly between batches (it
+was primarily useful to me for testing background jobs).
+.\"
+.\"   \echo [-n] [args]
+.\"
+.TP
+\fB\eecho [-n] [\fIargs\fP ...]\fP
+Just like the UNIX \fBecho(1)\fP, this prints its arguments to stdout,
+followed by a new-line.  If the \fB-n\fP flag is supplied, the new-line
+is omitted.
+.\"
+.\"   \warranty
+.\"
+.TP
+.Cm warranty
+Displays the standard GNU warranty.
+.\"
+.\"   \help [command]
+.\"
+.TP
+\fB\ehelp [\fIcommand\fP]\fP
+Without any arguments
+.Cm command
+displays a brief list of all available commands, otherwise, it provides
+specific help for \fIcommand\fP, if available. When help is requested on
+a specific \fIcommand\fP,
+.Cm help
+looks for the file
+.Va help_dir\
+/\fIcommand\fP.hlp
+and displays it to stdout.
+.\"
+.\"   \shell [shell_command]
+.\"
+.TP
+\fB\eshell [\fIshell command\fP]\fP
+If \fIshell command\fP is not supplied then \fIsqsh\fP executes
+.Va SHELL.
+If the
+.Va SHELL
+variable has not been set, then, by default, /bin/sh is executed. 
+Otherwise, if \fIshell command\fP is supplied then it is executed.
+The exit status of the command executed is stored in the special
+.Va ?
+read-only environment variable.
+.\"
+.\"   \lock
+.\"
+.TP
+\fB\elock\fP
+Locks the current session until the correct password is typed.  By
+default
+.Cm lock
+attempts to use the UNIX password (from /etc/passwd) associated with
+the user running \fIsqsh\fP, however if the 
+.Va lock
+variable is set
+then the contents of that is used for validation instead.
+.sp
+Note, on systems using Shadow Passwords (in which even the encypted
+password is unavailable), 
+.Cm lock
+will only work using the
+.Va lock
+variable.
+.\"
+.\" ------------------------------------------------------------
+.SS Aliases
+.\" ------------------------------------------------------------
+.\"
+The following aliases are established upon startup of \fIsqsh\fP, and
+are provided primarily for backward compatibility with \fBisql\fP.  These
+may be removed at any time using the
+.Cm unalias
+command (either at the prompt, or within your .sqshrc file).
+.\"
+.\"   !
+.\"
+.TP 5
+.Ca !
+The
+.Ca !
+alias is provided as a \fBcsh(1)\fP-like history mechanism, and is an
+alias of
+.Cm buf\-append\
+\.
+With release 0.7, this alias is provided only for backwards compatibility
+with previous releases of \fIsqsh\fP.  See \fBSPECIAL VARIABLES\fP,
+.Va history_shorthand\
+\)
+for details on the new shorthand mechanism (the new shorthand more
+closely resembles that of \fBcsh\fP).
+.\"
+.\"   reset
+.\"
+.TP
+.Ca reset
+An alias for the
+.Cm reset
+command, which causes the contents of the current work buffer to be
+cleared and copied to history (if in interactive mode).
+.\"
+.\"   exit and quit
+.\"
+.TP
+\fBexit\fP and \fBquit\fP
+An alias for the
+.Cm exit
+command, causes the current read-eval-print loop to complete.
+.\"
+.\"   edit, vi, and emacs
+.\"
+.TP
+\fBedit\fP, \fBvi\fP, and \fBemacs\fP
+These are provided as aliases for the
+.Cm buf\-edit
+command.  See \fBCOMMANDS-Buffers\fP for information on the interactions
+between
+.Cm buf\-edit
+and aliases.
+.\"
+.\"   go
+.\"
+.TP
+.Ca go
+Provided as an alias for the
+.Cm go
+command (for obvious reasons).
+.\"
+.\"   help
+.\"
+.TP
+.Ca help
+An alias for the
+.Cm help
+command.
+.\"
+.\" ------------------------------------------------------------
+.SS In\-Line \ego
+.\" ------------------------------------------------------------
+.\"
+If the variable
+.Va semicolon_hack
+is set to 1 (on), then sqsh supports what is called an in\-line
+.Cm go
+feature.  This allows the current command batch to be terminated
+and sent to the database in a single step by appending a `;' onto
+the end of the current work buffer. This allows
+.sp
+.RS
+.ft 5
+.nf
+1> sp_who;
+.fi
+.ft 1
+.RE
+.sp
+To behave in the same manner as if you had typed:
+.sp
+.RS
+.ft 5
+.nf
+1> sp_who
+2> \\go
+.fi
+.ft 1
+.RE
+.sp
+Likewise, anything following the semicolon is passed to the 
+.Cm go
+command just as if it was run as a normal command:
+.sp
+.RS
+.ft 5
+.nf
+1> sp_who ; 2>/dev/null | more
+.fi
+.ft 1
+.RE
+.sp
+Unlike most other \fBisql\fP replacements, \fIsqsh\fP attempts to
+be smart about the semicolons.  If a semicolon is contained within
+a set of single or double quotes it will not be interpreted.  This
+includes multiple quotes.  For example:
+.sp
+.RS
+.ft 5
+.nf
+1> select "This is a multiple line
+.br
+2> quote; it is smart!" ;
+.fi
+.ft 1
+.RE
+.sp
+In the above example, only the second semicolon (the one at the end
+of the line) will be interpreted.
+.\" 
+.\" ==========================================
+.SH SPECIAL VARIABLES
+.\" ==========================================
+.\" 
+There are several options that are configurable via the command line
+options to \fIsqsh\fP, however these are by no means complete.  There
+are many aspects of \fIsqsh\fP's behavior that may only be modified
+by setting special variables (in fact, the command line options really
+only set these variables for you).
+.\"
+.\" ------------------------------------------------------------
+.SS Variable Datatypes
+.\" ------------------------------------------------------------
+.\"
+Next to all of the variables that follow is the type of
+data with which they may be set.  Any attempts to set the variable with
+a type of data that it does not accept will fail.
+.TP 15
+.B \fIstring\fP
+Any sequence characters.
+.TP
+.B \fIboolean\fP
+A positive \fIboolean\fP value may be represented as either "True", "Yes", "1",
+or "On" (case insensitive) and a negative boolean value may be represented
+as "False", "No", "0", or "Off" (case insensitive).  However, internally
+the value of the variable will always be represented as either a "1" or "0".
+.TP
+.B \fIpath\fP
+Must be the \fIpath\fP name that is readable by the \fIsqsh\fP program.
+.TP
+.B \fIint\fP
+Must be one or more digits.  Note that some variables also restrict
+the range of the integer.
+.TP
+.B \fIdate-spec\fP
+This is a string of the format used to specify dates and times for
+the \fBdate(1)\fP command, or the \fBstrftime(3C)\fP and \fBcftime(3C)\fP
+standard C library functions.  For example `%H:%M:%S' specifies a time
+of hours in 24 hour format, followed by a colon, followed by minutes,
+followed by a colon, followed by seconds.
+.TP
+.B \fIfloat-format\fP
+A string of the format \fIpp\fP.\fIss\fP, where \fIpp\fP is the
+total precision of a floating point value (the total number of
+digits to be displayed, including those following the decimal) 
+and \fIss\fP is the scale of the value (the total number of 
+digits following the decimal to be displayed).
+.RE
+.\"
+.\" ------------------------------------------------------------
+.SS Variables
+.\" ------------------------------------------------------------
+.\"
+The following variables have special meanings within \fIsqsh\fP and
+the setting of these variables alter the behavior of the shell.
+.\"
+.\"  $?
+.\"
+.TP 15
+.B \fI$?\fP (int)
+This variable may contain the following return value:
+.RS
+.TP 3
+.B o
+The most recent error number return from the SQL Server (@@errno)
+of severity > 10 (above informational messages).
+.TP
+.B o
+The exit value of a previously executed pipe command.
+.TP
+.B o
+The return value of the most recently executed sqsh function.
+.RE
+.\"
+.\"  $#
+.\"
+.TP 15
+.B \fI$#\fP (int)
+Contains the number of arguments passed into the sqsh
+function or script.
+.\"
+.\"  ${0}..${N}
+.\"
+.TP 15
+.B \fI${0}\fP..\fI${NN}\fP (int)
+Used to reference positional function arguments. Argument ${0} is the
+number of the function being called, ${1} is the first argument, etc.
+.\"
+.\"  autouse
+.\"
+.TP
+.B \fIautouse\fP (string)
+Note: the meaning of this variable has been deprecated.  If
+.Va autouse
+is set, and the
+.Va database
+variable has not been set, then this variable causes
+.Cm connect
+to perform a "use \fB$autouse\fP"
+once a connection has been established.  This variable may also be set
+using the \fB-D\fP command line option.
+.\"
+.\"  banner
+.\"
+.TP
+.B \fIbanner\fP (boolean)
+Turns off the banner message displayed on startup, this variable
+defaults to 1 and may also be turned off using the \fB-b\fP command
+line argument.
+.\"
+.\"  batch_failcount
+.\"
+.TP
+.B \fIbatch_failcount\fP (int)
+This internal variable is used to keep track of the number of batches
+that have failed to execute (essentially, the number of times that
+the error handler was called).  A batch is considered failed whenever
+an error of severity
+.Va thresh_fail
+is encountered.  When
+.Va batch_failcount
+reaches
+.Va thresh_exit
+\fIsqsh\fP exits with an exit value of the total number of batches
+that have failed.  Setting
+.Va batch_failcount
+to the string "" will cause it to reset to zero, any other value
+may have unpredictable results. See \fBEXIT STATUS\fP for details.
+.\"
+.\"  batch_pause
+.\"
+.TP
+.B \fIbatch_pause\fP (boolean)
+Causes a "Paused. Hit enter to continue..." message to be displayed
+after each batch is executed.  This variable, in conjunction with
+.Va echo
+is good for debugging SQL scripts.
+.\"
+.\"  bcp_colsep
+.\"
+.TP
+.B \fIbcp_colsep\fP (string)
+Used as a separator between columns during BCP style output (see the
+.Va style
+configuration variable and the \fB-m\fP option to the
+.Cm go
+command).  The default setting is "|".
+.\"
+.\"  bcp_rowsep
+.\"
+.TP
+.B \fIbcp_rowsep\fP (string)
+Used as a separator between rows during BCP style output (see the
+.Va style
+configuration variable and the \fB-m\fP option to the
+.Cm go
+command).  Note that, a newline ("\\n") is automatically appended
+this this value and should not be supplied.. The default setting 
+is "|".
+.\"
+.\"  bcp_trim
+.\"
+.TP
+.B \fIbcp_trim\fP (boolean)
+Controls whether or not BCP style output trims trailing spaces
+from fixed length columns.  The default is "True".
+.\"
+.\"  charset
+.\"
+.TP
+.B \fIcharset\fP (string)
+If this variable is set prior to establishing a connection with SQL
+Server, then during the connection \fIsqsh\fP will request that
+the server transform to and from the requested \fIcharset\fP.  After
+establishing a connection, this variable is automatically set to
+the current character set in use.
+.\"
+.\"  clear_on_fail
+.\"
+.TP
+.B \fIclear_on_fail\fP (boolean)
+Normally, whenever the
+.Cm go
+command is run, \fIsqsh\fP clears the current work buffer of its
+contents, moving them to history.  Setting
+.Va clear_on_fail
+to 0, leaves the current work buffer in-tact if a failure is
+encountered while sending the contents to the database.  The default
+value is 1, or on.
+.\"
+.\"  colsep
+.\"
+.TP
+.B \fIcolsep\fP (string)
+Causes the string \fIcolsep\fP to be used to delimit SQL column output
+columns, this defaults to " ", it may also be set via the command line
+argument \fB-s\fP.
+.\"
+.\"  colwidth
+.\"
+.TP
+.B \fIcolwidth\fP (int)
+Used to control the maximum column width displayed by the \fBpretty\fP
+display style (see
+.Va style
+below).  If a row of a column exceeds this width, it will be wrapped
+in a relatively visually appealing manner at
+.Va colwidth
+characters.  Note, however, that if there is enough screen width to
+hold all columns
+.Va colwidth
+may be exceeded until the width of the screen is reached.
+.\"
+.\"  date
+.\"
+.TP
+.B \fIdate\fP (date-spec)
+This variable may be set with a date format (see the man page
+for \fBdate(1)\fP), and the variable expands to the current date
+in the supplied format.  The default format for this variable
+is %d-%b-%y (e.g. 02-Feb-1996).
+.\"
+.\"  datetime
+.\"
+.TP
+.B \fIdatetime\fP (date-spec)
+This variable may be set with a date format similar to 
+.Va date
+and 
+.Va time
+and is used to control the display format of all SQL Server 
+DATETIME and SMALLDATETIME columns.  
+.sp
+Note that this features relies upon the operating system specific
+locale information for determining such things as the name of
+the month and day, rather than going through the CT-Lib locale
+information.  This means that the date format could potentially
+miss-match the locale as requested using the \fB-z\fP flag. For
+example, if \fIsqsh\fP is run on an operating system configure
+for US English, but requests French as the language of choice
+using \fB-z\fP, the use of
+.Va datetime
+will cause all date information to be displayed in US English
+rather than French.
+.sp
+Ordinary characters
+defined in the variable are left in place without any
+conversion. Characters introducted by a `%' character are
+replaced during display of a column value as follows:
+.sp
+.RS
+.TP 5
+.B []
+Any contained between a pair of braces (`[' and `]') will be removed
+when displaying SMALLDATETIME columns.  This feature is particularly
+useful for removing the seconds and milliseconds values which are
+not applicable to SMALLDATETIME anyway.  For DATETIME columns, only
+the actual braces will be removed.
+.TP
+.B %a
+The abbreviated weekday name according to the current operating
+system locale.
+.TP
+.B %A
+The full weekday name according to the current operating system
+locale.
+.TP
+.B %b
+The abbreviated month name according to the current operating 
+system locale.
+.TP
+.B %B
+The full month name according to the current operating 
+system locale.
+.TP
+.B %c
+The preferred date and time representation for  the current
+operating system's locale.
+.TP
+.B %d
+The  day  of the month as a decimal number (range 0 to 31).
+.TP
+.B %D
+The date in US format (mm/dd/yy).
+.TP
+.B %H
+The hour as a decimal number using a 24-hour  clock (range 00 to 23)
+.TP
+.B %I
+The  hour as a decimal number using a 12-hour clock (range 01 to 21)
+.TP
+.B %j
+The day of the year as a decimal number (range  001 to 366).
+.TP
+.B %m
+The month as a decimal number (range 10 to 12).
+.TP
+.B %M
+The minute as a decimal number.
+.TP
+.B %p
+Either  `am'  or  `pm'  according to the given time value, or 
+the corresponding strings for the current operating system locale.
+.TP
+.B %r
+The time in 12-hour format (hh:mm:ss [AM|PM]).
+.TP
+.B %s
+Seconds since the epoc (1970-01-01 00:00:00 UTC) (this is not supported
+on all systems).
+.TP
+.B %S
+The second as a decimal number.
+.TP
+.B %T
+The current time in 24-hour format (hh:mm:ss).
+.TP
+.B %u
+The millisecond as a decimal number.
+.TP
+.B %U
+The  week  number  of the current year as a decimal number, 
+starting with the first Sunday as the first day of the first week.
+.TP
+.B %W
+The  week  number  of the current year as a decimal number, starting 
+with the first Monday as the first day of the first week.
+.TP
+.B %w
+The day of the week as a decimal, Sunday being 0.
+.TP
+.B %x
+The  preferred  date representation for the current locale without the time.
+.TP
+.B %X
+The preferred time representation for  the  current locale without the date.
+.TP
+.B %y
+The  year  as  a  decimal  number without a century (range 00 to 99).
+.TP
+.B %Y
+The year as a decimal number including the century.
+.TP
+.B %Z
+The time zone (e.g., EDT), or nothing if not time zone is determinable.
+.TP
+.B %%
+A literal `%' character.
+.RE
+.\"
+.\"  database
+.\"
+.TP
+.B \fIdatabase\fP (string)
+If this variable is set prior to establishing a connection to the
+SQL Server, the a "use \fB$database\fP" is performed immediately
+after the connection is established.  Once a connection has been
+established this variable will automatically be set to the current
+database context.
+.\"
+.\"  debug
+.\"
+.TP
+.B \fIdebug\fP (string)
+If \fIsqsh\fP has been compiled with debugging enabled (-DDEBUG),
+this variable may be used to control the amount of debugging output
+displayed. 
+.Va debug
+may be set to a pipe (|) delimited (logical OR) set of the following
+words to turn on various pieces of debugging: 
+\fBFD\fP,
+\fBSIGCHLD\fP,
+\fBENV\fP,
+\fBJOB\fP,
+\fBAVL\fP, or
+\fBALL\fP.
+.\"
+.\"  defer_bg
+.\"
+.TP
+.B \fIdefer_bg\fP (boolean)
+Normally, when a job is run the in the background (via a `&' on the command
+line), the output of the job is deferred to a temporary file (located in
+$\fItmp_dir\fP) until the user requests the output to be displayed.  This
+way the results of the job will not interfere with what the user is going.
+Setting this variable
+.\"
+.\"  echo
+.\"
+.TP
+.B \fIecho\fP (boolean)
+Setting
+.Va echo
+to on (1) causes each command submitted to the database via the
+.Cm go
+command to be displayed prior to the output.  This variable defaults
+to 0 (or off), and may also be set using the \fB-e\fP command line option.
+.\"
+.\"  encryption
+.\"
+.TP
+.B \fIencryption\fP (boolean)
+Setting the
+.Va encryption
+variable prior to establishing a connection to the server will
+cause the login connection to be initiated using client-side password
+encryption.  This variable may also be set using the \fB-X\fP
+command line option.
+.\"
+.\"  exit_failcount
+.\"
+.TP
+.B \fIexit_failcount\fP (boolean)
+Settings this value to 1 causes \fIsqsh\fP to return an exit status
+of
+.Va batch_failcount
+rather than 0, upon a non-error termination.  See \fBEXIT STATUS\fP
+for details.  The default value is 0.
+.\"
+.\"  expand
+.\"
+.TP
+.B \fIexpand\fP (boolean)
+Be default when the \fB\\go\fP command is executed the contents of the
+current work buffer is expanded of all environment variables prior to
+being sent to the database for execution. By setting this variable to
+"0", the buffer will no longer be expanded before being sent to the
+database.  This is useful when you either (1) have strings in the
+buffer that contain a `$' and you don't want them to be expanded, or
+(2) for performance reasons; it takes time (and an extra copy of the
+buffer) to perform the variable expansion.
+.\"
+.\"  filter
+.\"
+.TP
+.B \fIfilter\fP (boolean)
+Toggles the filtering the SQL batch through an external
+program (defined by the
+.Va filter_prog
+variable, below) prior to being sent to the SQL Server. Default
+is `0', or `off'.
+.\"
+.\"  filter_prog
+.\"
+.TP
+.B \fIfilter_prog\fP (string)
+Defines the external program through which the SQL batch will be filtered
+prior to being sent to the SQL Server.  This variable is ignored
+if
+.Va filter
+is set to `0' or `off'.  The default is `m4 -'.
+.\"
+.\"  float
+.\"
+.TP
+.B \fIfloat\fP (float-format)
+Defines the display format (the precision and scale) for all 
+floating point values displayed by sqsh.  The default is 
+`18.6'.  Note that values exceeding the defined precision 
+are not truncated, so setting this value too low may cause
+columns in a result set to be miss-aligned.
+.\"
+.\"  footers
+.\"
+.TP
+.B \fIfooters\fP (boolean)
+Toggles the "(%d rows affected)" following a result set.  The default
+for this variable is `1'.
+.\"
+.\"  headers
+.\"
+.TP
+.B \fIheaders\fP (boolean)
+Toggles the column headers preceding a result set. The default for this
+variable is `1'.
+.\"
+.\"  help_dir
+.\"
+.TP
+.B \fIhelp_dir\fP (path)
+This is the location of the help files used by the \fB\\help\fP command,
+typically it defaults to something like /usr/local/lib/sqsh/help.
+.\"
+.\"  histnum
+.\"
+.TP
+.B \fIhistnum\fP (int)
+Contains the history number that will be assigned to the current command
+batch as soon as the 
+.Cm go
+command is executed.  This variable should be considered read-only.
+.\"
+.\"  history
+.\"
+.TP
+.B \fIhistory\fP (path)
+This is the location of the history file used to store and retrieve a
+users history during start-up and shut-down.  This defaults to
+\fB$HOME\fP/.sqsh_history.  This variable is expanded each time it
+is referenced by sqsh, much in the same way that
+.Va prompt
+is each time the prompt is displayed.
+.\"
+.\"  history_shorthand
+.\"
+.TP
+.B \fIhistory_shorthand\fP (boolean)
+This variable is only meaningful within an interactive session.  If set,
+it turns on the ability to append any named buffer or history buffer
+onto the current work buffer in a `sh' history style, such as `!40'.
+Be careful with this feature, \fIsqsh\fP is not terribly intelligent
+with looking for history shorthand, so it is possible that it may
+get confused (although, it is smart enough to ignore !'s in quoted
+strings).
+.\"
+.\"  histsave
+.\"
+.TP
+.B \fIhistsave\fP (boolean)
+The value of this variable is used by \fIsqsh\fP to indicate whether
+the history should be save to \fB$history\fP prior to shutdown.
+.\"
+.\"  histsize
+.\"
+.TP
+.B \fIhistsize\fP (int)
+The value of this variable is used to alter the maximum number of
+history entries are are maintained by \fIsqsh\fP (the default is 10).
+Note that decreasing the value of this variable causes some history
+entries to be lost.
+.\"
+.\"  hostname
+.\"
+.TP
+.B \fIhostname\fP (string)
+Used during the connection process to indicate to SQL Server the
+name of the host from which \fIsqsh\fP is connecting.  This
+variable may also be set using the \fB-H\fP flag.
+.\"
+.\"  interactive
+.\"
+.TP
+.B \fIinteractive\fP (boolean)
+This is a variable used internally and should probably not be altered
+by the user.  If \fB$interactive\fP is `0', then the prompt is not
+displayed, the history is neither read nor written and some user messages
+are suppressed.
+.\"
+.\"  interfaces
+.\"
+.TP
+.B \fIinterfaces\fP (path)
+This is the full path name of the interfaces file, it defaults to
+\fB$SYBASE\fP/interfaces.
+.\"
+.\"  keyword_completion
+.\"
+.TP
+.B \fIkeyword_completion\fP (int/string)
+This variable only applies if GNU Readline support has been compiled
+into \fIsqsh\fP.
+.Va keyword_completion
+is used to control the TSQL keyword completion feature in readline,
+and may be set using either an integer between 0 and 4, or one of the
+strings \fInone\fP, \fIlower\fP, \fIupper\fP, \fIsmart\fP, or \fIexact\fP.  If
+it is set to either 0 or \fInone\fP, then no keyword completion is
+performed (this is the default). \fIlower\fP or 1, causes \fIsqsh\fP
+to complete the keyword in lowercase, regardless of the case that the
+partially completed keyword was typed. \fIupper\fP or 2 forces completion
+to be performed in upper case, \fIsmart\fP, or 3, basis the decision
+on case upon the first character of the partial keyword, and \fIexact\fP
+completes the keyword in exactly the same case as defined in the
+\fB.sqsh_words\fP (for the built-in TSQL keywords, this will be lower
+case).
+.\"
+.\"  keyword_file
+.TP
+.B \fIkeyword_file\fP (string)
+If readline support has been compiled into \fIsqsh\fP, and \fIsqsh\fP
+is being run in interactive mode, the contents of this file are used
+for keyword tab completion by readline rather than the default set
+of TSQL syntactical keywords.  The default is \fB$HOME/.sqsh_words\fP.
+.\"
+.\"
+.\"  language
+.\"
+.TP
+.B \fIlanguage\fP (string)
+The
+.Va language
+variable is used while establishing a connection to the server to 
+specify the national language used to display system prompts and
+messages.  The variable will automatically track the current language
+setting of the server. This may also be set via the \fB-z\fP flag.
+.\"
+.\"
+.\"  lineno
+.\"
+.TP
+.B \fIlineno\fP (int)
+This is an internal variable and should not be altered by the user. It
+is used to maintain the line number that is being typed into within the 
+current work buffer.
+.\"
+.\"
+.\"  linesep
+.\"
+.TP
+.B \fIlinesep\fP (string)
+Used to configure the line separator for the horizontal display style,
+this defaults to "\\n\\t".
+.\"
+.\"
+.\"  lock
+.\"
+.TP
+.B \fIlock\fP (string/write-only)
+Defines the password to be used by the
+.Cm lock
+command. If unset or set to the string "NULL", then the UNIX password
+of the user running \fIsqsh\fP is used instead.  Note that
+.Va lock
+will always expand to the string "*lock*" if referenced.
+.\"
+.\"  newline_go
+.\"
+.TP
+.B \fInewline_go\fP (boolean)
+This flag is used as a horrible kludge to support an "empty" alias
+for the 
+.Cm go
+command, that is, the equivalent of supplying "-c ''" on the command line.
+When on, an empty line is interpreted as a call to the
+.Cm go
+command.  This feature is not recommended but is supplied for completeness.
+.\"
+.\"  maxlen
+.\"
+.TP
+.B \fImaxlen\fP (int)
+Controls the maximum amount of data that will be displayed (in any
+display mode) in a single column.  This setting will automatically
+truncate the output of particularly large datatypes (such as TEXT)
+to the value supplied. The default setting is 8192 bytes (8KB).
+.\"
+.\"  output_parms
+.\"
+.TP
+.B \fIoutput_parms\fP (boolean)
+Flag used to enable to disable the display of output parameter
+result sets from stored procedures.  The default is to enable
+the display.
+.\"
+.\"  packet_size
+.\"
+.TP
+.B \fIpacket_size\fP (int)
+Defines the size of the TDS packets used to communicate with SQL.  Changing
+the value of the variable will not affect the current connection but
+will take effect upon the next
+.Cm reconnect
+command.  Specifying a value of NULL indicates that the default packet
+size is desired.
+.\"
+.\"  password
+.\"
+.TP
+.B \fIpassword\fP (string/write-only)
+This is the users current password. A NULL password may be assigned
+using an explicit "NULL" string.  For security reasons, when referenced
+the
+.Va password
+variable will always expand to the string "*password*".
+.\"
+.\"  prompt
+.\"
+.TP
+.B \fIprompt\fP (string)
+This variable is used by \fIsqsh\fP to build your current prompt.  Any
+variables contain within \fB$prompt\fP are expanded each time the prompt
+is displayed.  The default value for this is `${lineno}> '.
+.\"
+.\"  prompt2
+.\"
+.TP
+.B \fIprompt2\fP (string)
+This contents of this prompt are expanded and displayed during interactive
+use when \fIsqsh\fP requires additional input, such as during a line
+continuation.  The default value is `--> '.
+.\"
+.\"  rcfile
+.\"
+.TP
+.B \fIrcfile\fP (path)
+Contains a colon (:) delimited list of sqsh resource (sqshrc) files. The
+default setting is /usr/local/etc/sqshrc (unless overridden by the
+--prefix option when sqsh was compiled) followed by \fB$HOME\fP/.sqshrc).
+.\"
+.\"  readline_history
+.\"
+.TP
+.B \fIreadline_history\fP (string)
+If readline support has been compiled into \fIsqsh\fP, the
+contents of the readline line-by-line history will be written
+to the file specified by the
+.Va readline_history
+variable.  The default is \fB$HOME/.sqsh_readline\fP.
+.\"
+.\"  readline_histsize
+.\"
+.TP
+.B \fIreadline_histsize\fP (int)
+If readline support has been compiled into \fIsqsh\fP, the
+value of
+.Va readline_histsize
+specifies the number of lines that are saved in the readline
+line-by-line history.  Setting this to a value of 0 causes
+every line to be saved.  The default value is 100.
+.\"
+.\"  real
+.\"
+.TP
+.B \fIreal\fP (float-format)
+Defines the display format (the precision and scale) for all 
+real values displayed by sqsh.  The default is 
+`18.6'.  Note that values exceeding the defined precision 
+are not truncated, so setting this value too low may cause
+columns in a result set to be miss-aligned.
+.\"
+.\"  repeat_batch
+.\"
+.TP
+.B \fIrepeat_batch\fP (boolean)
+When set to \fBOn\fP or \fBTrue\fP, a 
+.Cm go
+executed with an empty \fBSQL Buffer\fP will cause the previous
+batch to be re-executed.
+.\"
+.\"  script
+.\"
+.TP
+.B \fIscript\fP (string)
+If \fIsqsh\fP is run using the \fB-i\fP flag, then this variable contains
+the name of the script being executed.
+.\"
+.\"  statistics
+.\"
+.TP
+.B \fIstatistics\fP (boolean)
+Setting
+.Va statistics
+to 1 causes timing statistics to be displayed upon the successful
+execution of every batch of SQL.  This variable may also be set via
+the \fB-t\fP command line flag, or by supplying \fB-t\fP to the
+.Cm go
+command.
+.Va statistics
+defaults to 0.
+.\"
+.\"  semicolon_cmd
+.\"
+.TP
+.B \fIsemicolon_cmd\fP (string)
+When
+.Va semicolon_hack
+(see below) is enabled, this contents of this variable is executed
+when a semicolon is encountered in the \fBSQL Buffer\fP.  This
+variable defaults to the string `\fB\ego\fP'.
+.\"
+.\"  semicolon_hack
+.\"
+.TP
+.B \fIsemicolon_hack\fP (boolean)
+Toggles on the ability to use a `;' as an in\-line command terminator. This
+feature is not recommended and is only in here because enough users
+complained.  See section \fBCOMMANDS, In-Line Go\fP.
+.\"
+.\"  SHELL
+.\"
+.TP
+.B \fISHELL\fP (string)
+The name of the shell to be used to execute pipes and to be used
+by the
+.Cm shell
+command (default `/bin/sh').
+.\"
+.\"  style
+.\"
+.TP
+.B \fIstyle\fP (string)
+Selects result set display style. Currently six styles are supported.
+The \fBhoriz\fP (which may also be defined as \fBhor\fP or \fBhorizontal\fP),
+closely resembles the output of isql, with the traditional columnar output.
+.sp
+The \fBvert\fP (or \fBvertical\fP) style rotates the output, so that every
+line is represented by a column name followed by a column value. This is
+nice for looking at particularly wide output.
+.sp
+The \fBbcp\fP style displays results in a format amenable to bcp'ing
+the result set back into another table.  That is, every column value
+is separated by
+.Va bcp_colsep
+with the final column separated by
+.Va bcp_rowsep
+followed by a newline (\en). If
+.Va bcp_colsep
+or
+.Va bcp_rowsep
+are not defined then `|' is used as the default separator. Note that 
+this output does not work well with COMPUTE columns, and uses the 
+default conversion methods for all data types (that is, \fBdatetime\fP
+columns may truncate the millisecond).
+.sp
+The \fBhtml\fP display style outputs all result sets in the form of
+an HTML <TABLE> construct.  This mode is ideal for the use of sqsh
+as a CGI application.
+.sp
+The \fBmeta\fP display style outputs only the meta-data information
+associated with the result and discards the actual row results. This
+mode is useful for debugging the result sets generated from a full
+passthru Open Server gateway, or for those interested in what is
+really coming back from the server.
+.sp
+The \fBpretty\fP display style generates a fluffy table-like output
+using regular ASCII characters for borders.  This mode does not
+perform any explicit column wrapping, like the \fBhoriz\fP display
+mode.  However, the
+.Va colwidth
+variable can be used to control the maximum width of a given column
+on the screen.  If the column exceeds
+.Va colwidth
+characters wide, it is wrapped in a relatively visually appealing
+manner.  Note that
+.Va colwidth
+may be exceeded if there is enough screen width to hold the columns
+without wrapping.
+.sp
+The \fBnone\fP display style suppresses all results from being displayed
+(however it does actually retrieve result information from the SQL Server).
+This is particularly useful when used with the \fB-p\fP flag (or the
+.Va statistics
+variable) for gathering accurate performance statistics.
+.\"
+.\"  thresh_display
+.\"
+.TP
+.B \fIthresh_display\fP (int)
+Sets the minimum SQL Server error severity that will display a message to
+the user, the default is 0 and valid ranges are between 0 and 22, inclusive.
+.\"
+.\"  thresh_exit
+.\"
+.TP
+.B \fIthresh_exit\fP (int)
+Defines the maximum number of errors of severity level
+.Va thresh_fail
+may be encountered before sqsh aborts.  This is useful primarily
+for non-interactive scripts, but is allowed on an interactive session.
+Setting
+.Va thresh_exit
+to a value of 0 disables this feature.  See section \fBEXIT STATUS\fP
+for details.
+.\"
+.\"  thresh_fail
+.\"
+.TP
+.B \fIthresh_fail\fP (int)
+Sets the minimum SQL Server severity level that is to be considered
+a failed batch.  The minimum for this value is 0 (meaning any error
+that is not an information message), and the maximum is 22.  Whenever
+.Va thresh_fail
+is crossed, the variable
+.Va batch_failcount
+is incremented by 1.  See section \fBEXIT STATUS\fP for details.
+.\"
+.\"  time
+.\"
+.TP
+.B \fItime\fP (date-spec)
+This variable may be set with a time format (see the man page
+for \fBdate(1)\fP), and the variable expands to the current time
+in the supplied format.  The default format for this variable
+is %H:%M:%S (e.g. 14:32:58).
+.\"
+.\"  tmp_dir
+.\"
+.TP
+.B \fItmp_dir\fP (path)
+This contains the directory to which temporary files used internally by
+\fIsqsh\fP are to be written.  These files are generated either during
+buffer editing (the \fB\\buf\-edit\fP command), or to maintain output
+defer files for background jobs.  The default value for this variable
+is /tmp.
+.\"
+.\"  username
+.\"
+.TP
+.B \fIusername\fP (string)
+The name of the user currently connected to the database.
+.\"
+.\"  version
+.\"
+.TP
+.B \fIversion\fP (none)
+This read-only variable contains the current version number.
+.\"
+.\"  width
+.\"
+.TP
+.B \fIwidth\fP (int)
+The current width of the SQL output.
+.\"
+.\"  xgeom
+.\"
+.TP
+.B \fIxgeom\fP (string/int)
+If X11 support is compiled into \fBsqsh\fP, this value is used to
+configure the default window size (in characters) of the X
+display.  This variable must be of the format \fIWW\fPx\fIHH\fP
+or just \fIWW\fP, where \fIWW\fP is the width of the window and 
+\fIHH\fP is the height of the window. If the height of the window
+is not supplied, then 25 lines is assumed.  If
+.Va xgeom
+is not set, then
+.Va width
+is used as the default width and the height is assumed to be 25.
+If neither is set, then 80x25 is assumed.
+.\" ============================================================
+.SH SCRIPT EXECUTION
+.\" ============================================================
+As with most shells, \fIsqsh\fP allows a file containing SQL
+and script commands to be executed directly via the magical
+UNIX \fB#!\fP convention.
+.PP
+On most UNIX platforms, when the operating system encounters
+the bytes \fB#!\fP as the first two bytes of an executable
+file it will automatically pipe the file through the interpreter
+specified immediately after the \fB#!\fP.  For example, to create
+an executable \fIsqsh\fP script to run \fBsp_who\fP, you simply
+need to create a file like so:
+.sp
+.RS
+.ft 5
+.nf
+#!/usr/local/bin/sqsh -i
+.br
+sp_who
+.br
+go
+.fi
+.ft 1
+.RE
+.sp
+Thus, if your \fBsp_who\fP script is executed directly, it will
+automatically launch "\fB/usr/local/bin/sqsh -i sp_who\fP" for
+you.
+.PP
+And, to make things even more flexible, \fIsqsh\fP supports
+positional parameters, similar to most shells, of the form
+\fB${n}\fP which will expand to the \fBn\fPth argument to
+your \fIsqsh\fP script.  For example:
+.sp
+.RS
+.ft 5
+.nf
+#!/usr/local/bin/sqsh -i
+.br
+sp_who ${1}
+.br
+go
+.fi
+.ft 1
+.RE
+.sp
+will cause the \fBsp_who\fP stored procedure to be executed
+with an argument of the first command line parameter supplied
+to the \fBsp_who\fP shell script.
+.PP
+Note that positional parameters \fImust\fP be contained between
+braces to avoid conflicts with the TSQL \fBmoney\fP data type
+(without the braces, the variable will not be expanded).
+.\" ============================================================
+.SH EXIT STATUS
+.\" ============================================================
+One of the major complaints of \fIisql\fP is that it provides no
+facility to detect when an error condition occurred while it is 
+performing processing.  \fIsqsh\fP provides a rather complex, but
+flexible mechanism for returning meaningful information concerning
+its reason for exit in the form of an exit status (see \fBexit(3)\fP).
+.\"
+.PP
+When \fIsqsh\fP begins execution two handlers are associated with
+the current connection to the database, one is a message handler
+which is responsible for displaying the text of any SQL Server messages
+or errors, and the other is an error handler, which is responsible
+for determining what to do with an error condition (bear with me,
+these are only loose descriptions). And, associated with each message
+and error condition is a severity level, between 0 and 22 (informational
+message to fatal condition).
+.\"
+.PP
+Associated with these two message handlers are several variables
+that are used to either control their behavior, or are used as
+indicators by the message handler:
+.\"
+.TP 5
+.Va thresh_display
+This variable is used by the message handler to determine the minimum
+error severity which will cause a message to be displayed. By default
+this is 0, which will display all messages (with a couple of exceptions).
+Setting this to 1, for example, would suppress information messages
+such as the output of \fBset showplan\fP.
+.\"
+.TP
+.Va thresh_fail
+This variable is used by the error handler to determine which error
+severity is considered by \fIsqsh\fP to be a failure. Normally, this
+defaults to 11 which indicates that any error, other than informational
+messages, is a failure. The next variable will explain the importance
+of this value.
+.\"
+.TP
+.Va batch_failcount
+This variable should be considered read-only, and contains the total number
+of times that batches have caused an error of severity
+.Va thresh_fail
+or more.  The only value that is valid to explicitly set this to is "" (the
+empty string), which will reset this value to 0, any other value may
+have unpredictable results.
+.\"
+.TP
+.Va thresh_exit
+This variable is used to determine the limit at which
+.Va batch_failcount
+will cause \fIsqsh\fP to exit.  If
+.Va thresh_exit
+is 0, then this feature is disabled.  In other words, if
+.Va batch_failcount
+==
+.Va thresh_exit
+and
+.Va thresh_exit
+is greater than 0, then \fIsqsh\fP will exit, returning
+.Va batch_failcount
+as an exit status.
+.sp
+Note that, unless
+.Va exit_failcount
+is set to 1, \fIsqsh\fP will exit with 0 if the total number of failures
+does not reach
+.Va thresh_exit.
+.\"===========
+.TP
+.Va exit_failcount
+This variable is used only when \fIsqsh\fP would normally exit with
+a success status (0), this causes it to instead exit with a value
+of
+.Va batch_failout
+(which may, itself, be 0).
+.PP
+To recap, here are a list of error codes that may be returned by
+\fIsqsh\fP upon exit, and the reason that they could be returned:
+.\"===========
+.TP 15
+.B 0
+No error has been encountered.
+.TP
+.B 1..253
+Between 1 and 253 batches have failed (if you run more than 253 batches,
+the exit status of sqsh is undetermined...I may fix this in the future).
+.\"===========
+.TP
+.B 254
+An explicit
+.Cm abort
+was called, or a SIGINT (^C) was issued during a non-interactive
+session.
+.\"===========
+.TP
+.B 255
+A general error condition has occurred, such as a bad command line argument
+to sqsh, memory allocation failure, file access error, etc.
+.\"===========
+.PP
+The following sections provide detailed examples of combinations of
+variable settings and the results produced upon exit with certain
+failure conditions:
+.\" ------------------------------------------------------------
+.SS thresh_display=0, thresh_fail=0, thresh_exit=1
+.\" ------------------------------------------------------------
+With this combination, all error messages will be displayed as they
+happen, and every error will be considered an failure condition.  Upon
+reaching the first error, \fIsqsh\fP will abort with an exit status
+of 1, or the total number of failures (the
+.Va batch_failcount
+variable).  However, if nothing goes wrong during the whole process,
+a zero is returned.
+.\" ------------------------------------------------------------
+.SS thresh_display=0, thresh_fail=0, thresh_exit=3
+.\" ------------------------------------------------------------
+This combination will cause all error conditions to be displayed and
+all of them to be considered a failure condition.  Upon reaching three
+total failed batches, \fIsqsh\fP with exit with a status of 3. However
+if 0, 1, or 2 batches fail, then 0 is returned.
+.\" ------------------------------------------------------------
+.SS thresh_display=22, thresh_fail=0, thresh_exit=3
+.\" ------------------------------------------------------------
+This behaves the same as the previous example, with the exception that
+all error messages will be suppressed from being displayed.  This is
+particularly useful if you just care about the exit value more than
+the actual error.
+.\" ------------------------------------------------------------
+.SS thresh_display=0, thresh_fail=2, thresh_exit=1
+.\" ------------------------------------------------------------
+This will cause the first error of severity 2 or higher to be displayed
+and cause \fIsqsh\fP to exit with a failure condition of 1.
+.\" ------------------------------------------------------------
+.SS thresh_display=0, thresh_fail=0, thresh_exit=3, exit_failcount=1
+.\" ------------------------------------------------------------
+This is identical to the second example, above, however \fIsqsh\fP will
+return the total number of batches that failed even if 
+.Va batch_failcount
+does not reach 3.
+.\" ============================================================
+.SH FILES
+.\" ============================================================
+\fB$HOME/.sqshrc\fP,
+\fB$HOME/.sqsh_session\fP,
+\fB$HOME/.sqsh_history\fP,
+\fB$HOME/.sqsh_readline\fP,
+\fB$HOME/.sqsh_words\fP,
+\fB$tmp_dir/sqsh-dfr.*\fP,
+\fB$tmp_dir/sqsh-edit.*\fP
+.\" ============================================================
+.SH BUGS
+.\" ============================================================
+The addition of flow-of-control expressions has extended sqsh
+\fIway\fP beyond the scope of its original design, and it is
+quite obvious from using the features they are hacked in
+and are rather klunky (although still quite usable).
+As a result, the processing of these expressions is rather
+slow (when compared to bourne shell), and the error reporting
+doesn't lend itself to debugging large scripts.  The development
+of 1000+ line scripts is discouraged.
+.PP
+The combination of backgrounding and pipes does not work properly right now.
+I know why this is happening, but haven't determined an elegant solution
+to it just yet.  What happens is, when a background job is run that 
+incorporates a pipe-line, \fIsqsh\fP will suspend until the job is
+complete, which is obviously not what you would desire.  To test this,
+try the following:
+.sp
+.RS
+.ft 5
+.nf
+1> select * from syscolumns
+.br
+2> go | grep id &
+.fi
+.ft 1
+.RE
+.sp
+You will find that you do not get your prompt back until the job completes.
+If you want a technical explanation of why this is happening, send me e-mail
+at the address at the end.
+.PP
+I would like to support all of the flags available in \fBisql\fP right now.
+This shouldn't be very hard.
+.PP
+No complaints about spelling or grammar. I hate documentation, so count
+yourself lucky that you have a manual page at all.
+.PP
+I know that there are more lurking out there; if you find any please
+send e-mail to gray@voicenet.com, or grays@xtend-tech.com and I'll jump
+on them.
