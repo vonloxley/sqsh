@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.6 2004/11/05 15:53:45 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.7 2004/11/22 07:10:23 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -499,6 +499,7 @@ int cmd_connect( argc, argv )
             version = CS_TDS_46;
         else if (strcmp(tds_version, "5.0") == 0)
             version = CS_TDS_50;
+	else version = CS_TDS_50;
 
         if (ct_con_props(g_connection, CS_SET, CS_TDS_VERSION, 
             (CS_VOID*)&version, CS_UNUSED, (CS_INT*)NULL) != CS_SUCCEED)

@@ -1,3 +1,12 @@
+2004-11-09  Michael Peppler  <mpeppler@peppler.org>
+
+	* src/cmd_bcp.c (cmd_bcp): Add support for BLK_VERSION_150.
+
+	* src/cmd_connect.c (cmd_connect): Add support for CS_VERSION_150.
+
+	* src/sqsh_compat.c (sqsh_getinput): Set the interrupted flag
+	if user hits ^D.
+
 2004-11-08  Michael Peppler  <mpeppler@peppler.org>
 
 	* aclocal.m4 (AC_SYBASE_ASE): Change library search code to
@@ -84,7 +93,7 @@
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.9 2004/11/05 15:53:44 mpeppler Exp $
+$Id: ChangeLog,v 1.10 2004/11/08 12:57:17 mpeppler Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against

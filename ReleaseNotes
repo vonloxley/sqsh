@@ -1,6 +1,17 @@
-$Id$
+$Id: ReleaseNotes,v 1.1 2004/11/08 08:23:24 mpeppler Exp $
 
-Release Notes for sqsh 2.1.2
+Release Notes 
+
+sqsh 2.1.3
+
+This is an incremental bug-fix release.
+
+Better library detection in the configure script (handles new OCS 15 library
+names)
+
+
+
+sqsh 2.1.2
 
 This is an incremental bug-fix release.
 
