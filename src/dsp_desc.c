@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.2 2004/04/10 00:10:31 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.3 2004/11/05 13:01:14 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -61,7 +61,8 @@ static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
      ((t) == CS_VARCHAR_TYPE)   || \
      ((t) == CS_LONGCHAR_TYPE)  || \
      ((t) == CS_LONGBINARY_TYPE)|| \
-     ((t) == CS_VARBINARY_TYPE))
+     ((t) == CS_VARBINARY_TYPE) || \
+     ((t) == CS_UNICHAR_TYPE))
 
 /*
  * dsp_desc_bind():
@@ -681,10 +682,13 @@ static CS_INT dsp_dlen( fmt )
         case CS_CHAR_TYPE:
         case CS_LONGCHAR_TYPE:
         case CS_TEXT_TYPE:
+        case CS_VARCHAR_TYPE:
             return fmt->maxlength;
         case CS_IMAGE_TYPE:
         case CS_BINARY_TYPE:
         case CS_LONGBINARY_TYPE:
+        case CS_VARBINARY_TYPE:
+        case CS_UNICHAR_TYPE:
             return (2 * fmt->maxlength) + 4;
         case CS_BIT_TYPE:
             return 1;

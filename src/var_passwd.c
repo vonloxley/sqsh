@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_passwd.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: var_passwd.c,v 1.1.1.1 2004/04/07 12:35:06 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -107,7 +107,9 @@ int var_set_password( env, var_name, var_value )
 	 */
 	if ( *var_value == NULL || strcmp(*var_value,"NULL") == 0 ) {
 
-		if (*var_value != NULL)
+	    /* Helmut Ruholl adds the strcmp() to handle password
+	       resets in .sqsh_session. mpeppler 2004-12-07 */
+	    if (*var_value != NULL && strcmp(*var_value, "NULL"))
 		{
 			g_password_set = False;
 		}
