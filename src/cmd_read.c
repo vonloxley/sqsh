@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_read.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: cmd_read.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -107,11 +107,21 @@ int cmd_read( argc, argv )
 	}
 	else
 	{
+	    /* XXX this code means that input can't be fetched from the 
+	       user with \read in a script */
+#if 0
 		if (sqsh_stdin_fgets( input, sizeof(input) ) == NULL)
 		{
 			fprintf( stderr, "\\read: %s\n", strerror(errno) );
 			return CMD_FAIL;
 		}
+#else
+		if (fgets( input, sizeof(input), stdin ) == NULL)
+		{
+			fprintf( stderr, "\\read: %s\n", strerror(errno) );
+			return CMD_FAIL;
+		}
+#endif
 
 		str = strchr( input, '\n' );
 
