@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_meta.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: dsp_meta.c,v 1.2 2004/04/10 00:10:31 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -99,6 +99,10 @@ int dsp_meta( out, cmd, flags )
                 dsp_meta_int_prop( out, cmd, CS_NUMDATA, "CS_NUMDATA" );
                 dsp_meta_int_prop( out, cmd, CS_NUMORDERCOLS, "CS_NUMORDERCOLS" );
                 dsp_meta_desc( out, cmd );
+
+		if (g_dsp_interrupted)
+		    return DSP_INTERRUPTED;
+
                 if ((d = dsp_meta_fetch( cmd, &nrows )) != DSP_SUCCEED)
                 {
                     return d;
@@ -111,6 +115,10 @@ int dsp_meta( out, cmd, flags )
                 dsp_meta_int_prop( out, cmd, CS_CMD_NUMBER, "CS_CMD_NUMBER" );
                 dsp_meta_int_prop( out, cmd, CS_NUMDATA, "CS_NUMDATA" );
                 dsp_meta_desc( out, cmd );
+
+		if (g_dsp_interrupted)
+		    return DSP_INTERRUPTED;
+
                 if ((d = dsp_meta_fetch( cmd, &nrows )) != DSP_SUCCEED)
                 {
                     return d;
@@ -124,6 +132,10 @@ int dsp_meta( out, cmd, flags )
                 dsp_meta_int_prop( out, cmd, CS_NUMDATA, "CS_NUMDATA" );
                 dsp_meta_int_prop( out, cmd, CS_NUM_COMPUTES, "CS_NUM_COMPUTES" );
                 dsp_meta_desc( out, cmd );
+
+		if (g_dsp_interrupted)
+		    return DSP_INTERRUPTED;
+
                 if ((d = dsp_meta_fetch( cmd, &nrows )) != DSP_SUCCEED)
                 {
                     return d;
@@ -135,6 +147,10 @@ int dsp_meta( out, cmd, flags )
                 dsp_meta_int_prop( out, cmd, CS_CMD_NUMBER, "CS_CMD_NUMBER" );
                 dsp_meta_int_prop( out, cmd, CS_NUMDATA, "CS_NUMDATA" );
                 dsp_meta_desc( out, cmd );
+
+		if (g_dsp_interrupted)
+		    return DSP_INTERRUPTED;
+
                 if ((d = dsp_meta_fetch( cmd, &nrows )) != DSP_SUCCEED)
                 {
                     return d;
@@ -146,6 +162,10 @@ int dsp_meta( out, cmd, flags )
                 dsp_meta_int_prop( out, cmd, CS_CMD_NUMBER, "CS_CMD_NUMBER" );
                 dsp_meta_int_prop( out, cmd, CS_NUMDATA, "CS_NUMDATA" );
                 dsp_meta_desc( out, cmd );
+
+		if (g_dsp_interrupted)
+		    return DSP_INTERRUPTED;
+
                 if ((d = dsp_meta_fetch( cmd, &nrows )) != DSP_SUCCEED)
                 {
                     return d;
@@ -155,6 +175,9 @@ int dsp_meta( out, cmd, flags )
             default:
                 break;
         }
+
+	if (g_dsp_interrupted)
+	    return DSP_INTERRUPTED;
     }
 
     if (r == CS_FAIL)

@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_pretty.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: dsp_pretty.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -269,6 +269,9 @@ int dsp_pretty( o, cmd, flags )
 					dsp_prhead( o, select_desc );
 				}
 
+                if (g_dsp_interrupted)
+                    goto dsp_interrupted;
+
 				/*
 				 * Then, while there is data to fetch, display the
 				 * data for each row as it comes back.
@@ -279,6 +282,9 @@ int dsp_pretty( o, cmd, flags )
 						goto dsp_interrupted;
 
 					dsp_prrow( o, select_desc );
+
+					if (g_dsp_interrupted)
+						goto dsp_interrupted;
 				}
 
 				if (ret != CS_END_DATA)
@@ -315,6 +321,9 @@ int dsp_pretty( o, cmd, flags )
 						goto dsp_interrupted;
 
 					dsp_comp_prrow( o, select_desc, compute_desc );
+
+					if (g_dsp_interrupted)
+						goto dsp_interrupted;
 				}
 
 				if (ret != CS_END_DATA)
@@ -327,6 +336,8 @@ int dsp_pretty( o, cmd, flags )
 				break;
 		}
 
+		if (g_dsp_interrupted)
+			goto dsp_interrupted;
 	}
 
 	if (last_row_result != CS_STATUS_RESULT && rows_affected != CS_NO_COUNT && 

@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_html.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: dsp_html.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -128,6 +128,9 @@ int dsp_html( output, cmd, flags )
 					dsp_fputs( "</table>\n", output );
 					in_table = CS_FALSE;
 				}
+
+				if (g_dsp_interrupted)
+					goto dsp_interrupted;
 
 				while ((ret = ct_fetch( cmd,              /* Command */
 				                  CS_UNUSED,        /* Type */
@@ -257,6 +260,9 @@ int dsp_html( output, cmd, flags )
 					dsp_fputs( "</tr>\n", output );
 				}
 
+				if (g_dsp_interrupted)
+					goto dsp_interrupted;
+
 				/*
 				 * Then, while there is data to fetch, display the
 				 * data for each row as it comes back.
@@ -292,6 +298,9 @@ int dsp_html( output, cmd, flags )
 						dsp_fputs( "</td>\n", output );
 					}
 					dsp_fputs( "</tr>\n", output );
+
+					if (g_dsp_interrupted)
+						goto dsp_interrupted;
 				}
 
 				if (ret != CS_END_DATA)
@@ -327,6 +336,9 @@ int dsp_html( output, cmd, flags )
 						goto dsp_interrupted;
 
 					dsp_comp_prrow( output, select_desc, compute_desc );
+
+					if (g_dsp_interrupted)
+						goto dsp_interrupted;
 				}
 
 				if (ret != CS_END_DATA)
@@ -337,6 +349,9 @@ int dsp_html( output, cmd, flags )
 			
 			default:
 				break;
+
+			if (g_dsp_interrupted)
+				goto dsp_interrupted;
 		}
 
 	}

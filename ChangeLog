@@ -1,3 +1,20 @@
+2004-04-10  Michael Peppler  <mpeppler@peppler.org>
+
+	* src/dsp_meta.c (dsp_meta): Applied patch from Andrew Pimlott to
+	handle sqsh hanging when one interrupts output that is piped to
+	another program.
+
+	* src/sqsh_expand.c (expand_variable): Applied patch from Michael
+	Chepelev for core dumps when expanding $$ $, etc. This bit of code
+	is currently #ifdef'd pending complete testing of variable
+	expansion. 
+
+	* src/cmd_func.c (cmd_call): Apply patch from Bin Mu to fix
+	segfault when using \call without a function name.
+
+	* src/cmd_bcp.c (cmd_bcp): Apply patch from Onno van der Linden to
+	avoid potential divide by 0 error.
+
 2004-04-09  Michael Peppler  <mpeppler@peppler.org>
 
 	* src/dsp_desc.c (dsp_desc_fetch): Add support for CS_DATE_TYPE
@@ -14,6 +31,8 @@
 	highest CS_VERSION_xxx value that is available at run-time. This
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
+
+$Id$
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against

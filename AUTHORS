@@ -1,0 +1,8 @@
+$Id$
+
+Sqsh was written by Scott C. Gray. Scott did all the work through
+release 2.1.
+
+Sqsh is currently maintained by Michael Peppler (mpeppler@peppler.org) 
+with the principal aim to keep sqsh's features and behavior in sync with
+Sybase's capabilities as new features are added to ASE.

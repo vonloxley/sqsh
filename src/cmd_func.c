@@ -50,94 +50,94 @@
 ** Define a sqsh function.
 */
 int cmd_func( argc, argv )
-	int     argc;
-	char   *argv[];
+    int     argc;
+    char   *argv[];
 {
-	char        *func_name;
-	varbuf_t    *input_buf;
-	int          ret;
-	/* extern char *sqsh_optarg; */
-	extern int   sqsh_optind;
-	int          ch;
-	int          do_export = False;
-	int          have_error = False;
+    char        *func_name;
+    varbuf_t    *input_buf;
+    int          ret;
+    /* extern char *sqsh_optarg; */
+    extern int   sqsh_optind;
+    int          ch;
+    int          do_export = False;
+    int          have_error = False;
 
-	while ((ch = sqsh_getopt( argc, argv, "x" )) != EOF) 
-	{
-		switch (ch) 
-		{
-			case 'x' :
-				do_export = True;
-				break;
-			default :
-				fprintf( stderr, "\\func: -%c: Invalid option\n",
-					(int)ch );
-				have_error = True;
-		}
-	}
+    while ((ch = sqsh_getopt( argc, argv, "x" )) != EOF) 
+    {
+        switch (ch) 
+        {
+            case 'x' :
+                do_export = True;
+                break;
+            default :
+                fprintf( stderr, "\\func: -%c: Invalid option\n",
+                    (int)ch );
+                have_error = True;
+        }
+    }
 
-	if ((argc - sqsh_optind) != 1)
-	{
-		fprintf( stderr, "use: \\func [-x] <name>\n" );
-		fprintf( stderr, "         <body>\n" );
-		fprintf( stderr, "     \\done\n" );
-		return(CMD_FAIL);
-	}
+    if ((argc - sqsh_optind) != 1)
+    {
+        fprintf( stderr, "use: \\func [-x] <name>\n" );
+        fprintf( stderr, "         <body>\n" );
+        fprintf( stderr, "     \\done\n" );
+        return(CMD_FAIL);
+    }
 
-	func_name = argv[sqsh_optind];
+    func_name = argv[sqsh_optind];
 
-	/*
-	** Allocate a buffer for the input.
-	*/
-	if ((input_buf = varbuf_create( 512 )) == NULL)
-	{
-		fprintf( stderr, "\\func: Memory allocation failure\n" );
-		return(CMD_FAIL);
-	}
+    /*
+    ** Allocate a buffer for the input.
+    */
+    if ((input_buf = varbuf_create( 512 )) == NULL)
+    {
+        fprintf( stderr, "\\func: Memory allocation failure\n" );
+        return(CMD_FAIL);
+    }
 
-	env_tran(g_env);
+    env_tran(g_env);
 
-	/*
-	** Get the body of the function. Note that this function
-	** is defined in cmd_do.c.
-	*/
-	if ((ret = cmd_body_input( input_buf )
-		!= CMD_CLEARBUF))
-	{
-		varbuf_destroy( input_buf );
-		env_rollback(g_env);
-		return(ret);
-	}
+    /*
+    ** Get the body of the function. Note that this function
+    ** is defined in cmd_do.c.
+    */
+    if ((ret = cmd_body_input( input_buf )
+        != CMD_CLEARBUF))
+    {
+        varbuf_destroy( input_buf );
+        env_rollback(g_env);
+        return(ret);
+    }
 
-	env_rollback(g_env);
+    env_rollback(g_env);
 
-	/*
-	** Attempt to add the new function in the table.
-	*/
-	if (funcset_add( g_funcset, func_name, varbuf_getstr(input_buf) )
-		== False)
-	{
-		fprintf( stderr, "\\func: %s\n", sqsh_get_errstr() );
-		varbuf_destroy( input_buf );
-		return(CMD_FAIL);
-	}
+    /*
+    ** Attempt to add the new function in the table.
+    */
+    if (funcset_add( g_funcset, func_name, varbuf_getstr(input_buf) )
+        == False)
+    {
+        fprintf( stderr, "\\func: %s\n", sqsh_get_errstr() );
+        varbuf_destroy( input_buf );
+        return(CMD_FAIL);
+    }
 
-	/*
-	** If we are to export this function, then we want to
-	** also create it as a command.
-	*/
-	if (do_export == True)
-	{
-		if (cmdset_add( g_cmdset, func_name, cmd_call )
-			== False)
-		{
-			fprintf( stderr, "\\func: Error exporting %s: %s\n",
-				func_name, sqsh_get_errstr() );
-		}
-	}
+    /*
+    ** If we are to export this function, then we want to
+    ** also create it as a command.
+    */
+    if (do_export == True)
+    {
+        if (cmdset_add( g_cmdset, func_name, cmd_call )
+            == False)
+        {
+            fprintf( stderr, "\\func: Error exporting %s: %s\n",
+                func_name, sqsh_get_errstr() );
+        }
+    }
 
-	varbuf_destroy( input_buf );
-	return(CMD_CLEARBUF);
+    varbuf_destroy( input_buf );
+    return(CMD_CLEARBUF);
 }
 
 /*
@@ -146,93 +146,93 @@ int cmd_func( argc, argv )
 ** Call function previously created with cmd_func().
 */
 int cmd_call( argc, argv )
-	int     argc;
-	char   **argv;
+    int     argc;
+    char   **argv;
 {
-	func_t   *f;
-	char     *func_name;
-	int       ret;
+    func_t   *f;
+    char     *func_name;
+    int       ret;
 
-	/*
-	** If the name of the command run was \call, then the first
-	** argument must be the name of the function.
-	*/
-	if (strcmp( argv[0], "\\call" ) == 0)
-	{
-		if (argc < 2)
-		{
-			fprintf( stderr, "Use: \\call <func_name> [args ...]\n" );
-		}
+    /*
+    ** If the name of the command run was \call, then the first
+    ** argument must be the name of the function.
+    */
+    if (strcmp( argv[0], "\\call" ) == 0)
+    {
+        if (argc < 2)
+        {
+            fprintf( stderr, "Use: \\call <func_name> [args ...]\n" );
+        }
 
-		func_name = argv[1];
+        func_name = argv[1];
 
-		argv = &(argv[1]);
-		--argc;
-	}
-	else
-	{
-		func_name = argv[0];
-	}
+        argv = &(argv[1]);
+        --argc;
+    }
+    else
+    {
+        func_name = argv[0];
+    }
 
-	/*
-	** Try to track down the function.
-	*/
-	f = funcset_get( g_funcset, func_name );
+    /*
+    ** Try to track down the function.
+    */
+    f = funcset_get( g_funcset, func_name );
 
-	if (f == NULL)
-	{
-		fprintf( stderr, "\\call: Erro calling %s: %s\n",
-			(char*)func_name, sqsh_get_errstr() );
-		return(CMD_FAIL);
-	}
+    if (f == NULL)
+    {
+        fprintf( stderr, "\\call: Error calling %s: %s\n",
+		 func_name ? (char*)func_name : "NULL", sqsh_get_errstr() );
+        return(CMD_FAIL);
+    }
 
-	/*
-	** Now, push our arguments onto the stack of current arguments
-	** to functions.  These will be referenced by sqsh_expand()
-	** when expanding $[0-9] values.
-	*/
-	g_func_args[g_func_nargs].argc = argc;
-	g_func_args[g_func_nargs].argv = argv;
-	++g_func_nargs;
+    /*
+    ** Now, push our arguments onto the stack of current arguments
+    ** to functions.  These will be referenced by sqsh_expand()
+    ** when expanding $[0-9] values.
+    */
+    g_func_args[g_func_nargs].argc = argc;
+    g_func_args[g_func_nargs].argv = argv;
+    ++g_func_nargs;
 
-	/*
-	** Set the current stdin to be the body of our function.
-	*/
-	sqsh_stdin_buffer( f->func_body, -1 );
+    /*
+    ** Set the current stdin to be the body of our function.
+    */
+    sqsh_stdin_buffer( f->func_body, -1 );
 
-	/*
-	** The default return value is 0.
-	*/
-	env_set( g_internal_env, "?", "0" );
+    /*
+    ** The default return value is 0.
+    */
+    env_set( g_internal_env, "?", "0" );
 
-	/*
-	** Now, ship the current command body off to cmd_input() to
-	** let it take care of the rest.
-	*/
-	ret = cmd_input();
+    /*
+    ** Now, ship the current command body off to cmd_input() to
+    ** let it take care of the rest.
+    */
+    ret = cmd_input();
 
-	/*
-	** If a return was issued, then don't pass it on up.
-	*/
-	if (ret == CMD_RETURN)
-	{
-		ret = CMD_LEAVEBUF;
-	}
+    /*
+    ** If a return was issued, then don't pass it on up.
+    */
+    if (ret == CMD_RETURN)
+    {
+        ret = CMD_LEAVEBUF;
+    }
 
-	/*
-	** Restore stdin.
-	*/
-	sqsh_stdin_pop();
+    /*
+    ** Restore stdin.
+    */
+    sqsh_stdin_pop();
 
-	/*
-	** Pop our arguments off the stack.
-	*/
-	--g_func_nargs;
+    /*
+    ** Pop our arguments off the stack.
+    */
+    --g_func_nargs;
 
-	/*
-	** And return.
-	*/
-	return(ret);
+    /*
+    ** And return.
+    */
+    return(ret);
 }
 
 

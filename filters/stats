@@ -81,7 +81,7 @@ END {
 
 	printf( "%-30s %5d %10d %10d %10d %10d\n",
 		"",
-		grant_count,
+		grand_count,
 		grand_scan_count,
 		grand_log_io,
 		grand_phys_io,

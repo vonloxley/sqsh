@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_horiz.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: dsp_horiz.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -277,6 +277,9 @@ int dsp_horiz( output, cmd, flags )
 					dsp_prhead( output, select_desc );
 				}
 
+				if (g_dsp_interrupted)
+					goto dsp_interrupted;
+
 				/*
 				 * Then, while there is data to fetch, display the
 				 * data for each row as it comes back.
@@ -287,6 +290,9 @@ int dsp_horiz( output, cmd, flags )
 						goto dsp_interrupted;
 
 					dsp_prrow( output, select_desc );
+
+					if (g_dsp_interrupted)
+						goto dsp_interrupted;
 				}
 
 				if (ret != CS_END_DATA)
@@ -323,6 +329,9 @@ int dsp_horiz( output, cmd, flags )
 						goto dsp_interrupted;
 
 					dsp_comp_prrow( output, select_desc, compute_desc );
+
+					if (g_dsp_interrupted)
+						goto dsp_interrupted;
 				}
 
 				if (ret != CS_END_DATA)

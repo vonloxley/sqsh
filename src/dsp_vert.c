@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_vert.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: dsp_vert.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -282,6 +282,11 @@ int dsp_vert( output, cmd, flags )
 						          col_data_ptr, col_data_len );
 						dsp_fputc( '\n', output );
 					}
+
+					if (g_dsp_interrupted) 
+					{
+						goto dsp_interrupted;
+					}
 				}
 
 				if (ret != CS_END_DATA)
@@ -405,6 +410,11 @@ int dsp_vert( output, cmd, flags )
 					}
 
 					dsp_fputs( " \n", output );
+
+					if (g_dsp_interrupted) 
+					{
+						goto dsp_interrupted;
+					}
 				}
 
 				if (ret != CS_END_DATA)
