@@ -1,6 +1,13 @@
+#  $Id$
 #
-#  Makefile.in,v 1.4 1996/02/15 02:18:28 gray Exp
+#  Makefile for sqsh on Cygwin
 #
+
+#  Fix the SYBASE_OCOS entry below, copy "config.h" to the
+#  src directory, then cd to the src directory and run
+#       make -f ../cygwin/Makefile
+#  and everything **should** work.
+
 
 #  The following list of sqshrc files will be executed by sqsh upon
 #  startup.  This allows for system-wide defaults to be set in a 
@@ -37,7 +44,7 @@ SYBASE_INCDIR = -I$(SYBASE_OCOS)/include
 #
 #SYBASE_LIBS   = -L$(SYBASE)/OCS-12_5/dll -lblk -lcs -lct  
 #SYBASE_LIBS = libblk.lib libcs.lib libct.lib
-SYBASE_LIBS = libblk.a libcs.a libct.a
+SYBASE_LIBS = ../cygwin/libblk.a ../cygwin/libcs.a ../cygwin/libct.a
 
 #
 #  If you have the GNU readline library available, uncomment the

@@ -15,6 +15,8 @@ say thoroughly) on a whole slew of platforms, including Solaris 2.x,
 SunOS 4.x, HP-UX 10.x, HP-UX 11.x, IRIX 5.x, IRIX 6.x, NCR SVR4,
 Dynix/ptx 2.x, NeXT, AIX 3.x, AIX 4.x, Digital UNIX 3.x, DG/UX 5.4.x,
 Linux 2.x, and NetBSD (I am sure that there are more).
+This package also builds in the Cygwin environment under Windows,
+see the cygwin directory for details.
 
 Requirements
 -=-=-=-=-=-=-

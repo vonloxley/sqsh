@@ -1,4 +1,4 @@
-$Id: ReleaseNotes,v 1.1 2004/11/08 08:23:24 mpeppler Exp $
+$Id: ReleaseNotes,v 1.2 2004/11/23 19:30:47 mpeppler Exp $
 
 Release Notes 
 
@@ -8,6 +8,8 @@ This is an incremental bug-fix release.
 
 Better library detection in the configure script (handles new OCS 15 library
 names)
+
+Cygwin build instructions and files.
 
 
 
