@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.2 2004/04/10 00:10:31 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -198,11 +198,15 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
         d->d_cols[i].c_native       = NULL;
         d->d_cols[i].c_data         = NULL;
 
+#if 0
+	/* This code has been commented out as it generates the dreaded
+	   "bind resulted in truncation" error. */
         if (g_dsp_props.p_maxlen > 0 && 
             d->d_cols[i].c_maxlength > g_dsp_props.p_maxlen)
         {
             d->d_cols[i].c_maxlength = g_dsp_props.p_maxlen;
         }
+#endif
 
         /*
          * Allocate enough space to hold the native data-type as it

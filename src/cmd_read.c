@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_read.c,v 1.2 2004/11/04 09:18:18 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_read.c,v 1.3 2004/11/04 14:44:54 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -118,18 +118,28 @@ int cmd_read( argc, argv )
                 return CMD_FAIL;
             }
         } else {
-			FILE *fin = fopen("/dev/tty", "r");
-			if(!fin) {
+	    char *tty_name;
+	    FILE *fin;
+
+	    tty_name = ctermid(NULL);
+	    if (tty_name == NULL) {
+		sqsh_set_error( SQSH_E_EXIST, 
+				"cmd_read: Unable to determine controlling tty" );
+		return CMD_FAIL;
+	    }
+	    
+	    fin = fopen("/dev/tty", "r");
+	    if (!fin) {
                 fprintf( stderr, "\\read: %s\n", strerror(errno) );
                 return CMD_FAIL;
-			}
+	    }
             if (fgets( input, sizeof(input), fin ) == NULL)
             {
                 fprintf( stderr, "\\read: %s\n", strerror(errno) );
-				fclose(fin);
+		fclose(fin);
                 return CMD_FAIL;
             }
-			fclose(fin);
+	    fclose(fin);
         }
 
         str = strchr( input, '\n' );

@@ -1,3 +1,13 @@
+2004-11-05  Michael Peppler  <mpeppler@peppler.org>
+
+	* src/dsp_desc.c (dsp_desc_bind): Comment out code to limit 
+	datafmt.maxlength to the column display max len. Avoids "bind
+	resulted in truncation" errors for text/image/varchar/varbinary
+	columns at the expense of disrupting the columnar display.
+
+	* src/cmd_read.c (cmd_read): Use ctermid() to get the name of the
+	controlling terminal.
+
 2004-11-04  Michael Peppler  <mpeppler@peppler.org>
 
 	* src/sqsh_expand.c (expand_skip_comment): Fix bug 1046570
@@ -63,7 +73,7 @@
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.6 2004/11/04 18:53:14 mpeppler Exp $
+$Id: ChangeLog,v 1.7 2004/11/04 19:47:25 mpeppler Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against
