@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.2 2004/04/10 00:10:31 mpeppler Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.3 2004/11/04 18:53:15 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -497,20 +497,24 @@ main( argc, argv )
      */
     if (set_width == False && stdout_tty)
     {
-        if (ioctl(fileno(stdout), TIOCGWINSZ, &ws ) != -1)
-        {
-            sprintf( str, "%d", ws.ws_col );
-            env_set( g_env, "width", str );
-
-            DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: Screen width = %d\n",
-                           ws.ws_col);)
-
-        }
-        else
-        {
+	/* Check to see if the width has been set via the sqshrc file.
+	   To do this we get the current setting - if it is != 80 then
+	   the sqshrc file had a \set width directive, which we don't want
+	   to override here. */
+	char *w;
+	env_get( g_env, "width", &w);
+	if(!w || atoi(w) == 80) {
+	    if (ioctl(fileno(stdout), TIOCGWINSZ, &ws ) != -1) {
+		sprintf( str, "%d", ws.ws_col );
+		env_set( g_env, "width", str );
+		
+		DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: Screen width = %d\n",
+			       ws.ws_col);)
+	    } else {
             DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: ioctl(%d,TIOCGWINSZ): %s\n",
                            (int)fileno(stdout), strerror(errno));)
-        }
+	    }
+	}
 
 #if defined(SIGWINCH)
         if (stdout_tty)

@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.4 2004/04/12 21:02:13 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.5 2004/11/04 18:53:15 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -114,7 +114,7 @@ int cmd_connect( argc, argv )
     char      *cp;
     extern    char *sqsh_optarg ;
     extern    int   sqsh_optind ;
-    char      use_database[31] ;
+    char      use_database[128] ;
     int       c ;
     int       have_error = False ;
     int       preserve_context   = True ;
@@ -328,7 +328,7 @@ int cmd_connect( argc, argv )
      */
     if( preserve_context && database != NULL && *database != '\0' ) 
     {
-        sprintf( use_database, "%s", database ) ;
+        strncpy( use_database, database , 127) ;
         autouse = use_database ;
     }
 
@@ -346,7 +346,7 @@ int cmd_connect( argc, argv )
     if (g_context == NULL)
     {
         /*-- Allocate a new context structure --*/
-            /*-- mpeppler 4/9/2004
+	/*-- mpeppler 4/9/2004
           we loop through the CS_VERSION_xxx values to try
           to use the highest one we find */
 
@@ -546,12 +546,12 @@ int cmd_connect( argc, argv )
     /*-- Initialize --*/
     if (cs_locale( g_context,                    /* Context */
                    CS_SET,                       /* Action */
-                      locale,                       /* Locale Structure */
+		   locale,                       /* Locale Structure */
                    CS_LC_ALL,                    /* Property */
-                      (CS_CHAR*)NULL,               /* Buffer */
+		   (CS_CHAR*)NULL,               /* Buffer */
                    CS_UNUSED,                    /* Buffer Length */
                    (CS_INT*)NULL                 /* Output Length */
-                     ) != CS_SUCCEED)
+	    ) != CS_SUCCEED)
         goto connect_fail;
 
     /*-- Language --*/
@@ -560,11 +560,11 @@ int cmd_connect( argc, argv )
         if (cs_locale( g_context,                 /* Context */
                        CS_SET,                    /* Action */
                        locale,                    /* Locale Structure */
-                          CS_SYB_LANG,               /* Property */
-                          (CS_CHAR*)language,        /* Buffer */
-                          CS_NULLTERM,               /* Buffer Length */
-                          (CS_INT*)NULL              /* Output Length */
-                         ) != CS_SUCCEED)
+		       CS_SYB_LANG,               /* Property */
+		       (CS_CHAR*)language,        /* Buffer */
+		       CS_NULLTERM,               /* Buffer Length */
+		       (CS_INT*)NULL              /* Output Length */
+		) != CS_SUCCEED)
             goto connect_fail;
     }
 
@@ -574,22 +574,22 @@ int cmd_connect( argc, argv )
         if (cs_locale( g_context,                 /* Context */
                        CS_SET,                    /* Action */
                        locale,                    /* Locale Structure */
-                          CS_SYB_CHARSET,            /* Property */
-                          (CS_CHAR*)charset,         /* Buffer */
-                          CS_NULLTERM,               /* Buffer Length */
-                          (CS_INT*)NULL              /* Output Length */
-                         ) != CS_SUCCEED)
+		       CS_SYB_CHARSET,            /* Property */
+		       (CS_CHAR*)charset,         /* Buffer */
+		       CS_NULLTERM,               /* Buffer Length */
+		       (CS_INT*)NULL              /* Output Length */
+		) != CS_SUCCEED)
             goto connect_fail;
     }
 
     /*-- Locale Property --*/
     if (ct_con_props( g_connection,            /* Connection */
-                          CS_SET,                  /* Action */
-                          CS_LOC_PROP,             /* Property */
-                          (CS_VOID*)locale,        /* Buffer */
-                          CS_UNUSED,               /* Buffer Length */
-                          (CS_INT*)NULL            /* Output Length */
-                         ) != CS_SUCCEED)
+		      CS_SET,                  /* Action */
+		      CS_LOC_PROP,             /* Property */
+		      (CS_VOID*)locale,        /* Buffer */
+		      CS_UNUSED,               /* Buffer Length */
+		      (CS_INT*)NULL            /* Output Length */
+	    ) != CS_SUCCEED)
         goto connect_fail;
     
 
@@ -611,7 +611,7 @@ int cmd_connect( argc, argv )
          * error handlers.
          */
         if (ct_connect( g_connection, server,
-                             (server == NULL)?CS_UNUSED:CS_NULLTERM ) != CS_SUCCEED)
+			(server == NULL)?CS_UNUSED:CS_NULLTERM ) != CS_SUCCEED)
         {
             if (*password_retry != '1' || !sqsh_stdin_isatty() ||
                 sg_login_failed != True)
