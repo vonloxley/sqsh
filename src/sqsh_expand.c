@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -400,23 +400,26 @@ static int expand_skip_comment( cpp, str_end, buf, flags )
     /*
      * Track down the end of comment.
      */
-    while ((str_end == NULL || str != (str_end-1)) && 
+    while (*str && (str_end == NULL || str != (str_end-1)) && 
         (*str != '*' || *(str+1) != '/'))
     {
         ++str;
     }
 
-    /*
-     * If we failed to find a closing comment, then
-     * we stopped at the end of line.
-     */
-    if (*str != '*' || *(str+1) != '/')
-    {
-        ++str;
-    }
-    else
-    {
-        str += 2;
+    /* if we're not at the end of the string (CR 1046570)*/
+    if(*str) {
+	/*
+	 * If we failed to find a closing comment, then
+	 * we stopped at the end of line.
+	 */
+	if (*str != '*' || *(str+1) != '/')
+	{
+	    ++str;
+	}
+	else
+	{
+	    str += 2;
+	}
     }
 
     varbuf_strncat( buf, *cpp, str - (*cpp) );

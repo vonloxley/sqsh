@@ -1,5 +1,8 @@
 2004-11-04  Michael Peppler  <mpeppler@peppler.org>
 
+	* src/sqsh_expand.c (expand_skip_comment): Fix bug 1046570
+	segv if a go is first on a line within a comment.
+
 	* src/cmd_connect.c (cmd_connect): First try at implementing 
 	optionally setting "chained" mode on connect.
 
@@ -60,7 +63,7 @@
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.5 2004/11/04 14:44:54 mpeppler Exp $
+$Id: ChangeLog,v 1.6 2004/11/04 18:53:14 mpeppler Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against
