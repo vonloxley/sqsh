@@ -16,20 +16,20 @@
 /*
  * Common header files.
  */
-#undef HAVE_STDLIB_H        /* #include <stdlib.h> */
-#undef HAVE_SYS_TYPES_H     /* #include <sys/types.h> */
-#undef HAVE_STRING_H        /* #include <string.h> */
-#undef HAVE_FCNTL_H         /* #include <fcntl.h> */
-#undef HAVE_UNISTD_H        /* #include <unistd.h> */
-#undef HAVE_MEMORY_H        /* #include <memory.h> */
-#undef HAVE_ERRNO_H         /* #include <errno.h> */
-#undef HAVE_SYS_TIME_H      /* #include <sys/time.h> */
-#undef HAVE_TIME_H          /* #include <time.h> */
-#undef HAVE_SYS_PARAM_H     /* #include <sys/param.h> */
-#undef HAVE_LIMITS_H        /* #include <limits.h> */
-#undef HAVE_CRYPT_H         /* #include <crypt.h> */
-#undef HAVE_SHADOW_H        /* #include <shadow.h> */
-#undef HAVE_STROPTS_H       /* #include <stropts.h> */
+#undef HAVE_STDLIB_H
+#undef HAVE_SYS_TYPES_H
+#undef HAVE_STRING_H
+#undef HAVE_FCNTL_H
+#undef HAVE_UNISTD_H
+#undef HAVE_MEMORY_H
+#undef HAVE_ERRNO_H
+#undef HAVE_SYS_TIME_H
+#undef HAVE_TIME_H
+#undef HAVE_SYS_PARAM_H
+#undef HAVE_LIMITS_H
+#undef HAVE_CRYPT_H
+#undef HAVE_SHADOW_H
+#undef HAVE_STROPTS_H
 
 /*
  * If you compiler doesn't fully support the keyword 'const'

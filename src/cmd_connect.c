@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.2 2004/04/10 00:10:30 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.3 2004/04/11 15:14:32 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -138,7 +138,6 @@ int cmd_connect( argc, argv )
     CS_INT      netio_type;
 #endif
     CS_INT      con_status;
-    CS_INT      cs_ver;
     CS_INT      retcode;
 
     /*
@@ -341,24 +340,24 @@ int cmd_connect( argc, argv )
           to use the highest one we find */
 
 #if defined(CS_VERSION_125)
-            cs_ver = CS_VERSION_125;
-        retcode = cs_ctx_alloc(cs_ver, &g_context);
+	g_cs_ver = CS_VERSION_125;
+        retcode = cs_ctx_alloc(g_cs_ver, &g_context);
 #if defined(CS_VERSION_120)
         if(retcode != CS_SUCCEED) {
-            cs_ver = CS_VERSION_120;
-            retcode = cs_ctx_alloc(cs_ver, &g_context);
+            g_cs_ver = CS_VERSION_120;
+            retcode = cs_ctx_alloc(g_cs_ver, &g_context);
         }
 #if defined(CS_VERSION_110)
         if(retcode != CS_SUCCEED) {
-            cs_ver = CS_VERSION_110;
-            retcode = cs_ctx_alloc(cs_ver, &g_context);
+            g_cs_ver = CS_VERSION_110;
+            retcode = cs_ctx_alloc(g_cs_ver, &g_context);
         }
 #endif
 #endif
 #endif
         if(retcode != CS_SUCCEED) {
-            cs_ver = CS_VERSION_100;
-            retcode = cs_ctx_alloc(cs_ver, &g_context);
+            g_cs_ver = CS_VERSION_100;
+            retcode = cs_ctx_alloc(g_cs_ver, &g_context);
         }
         if (retcode != CS_SUCCEED) /* nothing worked... */
             goto connect_fail;
@@ -377,7 +376,7 @@ int cmd_connect( argc, argv )
         }
         
         /*-- Initialize the context --*/
-        if (ct_init( g_context, cs_ver ) != CS_SUCCEED)
+        if (ct_init( g_context, g_cs_ver ) != CS_SUCCEED)
             goto connect_fail;
 
         if (ct_callback( g_context,                 /* Context */

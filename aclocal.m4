@@ -196,65 +196,6 @@ main() {
 	fi
 ])
 
-#  AC_PROG_CC_STDC
-#
-#  Copyright (C) 1992, 1994 Free Software Foundation, Inc.
-#  Francois Pinard <pinard@iro.umontreal.ca>, 1992.
-#  Modified by Scott C. Gray <gray@nas.nasa.gov>, 1995
-#
-#  This macro attempts to determine which flags (if any) are required 
-#  for ${CC} in order to compile an ANSI C program.  The results are
-#  added to @CFLAGS@
-#
-AC_DEFUN(AC_PROG_CC_STDC, 
-[
-	AC_MSG_CHECKING(for ${CC-cc} ANSI C option)
-	AC_CACHE_VAL(ac_cv_prog_cc_stdc,
-	[
-		ac_cv_prog_cc_stdc=no
-		cv_save_CFLAGS="$CFLAGS"
-
-		# The following command line options are tried with the
-		# current chosen C compiler to determine which flags supply
-		# ANSI capabilities.
-		#
-		#    A Real Compiler(tm) ""
-		#    AIX                 -qlanglvl=ansi
-		#    Ultrix and OSF/1    -std1
-		#    HP-UX               -Ae or -Aa -D_HPUX_SOURCE
-		#    SVR4 (Solaris)      -Xc
-		#    Cray                -hstdc
-		#    IRIX                -cckr, -ansiposix
-		#
-		for ac_arg in "" -qlanglvl=ansi -std1 -cckr -ansiposix -Ae "-Aa -D_HPUX_SOURCE" -hstdc
-		do
-			CFLAGS="$ac_save_CFLAGS $ac_arg"
-			AC_TRY_COMPILE(
-			[
-#if !defined(__STDC__) || __STDC__ != 1
-choke me
-#endif
-			], 
-			[
-int test( int i, double x ) ;
-struct s1 { int (*f) (int a) ; } ;
-struct s2 { int (*f) (double a) ; } ;
-			],
-			[
-				ac_cv_prog_cc_stdc="${ac_arg}"
-				break
-			])
-		done
-
-		CFLAGS="$ac_save_CFLAGS"
-	])
-
-	AC_MSG_RESULT($ac_cv_prog_cc_stdc)
-	case "x${ac_cv_prog_cc_stdc}" in
-		x|xno) ;;
-		*) CC="${CC} ${ac_cv_prog_cc_stdc}" ;;
-	esac
-])
 
 
 AC_DEFUN([AC_SYBASE_ASE], [

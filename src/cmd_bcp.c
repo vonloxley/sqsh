@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -168,6 +168,8 @@ int cmd_bcp( argc, argv )
     CS_LOCALE      *bcp_locale = NULL;  /* Locale for bcp connection */
     varbuf_t       *exp_buf    = NULL;  /* Variable expansion buffer */
     bcp_data_t     *bcp_dat    = NULL;  /* Bind data */
+    CS_INT         blk_ver     = -1;    /* BLK_VERSION_xxx value to use */
+
 
 #if defined(CTLIB_SIGPOLL_BUG) && defined(F_SETOWN)
     int             ctlib_fd;
@@ -336,6 +338,23 @@ int cmd_bcp( argc, argv )
         fprintf( stderr, "\\bcp: Unable to allocate new command\n" );
         goto return_fail;
     }
+
+    /*-- Find the appropriate BLK_VERSION_xxx value --*/
+#if defined(CS_VERSION_125)
+    if(g_cs_ver == CS_VERSION_125) {
+	blk_ver = BLK_VERSION_125;
+    }
+#endif
+#if defined(CS_VERSION_120)
+    if(blk_ver == -1 && g_cs_ver == CS_VERSION_120)
+	blk_ver = BLK_VERSION_120;
+#endif
+#if defined(CS_VERSION_110)
+    if(blk_ver == -1 && g_cs_ver == CS_VERSION_110)
+	blk_ver = BLK_VERSION_110;
+#endif
+    if(blk_ver == -1)
+	blk_ver = BLK_VERSION_100;
 
     /*-- Initialize the command --*/
     if (ct_command( bcp_cmd,                /* Command */
@@ -613,9 +632,9 @@ int cmd_bcp( argc, argv )
     sg_bcp_connection = bcp_con;
 
     /*-- Allocate a block descriptor --*/
-    DBG(sqsh_debug(DEBUG_BCP, "bcp: blk_alloc(BLK_VERSION_100)\n");)
+    DBG(sqsh_debug(DEBUG_BCP, "bcp: blk_alloc(blk_ver)\n");)
 
-    if (blk_alloc( bcp_con, BLK_VERSION_100, &bcp_desc ) != CS_SUCCEED)
+    if (blk_alloc( bcp_con, blk_ver, &bcp_desc ) != CS_SUCCEED)
     {
         fprintf( stderr, "\\bcp: Unable to allocate bulk descriptor\n" );
         goto return_fail;

@@ -28,13 +28,15 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_global.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_global.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
 /*-- Global Initialization --*/
 CS_CONTEXT         *g_context    = NULL;
 CS_CONNECTION      *g_connection = NULL;
+
+CS_INT      g_cs_ver       = CS_VERSION_100;
 
 env_t      *g_env          = NULL;
 env_t      *g_buf          = NULL;

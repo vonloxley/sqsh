@@ -35,6 +35,12 @@
 #include "dsp.h"
 #include "sqsh_func.h"
 
+/* g_cs_ver: This is the value of CS_VERSION_xxx. Stored in a global
+ *          because it is needed to figure out the correct BLK_VERSION_xxx
+ *          value to use in cmd_blk.c
+ */
+extern CS_INT         g_cs_ver;
+
 /*
  * g_context: This represents this process's connection to the database,
  *           it is possible for this to be a NULL pointer, for example

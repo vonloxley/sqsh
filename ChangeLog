@@ -1,3 +1,17 @@
+2004-04-12  Michael Peppler  <mpeppler@peppler.org>
+
+	* src/cmd_bcp.c (cmd_bcp): Add logic to use the correct
+	BLK_VERSION_xxx value corresponding to the CS_VERSION_xxx used
+	when Client Library was initialized and the CS_CONTEXT was
+	allocated in cmd_connect.h
+
+	* src/sqsh_global.c (g_cs_ver): Add global variable to hold the
+	value of the current CS_VERSION_xxx. Needed in cmd_bcp.c to
+	correctly initialize the BLK command.
+
+	* configure.in: Fixed configure script issues with obsolete macros
+	and incorrect handling of libraries for the readline test.
+
 2004-04-10  Michael Peppler  <mpeppler@peppler.org>
 
 	* src/dsp_meta.c (dsp_meta): Applied patch from Andrew Pimlott to
@@ -32,7 +46,7 @@
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id$
+$Id: ChangeLog,v 1.3 2004/04/11 15:14:32 mpeppler Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against

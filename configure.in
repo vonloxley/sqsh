@@ -219,8 +219,8 @@ else
 		DEF_READLINE="${DEF_READLINE} -DOLD_READLINE"
 	else
 		AC_CHECK_LIB(readline,
-			rl_completion_matches,,DEF_READLINE="${DEF_READLINE} -DOLD_READLINE",
-			"${READLINE_LIBS}")
+			rl_completion_matches,:,DEF_READLINE="${DEF_READLINE} -DOLD_READLINE",
+			${READLINE_LIBDIR} ${READLINE_LIBS})
 	fi
 fi
 
