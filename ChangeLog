@@ -1,3 +1,11 @@
+2004-11-04  Michael Peppler  <mpeppler@localhost.localdomain>
+
+	* src/cmd_read.c (cmd_read): Add check to make sure that
+	we read data from the terminal in all cases. This means
+	checking sqsh_stdin_isatty() and possibly opening /dev/tty
+	for reading in the case where sqsh is run with its input
+	redirected.
+
 2004-04-12  Michael Peppler  <mpeppler@peppler.org>
 
 	* src/cmd_bcp.c (cmd_bcp): Add logic to use the correct
@@ -46,7 +54,7 @@
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.3 2004/04/11 15:14:32 mpeppler Exp $
+$Id: ChangeLog,v 1.4 2004/04/12 21:02:11 mpeppler Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against
