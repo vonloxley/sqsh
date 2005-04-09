@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.8 2004/11/23 19:30:49 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.9 2004/11/24 13:43:21 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -73,6 +73,7 @@ static CS_RETCODE syb_cs_cb
     ;
 
 static int wrap_print _ANSI_ARGS(( FILE*, char* )) ;
+static int check_opt_capability _ANSI_ARGS(( CS_CONNECTION * ));
 
 /*
  * cmd_connect:
@@ -753,15 +754,18 @@ connect_succeed:
 
     /* Set chained mode, if necessary. */
     if ( chained != NULL ) {
-    CS_BOOL value = (*chained == '1' ? CS_TRUE : CS_FALSE);
+	if( check_opt_capability( g_connection ) ) 
+	{
+	    CS_BOOL value = (*chained == '1' ? CS_TRUE : CS_FALSE);
 
-    /* fprintf(stderr, "Setting chained mode to %d\n", value); */
-
-    retcode = ct_options( g_connection, CS_SET, CS_OPT_CHAINXACTS,
-                  &value, CS_UNUSED, NULL);
-    if(retcode != CS_SUCCEED) {
-        /* XXX */
-    }
+	    /* fprintf(stderr, "Setting chained mode to %d\n", value); */
+	    
+	    retcode = ct_options( g_connection, CS_SET, CS_OPT_CHAINXACTS,
+				  &value, CS_UNUSED, NULL);
+	    if(retcode != CS_SUCCEED) {
+		/* XXX */
+	    }
+	}
     }
 
     return_code = CMD_LEAVEBUF;
@@ -835,6 +839,19 @@ connect_fail:
 connect_leave:
     sg_login = False;
     return return_code;
+}
+
+static int check_opt_capability( g_connection )
+    CS_CONNECTION *g_connection;
+{
+    CS_BOOL val;
+    CS_RETCODE ret = ct_capability(g_connection, CS_GET, 
+				   CS_CAP_REQUEST,
+				   CS_OPTION_GET, (CS_VOID*)&val);
+    if(ret != CS_SUCCEED || val == CS_FALSE)
+	return 0;
+
+    return 1;
 }
 
 static int wrap_print( outfile, str )

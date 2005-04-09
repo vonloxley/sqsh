@@ -102,7 +102,7 @@ static var_entry_t  sg_var_entry[] = {
     { "bcp_colsep",       NULL,          var_set_bcp_colsep, var_get_bcp_colsep},
     { "bcp_rowsep",       NULL,          var_set_bcp_rowsep, var_get_bcp_rowsep},
     { "bcp_trim",         NULL,          var_set_bcp_trim,    var_get_bcp_trim},
-    { "chained",          "0",           var_set_bool,        NULL }, /* XXX */
+    { "chained",          NULL,          var_set_bool,        NULL }, /* XXX */
     { "charset",          NULL,          var_set_nullstr,     NULL            },
     { "clear_on_fail",    "1",           var_set_bool,        NULL            },
     { "colsep",           NULL,          var_set_colsep,      var_get_colsep  },

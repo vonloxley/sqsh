@@ -1,3 +1,15 @@
+2005-04-09  Michael Peppler  <mpeppler@peppler.org>
+
+	* src/cmd_connect.c (check_opt_capability): Add this function 
+	to check for ct_option() capability.
+
+	* src/var.h: Change "chained" to default to NULL.
+
+2004-12-08  Michael Peppler  <mpeppler@peppler.org>
+
+	* src/var_passwd.c (var_set_password): Add a check for NULL 
+	string (requested by Helmut Ruholl)
+
 2004-11-09  Michael Peppler  <mpeppler@peppler.org>
 
 	* src/cmd_bcp.c (cmd_bcp): Add support for BLK_VERSION_150.
@@ -93,7 +105,7 @@
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.10 2004/11/08 12:57:17 mpeppler Exp $
+$Id: ChangeLog,v 1.11 2004/11/23 19:30:46 mpeppler Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against
