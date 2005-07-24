@@ -139,7 +139,10 @@ extern int g_dsp_interrupted;
 #define DSP_BCP_ROWSEP   14
 #define DSP_BCP_TRIM     15
 #define DSP_MAXLEN       16
-#define DSP_VALID_PROP(p) ((p) >= DSP_WIDTH && (p) <= DSP_MAXLEN)
+#define DSP_CSV_COLSEP   17
+#define DSP_CSV_ROWSEP   18
+#define DSP_VALID_PROP(p) ((p) >= DSP_WIDTH && (p) <= DSP_CSV_ROWSEP)
+
 
 /*-- Length for dsp_prop() --*/
 #define DSP_NULLTERM     -1
@@ -153,7 +156,9 @@ extern int g_dsp_interrupted;
 #define DSP_NONE          5
 #define DSP_META          6
 #define DSP_PRETTY        7
-#define DSP_VALID_STYLE(s) ((s) >= DSP_BCP && (s) <= DSP_PRETTY)
+#define DSP_CSV           8
+#define DSP_VALID_STYLE(s) ((s) >= DSP_BCP && (s) <= DSP_CSV)
+
 
 /*-- External Prototypes --*/
 int     dsp_cmd      _ANSI_ARGS(( FILE*, CS_COMMAND*, char*, int ));
@@ -210,6 +215,8 @@ typedef struct dsp_prop_st {
 	int     p_bcp_rowsep_len;        /* Display len of bcp row separator */
 	int     p_bcp_trim;              /* True/False: Trim spaces in bcp? */
 	int     p_maxlen;                /* Maximum column width we will accept */
+    char    p_csv_colsep[MAX_SEPLEN+1]; /* Current csv column separator */
+    int     p_csv_colsep_len;        /* Display len of csv column separator */
 } dsp_prop_t;
 
 
@@ -231,6 +238,7 @@ int         dsp_horiz         _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
 int         dsp_meta          _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
 int         dsp_vert          _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
 int         dsp_bcp           _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
+int         dsp_csv           _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
 int         dsp_html          _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
 int         dsp_none          _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
 int         dsp_pretty        _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));

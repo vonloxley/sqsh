@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_dsp.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: var_dsp.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -181,6 +181,10 @@ int var_set_style( env, var_name, var_value )
 	{
 		dsp_style = DSP_BCP;
 	}
+	else if (strcmp( *var_value, "csv" ) == 0)
+	{
+		dsp_style = DSP_CSV;
+	}
 	else if (strcmp( *var_value, "html" ) == 0)
 	{
 		dsp_style = DSP_HTML;
@@ -251,6 +255,9 @@ int var_get_style( env, var_name, var_value )
 			break;
 		case DSP_PRETTY:
 			*var_value = "pretty";
+			break;
+		case DSP_CSV:
+			*var_value = "csv";
 			break;
 		default:
 			*var_value = "unknown";

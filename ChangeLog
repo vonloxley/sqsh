@@ -1,3 +1,8 @@
+2005-07-24  Michael Peppler  <mpeppler@peppler.org>
+
+	* src/var_dsp.c (var_set_style): Add CSV style (patch from
+	  Thomas Depke).
+
 2005-04-09  Michael Peppler  <mpeppler@peppler.org>
 
 	* src/cmd_connect.c (check_opt_capability): Add this function 
@@ -105,7 +110,7 @@
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.11 2004/11/23 19:30:46 mpeppler Exp $
+$Id: ChangeLog,v 1.12 2005/04/09 15:29:26 mpeppler Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against

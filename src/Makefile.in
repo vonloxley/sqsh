@@ -183,7 +183,7 @@ CMDS           =  \
 	cmd_warranty.o cmd_while.o
 
 DISPLAYS       = \
-	dsp.o dsp_bcp.o dsp_conv.o dsp_desc.o dsp_horiz.o \
+	dsp.o dsp_bcp.o dsp_csv.o dsp_conv.o dsp_desc.o dsp_horiz.o \
 	dsp_html.o dsp_meta.o dsp_none.o dsp_out.o dsp_pretty.o \
 	dsp_vert.o dsp_x.o
 
@@ -371,6 +371,10 @@ dsp.o: dsp.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
  sqsh_func.h sqsh_error.h sqsh_sig.h
 dsp_bcp.o: dsp_bcp.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
+ sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
+ sqsh_alias.h dsp.h sqsh_func.h
+dsp_csv.o: dsp_csv.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
  sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
  sqsh_alias.h dsp.h sqsh_func.h
