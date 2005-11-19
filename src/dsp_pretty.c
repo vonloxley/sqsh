@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_pretty.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: dsp_pretty.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -138,14 +138,18 @@ int dsp_pretty( o, cmd, flags )
 				break;
 
 			case CS_STATUS_RESULT:
-				while ((ret = ct_fetch( cmd,        /* Command */
+			  while (((ret = ct_fetch( cmd,        /* Command */
 				                  CS_UNUSED,        /* Type */
 				                  CS_UNUSED,        /* Offset */
 				                  CS_UNUSED,        /* Option */
-				                  &nrows )) == CS_SUCCEED)
+						   &nrows )) == CS_SUCCEED)
+				 || (ret == CS_ROW_FAIL))
 				{
 					if (g_dsp_interrupted)
 						goto dsp_interrupted;
+					
+					if (ret == CS_ROW_FAIL)
+					    continue;
 
 					if (ct_get_data( cmd,                      /* Command */
 					                 1,                        /* Item */
