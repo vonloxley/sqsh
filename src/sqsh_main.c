@@ -42,12 +42,19 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.3 2004/11/04 18:53:15 mpeppler Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.4 2004/11/05 15:53:45 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
 /*-- Prototypes --*/
 static void print_usage      _ANSI_ARGS(( void ));
+
+#define SQSH_HIDEPWD
+
+#if defined(SQSH_HIDEPWD)
+static void hide_password _ANSI_ARGS(( int argc, char *argv[]));
+#endif
+
 
 #if defined(TIOCGWINSZ) && defined(SIGWINCH)
 static void sigwinch_handler _ANSI_ARGS(( int, void* ));
@@ -104,6 +111,8 @@ static sqsh_flag_t sg_flags[] = {
     { "-U", "username",     "Name of Sybase user"                },
     { "-v", "",             "Display current version and exit"   },
     { "-w", "width",        "Adjust result display width"        },
+    /* The -\250 option is used internally only when hiding the password */
+    { "-\250", "",             ""                                   },
     { "-X", "",             "Enable client password encryption"  },
     { "-y", "dir",          "Override value of $SYBASE"          },
     { "-z", "language",     "Alternate display language"         },
@@ -142,6 +151,14 @@ main( argc, argv )
     int            i;
     varbuf_t      *exp_buf;
 
+#if defined(SQSH_HIDEPWD)
+    /*
+     * If the password is passed in with the -P option then we do a little
+     * dance to hide it (i.e. we open a pipe, write the password to the pipe
+     * re-exec the program and read the pipe there.)
+     */
+    hide_password(argc, argv);
+#endif
 
     /*
      * If termios.h defines TIOCGWINSZ, then we need to declare a
@@ -265,7 +282,7 @@ main( argc, argv )
      * stdin from the script file.
      */
     while ((ch = sqsh_getopt_combined( "SQSH", argc, argv,
-        "a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:l:L:m:n:o:pP;r;s:S:t;U:vV:w:Xy:z:" )) != EOF)
+        "\250;a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:l:L:m:n:o:pP;r;s:S:t;U:vV:w:Xy:z:" )) != EOF)
     {
         ret = 0;
         switch (ch) 
@@ -401,6 +418,19 @@ main( argc, argv )
                 }
                 
                 break;
+	    case '\250':
+	        {
+		  char pwd[255];
+		  memset(pwd, 0, 255);
+		  /* XXX The fileno is hard-coded - not good! */
+		  if(read(3, pwd, 255) <= 0) {
+		    fprintf(stderr, "Can't read password");
+		  } else {
+                    ret = env_set( g_env, "password", pwd );
+		  }
+		  close(3);
+		  close(4);
+		}
             case 'r' :
                 ret = True;
                 break;
@@ -841,3 +871,57 @@ static void print_usage()
     }
     fputc( '\n', stderr );
 }
+
+#if defined(SQSH_HIDEPWD)
+static void hide_password (argc, argv)
+    int argc;
+    char *argv[];
+{
+#define MAXPWD 255
+  int i;
+  char pwd[MAXPWD];
+
+  for(i = 1; i < argc; ++i) {
+    if(*(argv[i]) == '-' && *(argv[i] + 1) == 'P') {
+      char *p = NULL;
+      if(*(argv[i]+2)) {
+	p = (argv[i]+2);
+      } else if(i + 1 < argv && *(argv[i+1]) != '-') {
+	p = argv[i+1];
+      }
+
+      /* If the password is set and is not empty */
+      if(p) {
+	int filedes[2];
+
+	/* Make a copy of the password */
+	memset(pwd, 0, MAXPWD);
+	strncpy(pwd, p, MAXPWD);
+	/* Change the -P to -\250 */
+	*(argv[i] + 1) = '\250';
+	/* Null out the password in the argv[] array */
+	while(*p != '\0')
+	  *p++ = '\0';
+
+	/* Create the pipe... */
+	if(pipe(filedes) == -1) {
+	  perror("Can't pipe()");
+	  return;
+	}
+
+	/* ... and write the password on the pipe */
+	if(write(filedes[1], pwd, strlen(pwd)) != strlen(pwd)) {
+	  fprintf(stderr, "Failed to write to pipe\n");
+	  return;
+	}
+
+	/* Re-execute ourselves, with the modified argv[] */
+	execvp(argv[0], argv);
+
+	/* Not reached */
+      }
+    }
+  }
+}
+
+#endif	

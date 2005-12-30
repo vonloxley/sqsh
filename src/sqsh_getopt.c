@@ -33,7 +33,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_getopt.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_getopt.c,v 1.1.1.1 2004/04/07 12:35:06 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -52,9 +52,9 @@ static  int    sg_argc ;             /* Current end of argv */
 
 /*
  * The is_flag() macro is used to test a string to see if it is
- * potentially a flag (that is, it is of the format -[a-zA-Z0-9]).
+ * potentially a flag (that is, it is of the format -[a-zA-Z0-9] or -\250).
  */
-#define is_flag(s) (*(s) == '-' && isalnum((int)*((s)+1)))
+#define is_flag(s) (*(s) == '-' && (isalnum((int)*((s)+1)) || *((s)+1) == '\250'))
 
 /*-- Prototypes --*/
 static int sqsh_move _ANSI_ARGS(( int, char**, int ));
