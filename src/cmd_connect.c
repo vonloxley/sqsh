@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.9 2004/11/24 13:43:21 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.10 2005/04/09 15:29:28 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -605,7 +605,21 @@ int cmd_connect( argc, argv )
               (CS_INT*)NULL            /* Output Length */
         ) != CS_SUCCEED)
         goto connect_fail;
-    
+
+    /* Handle case where server is defined as host:port */
+#if defined(CS_SERVERADDR)
+    if(server && (cp = strchr(server, ':'))) {
+	if(*cp)
+	    *cp = ' '; 
+
+	/* fprintf(stderr, "Using %s for CS_SERVERADDR\n", server);*/
+	
+	if (ct_con_props( g_connection, CS_SET, CS_SERVERADDR,
+				   (CS_VOID*)server,
+				   CS_NULLTERM, (CS_INT*)NULL) != CS_SUCCEED)
+	    goto connect_fail;
+    }
+#endif
 
     /*
      * We sit in a loop and attempt to connect while we are getting 
