@@ -1,4 +1,4 @@
-$Id$
+$Id: README,v 1.1 2004/11/24 13:21:42 mpeppler Exp $
 
 Building sqsh on Windows in the Cygwin environment
 
@@ -43,5 +43,36 @@ Building:
 3. Run "make -f ../cygwin/Makefile"
 
 You should normally now have a sqsh.exe binary in the src directory.
+
+
+--------
+
+Linn Anderson sent me the following comments regarding Cygwin when 
+using FreeTDS:
+
+ First, thanks for sqsh.  I just built it for my cygwin desktop and had
+only a little trouble, mostly following the instructions in the cygwin
+directory.  What I ended up doing was much easier.  I havn't used the
+sqsh much, but the build seems robust.
+
+  Maybe this is all old hat to you, but if it helps, here is what I did:
+
+            Default Freetds install (configure, make, make install)
+            Extract sqsh
+            SYBASE=/usr/local
+            Export SYBASE
+            ./configure
+            Edit src/Makefile, replacing -ldl with -liconv
+            Make
+            Make install
+            Make install.man
+            And of course, edit up some usable interfaces file.
+
+The only problem with the build, out of the box, was -ldl not found and
+several links were needed from -liconv.
+
+  Again, thanks.
+
+--Linn
 
 

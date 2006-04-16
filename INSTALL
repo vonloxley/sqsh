@@ -4,7 +4,7 @@ Description
 -=-=-=-=-=-
 
 The follow document describes how to build and install the Sqsh SQL
-shell, version 2.1.3. For an overall description of the package, please
+shell, version 2.1.4. For an overall description of the package, please
 refer to the file README.
 
 Supported Platforms
@@ -30,6 +30,18 @@ In order to build this package, you will need:
       however).  Sqsh may still compile against Open Client 10.x,
       however that release is *very* old and I don't have a copy
       around to test with any more.
+
+      Note: If you have a 64 bit installation of ASE then you will
+      normally only have the 64bit version of Client Library. This means
+      that you either need to install the 32bit version of the SDK
+      (available from sybase.subscribenet.com), or you need to build
+      sqsh in 64 bit mode. This is NOT yet handled automatically - you
+      will need to add the proper flags for your C compiler to generate
+      64 bit code, and you will need to add -DSYB_LP64 to the CFLAGS
+      macro in src/Makefile. Note that any libraries that you want to 
+      link with (for example "readline" must also have the 64bit
+      objects - you can't link 32 bir and 64 bit code in the same 
+      binary).
 
    o  FreeTDS
 

@@ -134,7 +134,7 @@
 /*
  * Current version number.
  */
-#define SQSH_VERSION     "sqsh-2.1.3"
+#define SQSH_VERSION     "sqsh-2.1.4"
 
 #if !defined(__ansi__)
 #  if defined(__STDC__) || defined(STDC_HEADERS) || defined(PROTOTYPES)

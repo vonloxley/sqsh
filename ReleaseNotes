@@ -1,6 +1,15 @@
-$Id: ReleaseNotes,v 1.2 2004/11/23 19:30:47 mpeppler Exp $
+$Id: ReleaseNotes,v 1.3 2004/11/24 13:21:39 mpeppler Exp $
 
 Release Notes 
+
+sqsh 2.1.4
+
+Various bug fixes.
+
+Command line -P argument hiding.
+Allow host:port syntax for the -S option if built with OpenClient
+12.5.1 or later.
+Experimental support for CSV output (\go -m csv).
 
 sqsh 2.1.3
 
