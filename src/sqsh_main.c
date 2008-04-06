@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.4 2004/11/05 15:53:45 mpeppler Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.5 2005/12/30 15:22:59 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -97,14 +97,17 @@ static sqsh_flag_t sg_flags[] = {
     { "-I", "interfaces",   "Alternate interfaces file"          },
     { "-J", "charset",      "Client character set"               },
     { "-k", "keywords",     "Specify alternate keywords file"    },
+    { "-K", "",             "Use Kerberos Authentication"        },
     { "-l", "level",        "Set debugging level"                },
     { "-m", "mode",         "Set display mode (normal)"          },
     { "-n", "on|off",       "Set chained transaction mode"       },
+    { "-N", "appname",      "Set Application Name (sqsh)"        },
     { "-L", "var=value",    "Set the value of a given variable"  },
     { "-o", "filename",     "Direct all output to file"          },
     { "-p", "",             "Display performance stats"          },
     { "-P", "[password]",   "Sybase password (NULL)"             },
     { "-r", "[sqshrc]",     "Specify name of .sqshrc"            },
+    { "-R", "server principal", "Kerberos server principal"      },
     { "-s", "colsep",       "Alternate column separator (\\t)"   },
     { "-S", "server",       "Name of Sybase server ($DSQUERY)"   },
     { "-t", "[filter]",     "Filter batches through program"     },
@@ -282,7 +285,7 @@ main( argc, argv )
      * stdin from the script file.
      */
     while ((ch = sqsh_getopt_combined( "SQSH", argc, argv,
-        "\250;a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:l:L:m:n:o:pP;r;s:S:t;U:vV:w:Xy:z:" )) != EOF)
+        "\250;a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:K;l:L:m:n:N:o:pP;r;R:s:S:t;U:vV:w:Xy:z:" )) != EOF)
     {
         ret = 0;
         switch (ch) 
@@ -364,6 +367,9 @@ main( argc, argv )
             case 'k' :
                 ret = env_set( g_env, "keyword_file", sqsh_optarg );
                 break;
+	    case 'K':
+	        ret = env_set( g_env, "kerberos", "1");
+	        break;
             case 'l' :
                 ret = env_set( g_env, "debug", sqsh_optarg );
                 break;
@@ -373,6 +379,9 @@ main( argc, argv )
             case 'n' :
                 ret = env_set( g_env, "chained", sqsh_optarg );
                 break;
+	    case 'N':
+	        ret = env_set( g_env, "appname", sqsh_optarg);
+	        break;
             case 'L' :
                 cptr = sqsh_optarg;
                 i    = 0;
@@ -433,6 +442,9 @@ main( argc, argv )
 		}
             case 'r' :
                 ret = True;
+                break;
+	    case 'R':
+	        ret = env_set( g_env, "server_principal", sqsh_optarg);
                 break;
             case 's' :
                 ret = env_set( g_env, "colsep", sqsh_optarg );
@@ -886,12 +898,12 @@ static void hide_password (argc, argv)
       char *p = NULL;
       if(*(argv[i]+2)) {
 	p = (argv[i]+2);
-      } else if(i + 1 < argv && *(argv[i+1]) != '-') {
+      } else if(i + 1 < argc && *(argv[i+1]) != '-') {
 	p = argv[i+1];
       }
 
       /* If the password is set and is not empty */
-      if(p) {
+      if(p && *p) {
 	int filedes[2];
 
 	/* Make a copy of the password */

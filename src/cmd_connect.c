@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.10 2005/04/09 15:29:28 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.11 2005/12/30 16:06:42 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -112,6 +112,7 @@ int cmd_connect( argc, argv )
     char      *password_retry;
     char      *tds_version;
     char      *chained;
+    char      *appname;
     char      *cp;
     extern    char *sqsh_optarg ;
     extern    int   sqsh_optind ;
@@ -128,6 +129,8 @@ int cmd_connect( argc, argv )
     int       i;
     int       return_code;
     CS_INT    version;
+    int       kerberos_on;
+    char      *server_principal;
 
 #if defined(CTLIB_SIGPOLL_BUG) && defined(F_SETOWN)
     int       ctlib_fd;
@@ -152,7 +155,7 @@ int cmd_connect( argc, argv )
     /*
      * Parse the command line options.
      */
-    while ((c = sqsh_getopt( argc, argv, "D:U:P;S;I;cn" )) != EOF) 
+    while ((c = sqsh_getopt( argc, argv, "D:U:N:P;S;I;cnKR:" )) != EOF) 
     {
         switch( c ) 
         {
@@ -161,6 +164,14 @@ int cmd_connect( argc, argv )
 			 ENV_F_TRAN ) == False)
 	    {
 		fprintf( stderr, "\\connect: -D: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break;
+          case 'N':
+	    if (env_put( g_env, "appname", sqsh_optarg,
+			 ENV_F_TRAN ) == False) {
+		fprintf( stderr, "\\connect: -N: %s\n",
 			 sqsh_get_errstr() );
 		have_error = True;
 	    }
@@ -217,6 +228,25 @@ int cmd_connect( argc, argv )
 		have_error = True;
 	    }
 	    break ;
+	  case 'K' :
+	    if (env_put( g_env, "kerberos_on", sqsh_optarg,
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -K: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+	  case 'R' :
+	    if (env_put( g_env, "server_principal", sqsh_optarg,
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -R: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+
 	  default :
 	    fprintf( stderr, "\\connect: %s\n", sqsh_get_errstr() ) ;
 	    have_error = True ;
@@ -232,7 +262,7 @@ int cmd_connect( argc, argv )
     {
         fprintf( stderr, 
             "Use: \\connect [-c] [-I interfaces] [-U username] [-P password]\n"
-            "               [-S server] [-n {on|off}]\n" ) ;
+            "               [-S server] [-n {on|off}] [-K] [-R server_principal]\n" ) ;
     
         env_rollback( g_env );
         return CMD_FAIL;
@@ -258,6 +288,9 @@ int cmd_connect( argc, argv )
     env_get( g_env, "password_retry", &password_retry ) ;
     env_get( g_env, "tds_version", &tds_version ) ;
     env_get( g_env, "chained", &chained ) ;
+    env_get( g_env, "appname", &appname);
+    env_get( g_env, "kerberos_on", &kerberos_on);
+    env_get( g_env, "server_principal", &server_principal);
     password = g_password;
 
     /*
@@ -471,6 +504,9 @@ int cmd_connect( argc, argv )
                          ) != CS_SUCCEED)
         goto connect_fail;
 
+#if defined(CS_SEC_NETWORKAUTH)
+    if(kerberos_on == 0) {
+#endif
     /*-- Set password --*/
     if (ct_con_props( g_connection,               /* Connection */
                       CS_SET,                     /* Action */
@@ -480,12 +516,43 @@ int cmd_connect( argc, argv )
                       (CS_INT*)NULL               /* Output Length */
                          ) != CS_SUCCEED)
         goto connect_fail;
+#if defined(CS_SEC_NETWORKAUTH)
+    } else {
+	CS_INT kerb = CS_TRUE;
+	if( ct_con_props( g_connection,               /* Connection */
+                      CS_SET,                     /* Action */
+                      CS_SEC_NETWORKAUTH,                /* Property */
+                      (CS_VOID*)kerb,       /* Buffer */
+                      CS_UNUSED,
+                      (CS_INT*)NULL               /* Output Length */
+                         ) != CS_SUCCEED)
+        goto connect_fail;
+
+        if(server_principal != NULL) {
+	    if( ct_con_props( g_connection,               /* Connection */
+			      CS_SET,                     /* Action */
+			      CS_SEC_SERVERPRINCIPAL,                /* Property */
+                      (CS_VOID*)server_principal,       /* Buffer */
+                      CS_NULLTERM,
+                      (CS_INT*)NULL               /* Output Length */
+                         ) != CS_SUCCEED)
+        goto connect_fail;
+	}
+    }
+
+
+#endif
+
+
+
+    if (appname == NULL)
+	appname = "sqsh";
 
     /*-- Set application name --*/
     if (ct_con_props( g_connection,               /* Connection */
                       CS_SET,                     /* Action */
                       CS_APPNAME,                 /* Property */
-                      (CS_VOID*)"sqsh",           /* Buffer */
+                      (CS_VOID*)appname,          /* Buffer */
                       CS_NULLTERM,                /* Buffer Lenth */
                       (CS_INT*)NULL               /* Output Length */
                           ) != CS_SUCCEED)

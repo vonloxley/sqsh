@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.3 2004/11/05 13:01:14 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.4 2005/04/05 16:17:42 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -219,10 +219,13 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
          * request), I am forcing these data types to malloc a tad
          * more memory then they may need.
          */
+	/* The amount of memory alloced used to be 64 bytes. Pushed 
+	   to 256 following discovery of buffer overflow problems by
+	   Mike Tibbetts */
         if (d->d_cols[i].c_format.datatype == CS_FLOAT_TYPE ||
             d->d_cols[i].c_format.datatype == CS_REAL_TYPE)
         {
-            d->d_cols[i].c_data = (CS_CHAR*)malloc(64);
+            d->d_cols[i].c_data = (CS_CHAR*)malloc(256);
         }
         else
         {

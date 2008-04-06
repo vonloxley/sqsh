@@ -33,7 +33,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_getopt.c,v 1.1.1.1 2004/04/07 12:35:06 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_getopt.c,v 1.2 2005/12/30 15:22:59 mpeppler Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -75,7 +75,7 @@ int sqsh_getopt( argc, argv, opt_flags )
 	 * we saw the last time we were run, then we have a new set of
 	 * options and should start over again.
 	 */
-	if( sg_argv != argv || sg_argc != argc || sg_flags != opt_flags ) {
+	if( sg_argv != argv || sg_argc != argc || 0 != strcmp( sg_flags, opt_flags) ) {
 		sqsh_optind  = 1 ;           /* Skip argv[0] */
 		sg_argv      = argv ;
 		sg_argc      = argc ;

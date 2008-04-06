@@ -5,11 +5,12 @@
 prefix         = @prefix@
 src_dir        = @srcdir@
 exec_prefix    = @exec_prefix@
-bin_dir        = $(exec_prefix)/bin
-inc_dir        = $(prefix)/include
-lib_dir        = $(exec_prefix)/lib
+bin_dir        = @bindir@
+inc_dir        = @includedir@
+lib_dir        = @libdir@
 man_src        = $(src_dir)/doc
-man_dir        = $(prefix)/man
+man_dir        = @mandir@
+conf_dir       = @sysconfdir@
 
 INSTALL        = $(src_dir)/autoconf/install-sh
 INSTALL_PROG   = $(INSTALL) -c
@@ -17,7 +18,7 @@ INSTALL_DIR    = $(INSTALL) -d
 INSTALL_DATA   = $(INSTALL) -c -m 644
 INSTALL_MAN    = $(src_dir)/autoconf/install-man
 
-SQSHRC_GLOBAL  = $(prefix)/etc/sqshrc
+SQSHRC_GLOBAL  = $(conf_dir)/sqshrc
 
 MAN_PAGES      = sqsh.1
 SRCS           = $(OBJS:.o=.c)
@@ -50,40 +51,40 @@ distclean-subdirs :
 	done
 
 install : build-subdirs
-	@$(INSTALL_DIR) $(bin_dir); \
-	$(INSTALL_PROG) src/$(TARGET) $(bin_dir)/$(TARGET); \
-	$(INSTALL_DIR) `dirname $(SQSHRC_GLOBAL)`; \
-	if test -f $(SQSHRC_GLOBAL); then \
-		echo WARNING: You already have the file $(SQSHRC_GLOBAL); \
+	@$(INSTALL_DIR) $(DESTDIR)$(bin_dir); \
+	$(INSTALL_PROG) src/$(TARGET) $(DESTDIR)$(bin_dir)/$(TARGET); \
+	$(INSTALL_DIR) $(DESTDIR)`dirname $(SQSHRC_GLOBAL)`; \
+	if test -f $(DESTDIR)$(SQSHRC_GLOBAL); then \
+		echo WARNING: You already have the file $(DESTDIR)$(SQSHRC_GLOBAL); \
 		echo installed. This file will be left untouched. The version; \
 		echo supplied with this installation will be installed as; \
-		echo $(SQSHRC_GLOBAL).new; \
-		$(INSTALL_DATA) doc/global.sqshrc $(SQSHRC_GLOBAL).new; \
+		echo $(DESTDIR)$(SQSHRC_GLOBAL).new; \
+		$(INSTALL_DATA) doc/global.sqshrc $(DESTDIR)$(SQSHRC_GLOBAL).new; \
 	else \
-		$(INSTALL_DATA) doc/global.sqshrc $(SQSHRC_GLOBAL); \
+		$(INSTALL_DATA) doc/global.sqshrc $(DESTDIR)$(SQSHRC_GLOBAL); \
 	fi
 
 install-wrapper : install
-	@mv $(bin_dir)/$(TARGET) $(bin_dir)/$(TARGET).bin; \
+	@mv $(DESTDIR)$(bin_dir)/$(TARGET) $(DESTDIR)$(bin_dir)/$(TARGET).bin; \
 	/bin/sh scripts/make_wrapper.sh scripts/wrapper.sh.in scripts/wrapper.sh; \
-	$(INSTALL_PROG) scripts/wrapper.sh $(bin_dir)/$(TARGET)
+	$(INSTALL_PROG) scripts/wrapper.sh $(DESTDIR)$(bin_dir)/$(TARGET)
 
 uninstall :
-	rm -f $(bin_dir)/$(TARGET) $(bin_dir)/$(TARGET).bin
+	rm -f $(DESTDIR)$(bin_dir)/$(TARGET) $(DESTDIR)$(bin_dir)/$(TARGET).bin
 
 uninstall-wrapper: uninstall
 
 install.man :
-	 $(INSTALL_MAN) -s $(man_src) -d $(man_dir) $(MAN_PAGES)
+	 $(INSTALL_MAN) -s $(man_src) -d $(DESTDIR)$(man_dir) $(MAN_PAGES)
 
 uninstall.man :
-	 $(INSTALL_MAN) -u -d $(man_dir) $(MAN_PAGES)
+	 $(INSTALL_MAN) -u -d $(DESTDIR)$(man_dir) $(MAN_PAGES)
 
 install.zman :
-	 $(INSTALL_MAN) -c -u -d $(man_dir) $(MAN_PAGES)
+	 $(INSTALL_MAN) -c -u -d $(DESTDIR)$(man_dir) $(MAN_PAGES)
 
 uninstall.zman :
-	$(INSTALL_MAN) -c -u -d $(man_dir) $(MAN_PAGES)
+	$(INSTALL_MAN) -c -u -d $(DESTDIR)$(man_dir) $(MAN_PAGES)
 
 dist : build
 	@/bin/sh scripts/make_wrapper.sh scripts/wrapper.sh.in scripts/wrapper.sh; \

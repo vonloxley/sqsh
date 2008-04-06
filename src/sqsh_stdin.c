@@ -172,7 +172,7 @@ char* sqsh_stdin_fgets( buf, len )
 
     sin = &(sg_stdin_stack[sg_stdin_cur-1]);
 
-    if (sin->stdin_type == STDIN_FILE)
+    while (sin->stdin_type == STDIN_FILE)
     {
         str = fgets( buf, len, sin->stdin_file );
 
@@ -184,6 +184,9 @@ char* sqsh_stdin_fgets( buf, len )
             }
             else
             {
+		if (errno == EINTR) {
+		    continue;
+		}
                 sqsh_set_error( SQSH_E_RANGE, "%s", strerror(errno) );
             }
         }
