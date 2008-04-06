@@ -1,4 +1,4 @@
-.\" $Id: sqsh.1,v 1.7 2005/04/09 15:29:27 mpeppler Exp $
+.\" $Id: sqsh.1,v 1.8 2006/04/16 09:45:34 mpeppler Exp $
 .\" Copyright (C) 1995, 1996 by Scott C. Gray
 .\"
 .\" This program is free software; you can redistribute it and/or modify
@@ -122,6 +122,10 @@ sqsh - Interactive database shell
 ]
 .br
 [
+.BI \-K
+]
+.br
+[
 .BI -l " debug_flags"
 ]
 .br
@@ -151,6 +155,10 @@ sqsh - Interactive database shell
 .br
 [
 .BI  -r " [sqshrc]"
+]
+.br
+[
+.BI  -R " server principal"
 ]
 .br
 [
@@ -386,6 +394,13 @@ This file may also be set via the
 .Va keyword_file
 variable, which defaults to \fB$HOME/.sqsh_words\fP.
 .\"
+.\" -K
+.\"
+.TP
+.B -K
+If set, tells \fIsqsh\fP to use network authentication. The -P parameter
+will be ignored. See also the -R option below.
+.\"
 .\" -l debug_flags
 .\"
 .TP
@@ -467,6 +482,13 @@ the default.  If no \fIsqshrc\fP is supplied
 following \fB-r\fP, then no initialization files are processed.
 This flag \fBmust\fP be the first argument supplied on the command
 line, all other instances will be ignored.
+.\"
+.\" -R server principal
+.\"
+.TP 
+.B -R \fIserver_principal\fP
+Specifies a \fIserver principal\fP to use for network (kerberos) 
+authentication. Using this has no effect if -K is not set. 
 .\"
 .\" -s colsep
 .\"
@@ -1873,7 +1895,7 @@ use the current database connection:
 .\"   \connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile]
 .\"
 .TP 5
-\fB\econnect [-c] [-D \fIdb\fP] [-S \fIsrv\fP] [-U \fIuser\fP] [-P \fIpass\fP] [-I \fIifile\fP]\fP
+\fB\econnect [-c] [-D \fIdb\fP] [-S \fIsrv\fP] [-U \fIuser\fP] [-P \fIpass\fP] [-I \fIifile\fP] [-K] [-R \fIserver_principal\fP]\fP
 This command is used primarily for internal use to establish a connection
 to a database.  If a connection is already established it has no effect,
 however if a connection has not been established and \fB$password\fP has
