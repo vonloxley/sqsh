@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.11 2005/12/30 16:06:42 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.12 2008/04/06 10:03:08 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -522,7 +522,7 @@ int cmd_connect( argc, argv )
 	if( ct_con_props( g_connection,               /* Connection */
                       CS_SET,                     /* Action */
                       CS_SEC_NETWORKAUTH,                /* Property */
-                      (CS_VOID*)kerb,       /* Buffer */
+                      (CS_VOID*)&kerb,       /* Buffer */
                       CS_UNUSED,
                       (CS_INT*)NULL               /* Output Length */
                          ) != CS_SUCCEED)

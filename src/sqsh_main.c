@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.5 2005/12/30 15:22:59 mpeppler Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.6 2008/04/06 10:03:08 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -368,7 +368,7 @@ main( argc, argv )
                 ret = env_set( g_env, "keyword_file", sqsh_optarg );
                 break;
 	    case 'K':
-	        ret = env_set( g_env, "kerberos", "1");
+	        ret = env_set( g_env, "kerberos_on", "1");
 	        break;
             case 'l' :
                 ret = env_set( g_env, "debug", sqsh_optarg );
