@@ -173,7 +173,7 @@ int     dsp_prop     _ANSI_ARGS(( int, int, void*, int ));
  * The following data structure is very similar to a FILE*. It
  * is used to provide signal safe buffered I/O.
  */
-#define DSP_BUFSIZE  1024
+#define DSP_BUFSIZE  1048576
 typedef struct dsp_out_st {
 	int          o_fd;
 	FILE        *o_file;

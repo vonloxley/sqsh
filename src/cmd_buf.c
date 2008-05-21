@@ -37,7 +37,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_buf.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: cmd_buf.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -545,7 +545,7 @@ int cmd_buf_edit( argc, argv )
 	 * much.  It doesn't lend itself to multiple contexts within
 	 * the same program.
 	 */
-	sprintf( path, "%s/sqsh-edit.%d", tmp_dir, (int)getpid() );
+	sprintf( path, "%s/sqsh-edit.%d.sql", tmp_dir, (int)getpid() );
 
 	/*
 	 * Attempt to save the read buffer into the file that we built.

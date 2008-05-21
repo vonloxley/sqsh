@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.12 2008/04/06 10:03:08 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.13 2008/04/08 18:20:49 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -74,6 +74,7 @@ static CS_RETCODE syb_cs_cb
 
 static int wrap_print _ANSI_ARGS(( FILE*, char* )) ;
 static int check_opt_capability _ANSI_ARGS(( CS_CONNECTION * ));
+static int kerb_get_principal(char *kerb_proc, char *server, char *buf, int len);
 
 /*
  * cmd_connect:
@@ -131,6 +132,7 @@ int cmd_connect( argc, argv )
     CS_INT    version;
     int       kerberos_on;
     char      *server_principal;
+    char	  *kerb_prog;
 
 #if defined(CTLIB_SIGPOLL_BUG) && defined(F_SETOWN)
     int       ctlib_fd;
@@ -159,23 +161,23 @@ int cmd_connect( argc, argv )
     {
         switch( c ) 
         {
-	  case 'D' :
-	    if (env_put( g_env, "database", sqsh_optarg, 
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -D: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break;
+        case 'D' :
+        	if (env_put( g_env, "database", sqsh_optarg, 
+        			ENV_F_TRAN ) == False)
+        	{
+        		fprintf( stderr, "\\connect: -D: %s\n",
+        				sqsh_get_errstr() );
+        		have_error = True;
+        	}
+        	break;
           case 'N':
-	    if (env_put( g_env, "appname", sqsh_optarg,
-			 ENV_F_TRAN ) == False) {
-		fprintf( stderr, "\\connect: -N: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break;
+        	  if (env_put( g_env, "appname", sqsh_optarg,
+        			  ENV_F_TRAN ) == False) {
+        		  	fprintf( stderr, "\\connect: -N: %s\n",
+        		  			sqsh_get_errstr() );
+        		  	have_error = True;
+        	  }
+        	  break;
 	  case 'c' :
 	    preserve_context = False ;
 	    break ;
@@ -291,6 +293,7 @@ int cmd_connect( argc, argv )
     env_get( g_env, "appname", &appname);
     env_get( g_env, "kerberos_on", &kerberos_on);
     env_get( g_env, "server_principal", &server_principal);
+    env_get( g_env, "kerb_prog", &kerb_prog);
     password = g_password;
 
     /*
@@ -319,6 +322,15 @@ int cmd_connect( argc, argv )
         }
     }
 
+    if (kerberos_on && !server_principal && kerb_prog) {
+    	static char p[100];
+    	if(kerb_get_principal(kerb_prog, server, p, 100))
+    		server_principal = p;
+    	else {
+    		fprintf(stderr, "\\connect: Can't get server principal for %s using %s\n", server, kerb_prog);
+    	}
+    }
+    
     if (password != NULL && strcmp( password, "-" ) == 0)
     {
         if (sqsh_stdin_fgets( passbuf, sizeof(passbuf) ) != NULL)
@@ -990,6 +1002,24 @@ static int wrap_print( outfile, str )
     }
 
     return True ;
+}
+
+static int kerb_get_principal(char *kerb_proc, char *server, char *principal, int len) 
+{
+	FILE *fin;
+	char buff[255];
+	
+	principal[0] = 0;
+	
+	if((fin = popen(kerb_proc, "r")) == NULL) {
+		return 0;
+	}
+	while(fgets(buff, 200, fin)) {
+		strncpy(buff, principal, len);
+	}
+	fclose(fin);
+	
+	return 1;
 }
 
 /*

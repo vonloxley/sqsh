@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.6 2008/04/06 10:03:08 mpeppler Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.7 2008/04/08 18:20:49 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -119,6 +119,7 @@ static sqsh_flag_t sg_flags[] = {
     { "-X", "",             "Enable client password encryption"  },
     { "-y", "dir",          "Override value of $SYBASE"          },
     { "-z", "language",     "Alternate display language"         },
+    { "-Z", "program",		"Program to fetch server principal"  },
 };
 
 int
@@ -285,7 +286,7 @@ main( argc, argv )
      * stdin from the script file.
      */
     while ((ch = sqsh_getopt_combined( "SQSH", argc, argv,
-        "\250;a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:K;l:L:m:n:N:o:pP;r;R:s:S:t;U:vV:w:Xy:z:" )) != EOF)
+        "\250;a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:K;l:L:m:n:N:o:pP;r;R:s:S:t;U:vV:w:Xy:z:Z:" )) != EOF)
     {
         ret = 0;
         switch (ch) 
@@ -367,9 +368,9 @@ main( argc, argv )
             case 'k' :
                 ret = env_set( g_env, "keyword_file", sqsh_optarg );
                 break;
-	    case 'K':
-	        ret = env_set( g_env, "kerberos_on", "1");
-	        break;
+            case 'K':
+            	ret = env_set( g_env, "kerberos_on", "1");
+            	break;
             case 'l' :
                 ret = env_set( g_env, "debug", sqsh_optarg );
                 break;
@@ -379,9 +380,9 @@ main( argc, argv )
             case 'n' :
                 ret = env_set( g_env, "chained", sqsh_optarg );
                 break;
-	    case 'N':
-	        ret = env_set( g_env, "appname", sqsh_optarg);
-	        break;
+            case 'N':
+            	ret = env_set( g_env, "appname", sqsh_optarg);
+            	break;
             case 'L' :
                 cptr = sqsh_optarg;
                 i    = 0;
@@ -427,24 +428,24 @@ main( argc, argv )
                 }
                 
                 break;
-	    case '\250':
-	        {
-		  char pwd[255];
-		  memset(pwd, 0, 255);
-		  /* XXX The fileno is hard-coded - not good! */
-		  if(read(3, pwd, 255) <= 0) {
-		    fprintf(stderr, "Can't read password");
-		  } else {
-                    ret = env_set( g_env, "password", pwd );
-		  }
-		  close(3);
-		  close(4);
-		}
+            case '\250':
+	        	{
+	        		char pwd[255];
+	        		memset(pwd, 0, 255);
+	        		/* XXX The fileno is hard-coded - not good! */
+	        		if(read(3, pwd, 255) <= 0) {
+	        			fprintf(stderr, "Can't read password");
+	        		} else {
+	        			ret = env_set( g_env, "password", pwd );
+	        		}
+	        		close(3);
+	        		close(4);
+	        	}
             case 'r' :
                 ret = True;
                 break;
-	    case 'R':
-	        ret = env_set( g_env, "server_principal", sqsh_optarg);
+            case 'R':
+            	ret = env_set( g_env, "server_principal", sqsh_optarg);
                 break;
             case 's' :
                 ret = env_set( g_env, "colsep", sqsh_optarg );
@@ -481,6 +482,9 @@ main( argc, argv )
                 break;
             case 'z' :
                 ret = env_set( g_env, "language", sqsh_optarg );
+                break;
+            case 'Z':
+            	ret = env_set( g_env, "kerb_prog", sqsh_optarg);
                 break;
             default :
                 fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );

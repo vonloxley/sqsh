@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp.c,v 1.1.1.1 2004/04/07 12:35:01 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: dsp.c,v 1.2 2005/07/24 11:41:19 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -73,7 +73,7 @@ dsp_prop_t  g_dsp_props = {
 	"|",             /* p_bcp_rowsep */
 	1,               /* p_bcp_rowsep_len */
 	1,               /* p_bcp_trim */
-	8192,            /* p_maxlen */
+	32768,            /* p_maxlen */
 	",",             /* p_csv_colsep */
 	1,               /* p_csv_colsep_len */
 };
