@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.13 2008/04/08 18:20:49 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.14 2008/05/21 17:51:24 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -130,7 +130,7 @@ int cmd_connect( argc, argv )
     int       i;
     int       return_code;
     CS_INT    version;
-    int       kerberos_on;
+    char      *kerberos_on;
     char      *server_principal;
     char	  *kerb_prog;
 
@@ -517,7 +517,7 @@ int cmd_connect( argc, argv )
         goto connect_fail;
 
 #if defined(CS_SEC_NETWORKAUTH)
-    if(kerberos_on == 0) {
+    if(kerberos_on == NULL) {
 #endif
     /*-- Set password --*/
     if (ct_con_props( g_connection,               /* Connection */

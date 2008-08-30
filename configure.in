@@ -47,21 +47,22 @@ AC_ARG_WITH([devlib],
 AC_ARG_WITH([motif], 
 	[  --with-motif            support X11/Motif widgets],
 	[
-		if test $with_motif != "yes"
+		if test "x$with_motif" != "xno"
 		then
-			MOTIF_PATH=$with_motif
-			with_motif="yes"
-			MOTIF_INCDIR="-I$MOTIF_PATH/include/X11"
-			MOTIF_LIBDIR="-L$MOTIF_PATH/lib"
-		else
-			MOTIF_INCDIR="# -I/usr/X11/include"
-			MOTIF_LIBDIR="# -L/usr/X11/lib"
+			if test "x$with_motif" != "xyes"
+			then
+				MOTIF_PATH=$with_motif
+				with_motif="yes"
+				MOTIF_INCDIR="-I$MOTIF_PATH/include/X11"
+				MOTIF_LIBDIR="-L$MOTIF_PATH/lib"
+			else
+				MOTIF_INCDIR="# -I/usr/X11/include"
+				MOTIF_LIBDIR="# -L/usr/X11/lib"
+			fi
+			with_x="yes"
+			DEF_MOTIF="-DUSE_MOTIF"
 		fi
 
-		with_x="yes"
-		DEF_MOTIF="-DUSE_MOTIF"
-		AC_SUBST(MOTIF_PATH)
-		AC_SUBST(MOTIF_LIBS)
 	],[
 		DEF_MOTIF="# -DUSE_MOTIF"
 		with_motif="no"
@@ -75,9 +76,9 @@ AC_SUBST(MOTIF_PATH)
 AC_SUBST(MOTIF_INCDIR)
 AC_SUBST(MOTIF_LIBDIR)
 
-if test "$with_x" = "yes"
+if test "x$with_x" != "xno"
 then
-	if test "$with_motif" = "yes"
+	if test "x$with_motif" != "xno"
 	then
 		MOTIF_LIBS=-lXm
 		ATHENA_LIBS=
@@ -231,13 +232,7 @@ AC_SUBST(READLINE_LIBS)
 
 DEF_X11="-DUSE_X11"
 
-if test "$with_x" = "no"; then
-	DEF_X11="# ${DEF_X11}"
-	X_LIBS="# -lXaw -lXt -lXext -lXmu -lX11"
-	X_INCDIR="# -I/usr/X11R6/include"
-	X_LIBDIR="# -L/usr/X11R6/lib"
-else
-
+if test "x$with_x" != "xno"; then
 	# The AC PATH EXTRA macro uses xmkmf to figure out where to
 	# find the X include directory and X lib directories, so lets
 	# make sure that it can find the xmkmf executable.
@@ -298,6 +293,11 @@ else
 	# should clean things up for us.
 
 	X_LIBS="${X_WIDGETLIB} -lXt -lXext -lXmu ${X_PRE_LIBS} -lX11 ${X_EXTRA_LIBS}"
+else
+	DEF_X11="# ${DEF_X11}"
+	X_LIBS="# -lXaw -lXt -lXext -lXmu -lX11"
+	X_INCDIR="# -I/usr/X11R6/include"
+	X_LIBDIR="# -L/usr/X11R6/lib"
 fi
 
 AC_SUBST(DEF_X11)

@@ -16,7 +16,7 @@ AC_DEFUN(AC_VOLATILE,
 	AC_MSG_RESULT($ac_cv_have_volatile)
 
 	if (test "$ac_cv_have_volatile" = "yes"); then
-		AC_DEFINE(HAVE_VOLATILE)
+		AC_DEFINE(HAVE_VOLATILE, [1], [Define to 1 if your compiler supports the volatile keyword])
 	fi
 ])
 
@@ -42,7 +42,7 @@ AC_DEFUN(AC_SIGSETJMP,
 	AC_MSG_RESULT($ac_cv_have_sigsetjmp)
 
 	if (test "$ac_cv_have_sigsetjmp" = "yes"); then
-		AC_DEFINE(HAVE_SIGSETJMP)
+		AC_DEFINE(HAVE_SIGSETJMP, [1], [Define to 1 if your environment provides sigsetjpm()])
 	fi
 ])
 
@@ -66,7 +66,7 @@ AC_DEFUN(AC_POSIX_SIGNALS,
    ])
 
 	if test "$ac_cv_have_posix_sigs" = "yes"; then
-		AC_DEFINE(HAVE_POSIX_SIGNALS)
+		AC_DEFINE(HAVE_POSIX_SIGNALS, [1], [Define to 1 if your environment supprts POSIX signals])
 	fi
 	AC_MSG_RESULT($ac_cv_have_posix_sigs)
 ])
@@ -192,7 +192,7 @@ main() {
 	AC_MSG_RESULT($ac_cv_signal_behaviour)
 
 	if (test "$ac_cv_signal_behaviour" = "SYSV"); then
-		AC_DEFINE(SYSV_SIGNALS)
+		AC_DEFINE(SYSV_SIGNALS, [1], [Define to 1 if your environment supports SysV signals])
 	fi
 ])
 

@@ -7,7 +7,8 @@
 #  common directory. If you don't want a global sqshrc just comment 
 #  out SQSHRC_GLOBAL, below.
 
-SQSHRC_GLOBAL = @prefix@/etc/sqshrc
+sysconfdir    = @sysconfdir@
+SQSHRC_GLOBAL = ${sysconfdir}/sqshrc
 SQSHRC_PATH   = "$(SQSHRC_GLOBAL):$${HOME}/.sqshrc"
 
 #  The following variables are configurable by the user.  Typically
@@ -148,7 +149,8 @@ bin_dir        = $(exec_prefix)/bin
 inc_dir        = $(prefix)/include
 lib_dir        = $(exec_prefix)/lib
 man_src        = $(src_dir)/doc
-man_dir        = $(prefix)/man
+mandir         = @mandir@
+man_dir        = ${mandir}
 
 INSTALL        = $(src_dir)/autoconf/install-sh
 INSTALL_PROG   = $(INSTALL) -c
