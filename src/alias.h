@@ -38,11 +38,10 @@ typedef struct alias_entry_st {
 } alias_entry_t ;
 
 static alias_entry_t  sg_alias_entry[] = {
-
+/* MW - duplicate 'reset' removed */
 /*	NAME             BODY                                 */
 /*	------------     ------------------------------------ */
-   { "!",           "\\buf-append !. !!*"           },
-	{ "reset",       "\\reset"                       },
+	{ "!",           "\\buf-append !. !!*"           },
 	{ "reset",       "\\reset"                       },
 	{ "exit",        "\\exit"                        },
 	{ "quit",        "\\exit"                        },
