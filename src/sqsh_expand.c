@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
+static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.3 2004/11/04 19:47:25 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -982,3 +982,84 @@ static void expand_sighandler( sig, user_data )
 {
     *((int*)user_data) = sig;
 }
+
+
+/*
+ * sqsh-2.1.6 feature - expand_color_prompt()
+ *
+ * Expand the prompt with color definitions to a static buffer and return the buffer
+ * address to the caller.
+ *
+ * Parameters: prompt   - char pointer to a string containing the unexpanded prompt
+ *             readline - Boolean switch: will the prompt string be passed on to
+ *                        the readline library yes or no. If yes, then the colorcodes
+ *                        also have to be encapsulated in between \001 and \002.
+ *
+ * The prompt string may contain colorcodes in the format {a;b;c}. This must be expanded
+ * to a string "\033[a;b;cm".
+ *   Color definitions byte a,b,c
+ *   The first code defines the Color Attribute Code with possible values:
+ *     00=none 01=bold
+ *   The second value defines the Text Color Code:
+ *     30=black 31=red 32=green 33=yellow 34=blue 35=magenta 36=cyan 37=white
+ *   The third value defines the Background Color Code:
+ *     40=black 41=red 42=green 43=yellow 44=blue 45=magenta 46=cyan 47=white
+ *
+ * If a curly bracket is part of the prompt string it must be escaped by a double brace,
+ * for example {{....}}. No other checks are performed if an opening brace is closed and
+ * if the specified color values are valid.
+ */
+#define PROMPTSZ 512
+#define OVFLSZ     4
+
+char *expand_color_prompt( prompt, readline )
+    char    *prompt;
+    int      readline;
+{
+    static   char buf [PROMPTSZ+OVFLSZ];
+    register int  i, j;
+
+
+    if ( prompt == NULL )
+        return NULL;
+
+    i = 0;
+    j = 0;
+    while ( prompt[i] != '\0' && j < PROMPTSZ )
+    {
+        if ( prompt[i] == '{' )
+        {
+            if ( prompt[i+1] == '{' )
+                buf[j++] = prompt[i++];
+            else
+            {
+                if ( readline == True )
+                  buf[j++]  = '\001';
+                buf[j++] = '\033';
+                buf[j++] = '[';
+            }
+            i++;
+        }
+        else if ( prompt[i] == '}' )
+        {
+            if ( prompt[i+1] == '}' )
+                buf[j++] = prompt[i++];
+            else
+            {
+                buf[j++] = 'm';
+                if ( readline == True )
+                  buf[j++] = '\002';
+            }
+            i++;
+        }
+        else
+            buf[j++] = prompt[i++];
+    }
+    buf[j] = '\0';
+
+    if ( prompt[i] != '\0' && j >= PROMPTSZ )
+        strcpy (buf, "sqsh> ");
+
+    return buf;
+}
+
