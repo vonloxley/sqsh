@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_misc.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: cmd_misc.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -82,6 +82,9 @@ int cmd_display( sqlbuf )
 			s = varbuf_getstr( expand_buf ) ;
 		} else
 			s = "" ;
+
+                /*-- sqsh-2.1.6 feature - Expand color prompt --*/
+		s = expand_color_prompt (s, False);
 
 		/*-- Print the line of text --*/
 		fprintf( stdout, "%s%*.*s\n", 
