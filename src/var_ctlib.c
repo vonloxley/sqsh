@@ -30,10 +30,11 @@
 #include "sqsh_error.h"
 #include "sqsh_fd.h"
 #include "var.h"
+#include "sqsh_expand.h" /* sqsh-2.1.6 */
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_ctlib.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: var_ctlib.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -42,15 +43,37 @@ int var_set_interfaces( env, var_name, var_value )
 	char     *var_name ;
 	char     **var_value ;
 {
+	/* sqsh-2.1.6 - New variables */
+	varbuf_t  *exp_buf;
+	char      *interfaces;
+
+
 	if (var_value == NULL || *var_value == NULL)
 	{
 		sqsh_set_error( SQSH_E_INVAL, "Invalid path name" );
 		return False;
 	}
 
-	if (access( *var_value, R_OK ) == -1)
+	/*
+	 * sqsh-2.1.6 feature - Expand interfaces variable
+	*/
+	if ((exp_buf = varbuf_create( 512 )) == NULL)
+	{
+		sqsh_set_error( SQSH_E_INVAL, "Unable to allocate expand buffer" );
+		return False;
+	}
+	if (sqsh_expand( *var_value, exp_buf, 0 ) == False)
+	{
+		sqsh_set_error( SQSH_E_INVAL, "Unable to expand interfaces variable" );
+		return False;
+	}
+	interfaces = varbuf_getstr( exp_buf );
+
+
+	if (access( interfaces, R_OK ) == -1)
 	{
 		sqsh_set_error( SQSH_E_INVAL, "Illegal path: %s", strerror(errno) );
+		varbuf_destroy( exp_buf );
 		return False;
 	}
 
@@ -59,15 +82,16 @@ int var_set_interfaces( env, var_name, var_value )
 		if (ct_config( g_context,             /* Context */
 		               CS_SET,                /* Action */
 		               CS_IFILE,              /* Property */
-		               (CS_VOID*)*var_value,  /* Buffer */
+		               (CS_VOID*)interfaces,  /* Buffer */
 		               CS_NULLTERM,           /* Buffer Length */
 		               NULL ) != CS_SUCCEED )
 		{
 			sqsh_set_error( SQSH_E_INVAL, "Unable to configure CS_CONTEXT" );
+			varbuf_destroy( exp_buf );
 			return False;
 		}
 	}
-
+	varbuf_destroy( exp_buf ); /* sqsh-2.1.6 feature */
 	return True ;
 }
 
