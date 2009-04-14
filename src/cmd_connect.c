@@ -35,12 +35,22 @@
 #include "sqsh_init.h"
 #include "sqsh_stdin.h"
 #include "cmd.h"
+#include "sqsh_expand.h" /* sqsh-2.1.6 */
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.14 2008/05/21 17:51:24 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.12 2008/04/06 10:03:08 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
+
+/*
+ * sqsh-2.1.6 - Structure for Network Security Options
+*/
+typedef struct _NetSecService {
+    CS_INT  service;
+    CS_CHAR optchar;
+    CS_CHAR *name;
+} NET_SEC_SERVICE;
 
 /*
  * sg_login:  The following variable is set to True when we are in the
@@ -49,6 +59,12 @@ USE(RCS_Id)
  */
 static int sg_login = False;
 static int sg_login_failed = False;
+
+/*
+ * sqsh-2.1.6 feature - Keep track of the number of timeouts
+ * i.e. occurrences of CS_TIMEOUT for a connection.
+*/
+static int timeouts;
 
 /*-- Local Prototypes --*/
 static CS_RETCODE syb_server_cb 
@@ -74,7 +90,14 @@ static CS_RETCODE syb_cs_cb
 
 static int wrap_print _ANSI_ARGS(( FILE*, char* )) ;
 static int check_opt_capability _ANSI_ARGS(( CS_CONNECTION * ));
-static int kerb_get_principal(char *kerb_proc, char *server, char *buf, int len);
+
+/* sqsh-2.1.6 - New function SetNetAuth */
+static CS_RETCODE SetNetAuth _ANSI_ARGS(( CS_CONNECTION *,
+               CS_CHAR *, CS_CHAR *, CS_CHAR *, CS_CHAR *))
+#if defined(_CYGWIN32_)
+    __attribute__ ((stdcall))
+#endif /* _CYGWIN32_ */
+    ;
 
 /*
  * cmd_connect:
@@ -88,9 +111,20 @@ static int kerb_get_principal(char *kerb_proc, char *server, char *buf, int len)
  *    username   -   Sybase username  (overridden by -U)
  *    password   -   Sybase password  (overridden by -P)
  *    server     -   Sybase server    (overridden by -S)
- *    interfaces -   Locatio of sybase interfaces file (overridden by -I)
- *    colsep     -   Column seperator
- *    width      -   Display width
+ *    database   -   Sybase database  (overridden by -D)
+ *    interfaces -   Location of sybase interfaces file (overridden by -I)
+ *    chained    -   transaction mode chained or unchained (-n on|off)
+ *    preserve_context - Do not preserve database context when reconnecting
+ *                       to a server but use the default database of the
+ *                       specified login (-c)
+ *
+ *    appname        -N
+ *    keytab_file    -K
+ *    principal      -R
+ *    secure_options -V
+ *    secmech        -Z
+ *    query_timeout  -Q
+ *    login_timeout  -T
  */
 int cmd_connect( argc, argv )
     int    argc ;
@@ -130,9 +164,17 @@ int cmd_connect( argc, argv )
     int       i;
     int       return_code;
     CS_INT    version;
-    char      *kerberos_on;
-    char      *server_principal;
-    char	  *kerb_prog;
+    /* sqsh-2.1.6 - New variables */
+    char      *keytab_file;
+    char      *principal;
+    char      *secmech;
+    char      *secure_options;
+    char      *login_timeout;
+    char      *query_timeout;
+    CS_INT    SybTimeOut;
+    CS_BOOL   NetAuthRequired;
+    varbuf_t  *exp_buf;
+    char      tmp_str[30];
 
 #if defined(CTLIB_SIGPOLL_BUG) && defined(F_SETOWN)
     int       ctlib_fd;
@@ -156,32 +198,25 @@ int cmd_connect( argc, argv )
 
     /*
      * Parse the command line options.
+     * sqsh-2.1.6 - New options added and case evaluation neatly ordered.
      */
-    while ((c = sqsh_getopt( argc, argv, "D:U:N:P;S;I;cnKR:" )) != EOF) 
+    while ((c = sqsh_getopt( argc, argv, "cD:I;K:n:N:P;Q:R:S:T:U:V;Z;" )) != EOF) 
     {
         switch( c ) 
         {
-        case 'D' :
-        	if (env_put( g_env, "database", sqsh_optarg, 
-        			ENV_F_TRAN ) == False)
-        	{
-        		fprintf( stderr, "\\connect: -D: %s\n",
-        				sqsh_get_errstr() );
-        		have_error = True;
-        	}
-        	break;
-          case 'N':
-        	  if (env_put( g_env, "appname", sqsh_optarg,
-        			  ENV_F_TRAN ) == False) {
-        		  	fprintf( stderr, "\\connect: -N: %s\n",
-        		  			sqsh_get_errstr() );
-        		  	have_error = True;
-        	  }
-        	  break;
-	  case 'c' :
-	    preserve_context = False ;
-	    break ;
-	  case 'I'  :
+          case 'c' :
+            preserve_context = False ;
+          break ;
+	  case 'D' :
+	    if (env_put( g_env, "database", sqsh_optarg, 
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -D: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break;
+	  case 'I' :
 	    if (env_put( g_env, "interfaces", sqsh_optarg, 
 			 ENV_F_TRAN ) == False)
 	    {
@@ -190,24 +225,32 @@ int cmd_connect( argc, argv )
 		have_error = True;
 	    }
 	    break ;
-	  case 'S'  :    /* Server name */
-	    if (env_put( g_env, "DSQUERY", sqsh_optarg,
+	  case 'K' : /* sqsh-2.1.6 */
+	    if (env_put( g_env, "keytab_file", sqsh_optarg,
 			 ENV_F_TRAN ) == False)
 	    {
-		fprintf( stderr, "\\connect: -S: %s\n",
+		fprintf( stderr, "\\connect: -K: %s\n",
 			 sqsh_get_errstr() );
 		have_error = True;
 	    }
 	    break ;
-	  case 'U' :
-	    if (env_put( g_env, "username", sqsh_optarg,
+	  case 'n' :
+	    if (env_put( g_env, "chained", sqsh_optarg,
 			 ENV_F_TRAN ) == False)
 	    {
-		fprintf( stderr, "\\connect: -U: %s\n",
+		fprintf( stderr, "\\connect: -n: %s\n",
 			 sqsh_get_errstr() );
 		have_error = True;
 	    }
 	    break ;
+          case 'N' : /* sqsh-2.1.5 */
+	    if (env_put( g_env, "appname", sqsh_optarg,
+			 ENV_F_TRAN ) == False) {
+		fprintf( stderr, "\\connect: -N: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break;
 	  case 'P' :
 	    if(g_password_set == True && g_password != NULL)
 		strcpy( orig_password, g_password );
@@ -221,29 +264,73 @@ int cmd_connect( argc, argv )
 		have_error = True;
 	    }
 	    break;
-	  case 'n' :
-	    if (env_put( g_env, "chained", sqsh_optarg,
+	  case 'Q' : /* sqsh-2.1.6 */
+	    if (env_put( g_env, "query_timeout", sqsh_optarg,
 			 ENV_F_TRAN ) == False)
 	    {
-		fprintf( stderr, "\\connect: -n: %s\n",
+		fprintf( stderr, "\\connect: -Q: %s\n",
 			 sqsh_get_errstr() );
 		have_error = True;
 	    }
 	    break ;
-	  case 'K' :
-	    if (env_put( g_env, "kerberos_on", sqsh_optarg,
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -K: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-	  case 'R' :
-	    if (env_put( g_env, "server_principal", sqsh_optarg,
+	  case 'R' : /* sqsh-2.1.6 */
+	    if (env_put( g_env, "principal", sqsh_optarg,
 			 ENV_F_TRAN ) == False)
 	    {
 		fprintf( stderr, "\\connect: -R: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+	  case 'S' :
+	    if (env_put( g_env, "DSQUERY", sqsh_optarg,
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -S: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+	  case 'T' : /* sqsh-2.1.6 */
+	    if (env_put( g_env, "login_timeout", sqsh_optarg,
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -T: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+	  case 'U' :
+	    if (env_put( g_env, "username", sqsh_optarg,
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -U: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+	  case 'V' : /* sqsh-2.1.6 */
+            if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
+	      return_code = env_put( g_env, "secure_options", "cimoqr", ENV_F_TRAN);
+            else
+	      return_code = env_put( g_env, "secure_options", sqsh_optarg, ENV_F_TRAN);
+
+	    if (return_code == False)
+	    {
+		fprintf( stderr, "\\connect: -V: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
+	  case 'Z' : /* sqsh-2.1.6 */
+            if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
+	      return_code = env_put( g_env, "secmech", "default", ENV_F_TRAN);
+            else
+	      return_code = env_put( g_env, "secmech", sqsh_optarg, ENV_F_TRAN);
+
+	    if (return_code == False)
+	    {
+		fprintf( stderr, "\\connect: -Z: %s\n",
 			 sqsh_get_errstr() );
 		have_error = True;
 	    }
@@ -259,12 +346,16 @@ int cmd_connect( argc, argv )
     /*
      * If there are any options left on the end of the line, then
      * we have an error.
+     * sqsh-2.1.6 - New options added to the list.
      */
     if( have_error || sqsh_optind != argc ) 
     {
         fprintf( stderr, 
-            "Use: \\connect [-c] [-I interfaces] [-U username] [-P password]\n"
-            "               [-S server] [-n {on|off}] [-K] [-R server_principal]\n" ) ;
+            "Use: \\connect [-c] [-I interfaces] [-U username] [-P pwd] [-S server]\n"
+            "               [-D database ] [-N appname] [-n {on|off}] [-Q query_timeout]\n"
+            "               [-T login_timeout] [-K keytab_file] [-R principal]\n"
+            "               [-V secure_options] [-Z mechanism]\n"
+        ) ;
     
         env_rollback( g_env );
         return CMD_FAIL;
@@ -291,9 +382,14 @@ int cmd_connect( argc, argv )
     env_get( g_env, "tds_version", &tds_version ) ;
     env_get( g_env, "chained", &chained ) ;
     env_get( g_env, "appname", &appname);
-    env_get( g_env, "kerberos_on", &kerberos_on);
-    env_get( g_env, "server_principal", &server_principal);
-    env_get( g_env, "kerb_prog", &kerb_prog);
+    /* sqsh-2.1.6 - New variables */
+    env_get( g_env, "keytab_file", &keytab_file);
+    env_get( g_env, "login_timeout", &login_timeout);
+    env_get( g_env, "principal", &principal);
+    env_get( g_env, "query_timeout", &query_timeout);
+    env_get( g_env, "secmech", &secmech);
+    env_get( g_env, "secure_options", &secure_options);
+
     password = g_password;
 
     /*
@@ -322,50 +418,116 @@ int cmd_connect( argc, argv )
         }
     }
 
-    if (kerberos_on && !server_principal && kerb_prog) {
-    	static char p[100];
-    	if(kerb_get_principal(kerb_prog, server, p, 100))
-    		server_principal = p;
-    	else {
-    		fprintf(stderr, "\\connect: Can't get server principal for %s using %s\n", server, kerb_prog);
-    	}
-    }
-    
-    if (password != NULL && strcmp( password, "-" ) == 0)
+    /*
+     * sqsh-2.1.6 -  If an interfaces file is specified, make sure environment
+     * variables get expanded correctly.
+    */
+    if ( interfaces != NULL && *interfaces != '\0' )
     {
-        if (sqsh_stdin_fgets( passbuf, sizeof(passbuf) ) != NULL)
+        if ((exp_buf = varbuf_create( 512 )) == NULL)
         {
-            cp = strchr( passbuf, (int)'\n' );
-            if (cp != NULL)
-            {
-                *cp = '\0';
-            }
-            env_put( g_env, "password", passbuf, ENV_F_TRAN );
-            password = g_password;
+            fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+            sqsh_exit( 255 );
         }
+        if (sqsh_expand( interfaces, exp_buf, 0 ) != False)
+            env_put( g_env, "interfaces", varbuf_getstr( exp_buf ), ENV_F_TRAN );
+        else
+            fprintf( stderr, "sqsh: Error expanding $interfaces: %s\n", sqsh_get_errstr() );
+        varbuf_destroy( exp_buf );
+        env_get( g_env, "interfaces", &interfaces);
     }
+    DBG(sqsh_debug(DEBUG_ENV, "cmd_connect: Interfaces file is %s.\n", interfaces);)
 
     /*
-     * If we don't have a password to use (i.e. the $password isn't set
-     * or -P was not supplied), then ask the user for one.
-     */
-    if (g_password_set == False)
+     * sqsh-2.1.6 - If a keytab_file is specified, make sure environment variables get
+     * expanded correctly.
+    */
+    if ( keytab_file != NULL && *keytab_file != '\0' )
     {
-        len = sqsh_getinput( "Password: ", passbuf, sizeof(passbuf), 0 );
-
-        if (len < 0)
+        if ((exp_buf = varbuf_create( 512 )) == NULL)
         {
-            if (len == -1)
+            fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+            sqsh_exit( 255 );
+        }
+        if (sqsh_expand( keytab_file, exp_buf, 0 ) != False)
+            env_put( g_env, "keytab_file", varbuf_getstr( exp_buf ), ENV_F_TRAN );
+        else
+            fprintf( stderr, "sqsh: Error expanding $keytab_file: %s\n", sqsh_get_errstr() );
+        varbuf_destroy( exp_buf );
+        env_get( g_env, "keytab_file", &keytab_file);
+    }
+    DBG(sqsh_debug(DEBUG_ENV, "cmd_connect: Keytab_file is %s.\n", keytab_file);)
+
+    /*
+     * sqsh-2.1.6 feature - Network Authentication
+     *
+     * If network authentication is requested by passing on options
+     * -V and/or -Z, then we do not need to set the password.
+     *
+     * Note: Options -K and/or -R do not determine to use network
+     * authentication, they are just helper variables to netauth.
+     * Only the parameters -V and/or -Z will request network authentication.
+     * This code relies on the fact that sqsh will fill in default values for
+     * the parameters -V and -Z if the user does not supply a parameter value.
+     * (Parameter values for -V and -Z are optional)
+     * If a value of "none" is passed on to -Z, then we ignore all Network auth
+     * settings and will login using a password altogether.
+    */
+    for (i = 0, cp = secmech ; cp != NULL && *cp != '\0'; tmp_str[i++] = tolower(*cp++));
+    tmp_str[i] = '\0';
+    if (secmech != NULL && strcmp(tmp_str,"none") == 0)
+    {
+        env_put (g_env, secmech, NULL, ENV_F_TRAN);
+        env_put (g_env, secure_options, NULL, ENV_F_TRAN);
+        secmech         = NULL;
+        secure_options  = NULL;
+    }
+    if ((secmech != NULL && *secmech != '\0') || 
+        (secure_options != NULL && *secure_options != '\0'))
+    {
+        NetAuthRequired = CS_TRUE;
+        DBG(sqsh_debug(DEBUG_ERROR, "cmd_connect: Network user authentication required.\n");)
+    }
+    else
+    {
+        NetAuthRequired = CS_FALSE;
+        DBG(sqsh_debug(DEBUG_ERROR, "cmd_connect: Regular user authentication using password.\n");)
+        if (password != NULL && strcmp( password, "-" ) == 0)
+        {
+            if (sqsh_stdin_fgets( passbuf, sizeof(passbuf) ) != NULL)
             {
-                fprintf( stderr, "\\connect: %s\n", sqsh_get_errstr() );
+                cp = strchr( passbuf, (int)'\n' );
+                if (cp != NULL)
+                {
+                    *cp = '\0';
+                }
+                env_put( g_env, "password", passbuf, ENV_F_TRAN );
+                password = g_password;
             }
-            goto connect_fail;
         }
 
-        if (passbuf[len] == '\n')
-            passbuf[len] = '\0';
+        /*
+         * If we don't have a password to use (i.e. the $password isn't set
+         * or -P was not supplied), then ask the user for one.
+         */
+        if (g_password_set == False)
+        {
+            len = sqsh_getinput( "Password: ", passbuf, sizeof(passbuf), 0);
 
-        env_put( g_env, "password", passbuf, ENV_F_TRAN );
+            if (len < 0)
+            {
+                if (len == -1)
+                {
+                    fprintf( stderr, "\\connect: %s\n", sqsh_get_errstr() );
+                }
+                goto connect_fail;
+            }
+
+            if (passbuf[len] == '\n')
+                passbuf[len] = '\0';
+
+            env_put( g_env, "password", passbuf, ENV_F_TRAN );
+        }
     }
 
     /*
@@ -480,12 +642,48 @@ int cmd_connect( argc, argv )
             goto connect_fail;
 #endif
 
+        /*
+         * sqsh-2.1.6 feature - Set CS_TIMEOUT and CS_LOGIN_TIMEOUT
+        */
+        if (query_timeout != NULL && *query_timeout != '\0' && atoi (query_timeout) > 0)
+        {
+            SybTimeOut = atoi (query_timeout);
+            if (ct_config( g_context,                  /* Context */
+                           CS_SET,                     /* Action */
+                           CS_TIMEOUT,                 /* Property */
+                           (CS_VOID*)&SybTimeOut,      /* Buffer */
+                           CS_UNUSED,                  /* Buffer Length */
+                           NULL                        /* Output Length */
+                         ) != CS_SUCCEED)
+            {
+                DBG(sqsh_debug(DEBUG_ERROR, "ct_config: Failed to set CS_TIMEOUT to %d seconds.\n", SybTimeOut);)
+                goto connect_fail;
+	    }
+            DBG(sqsh_debug(DEBUG_ERROR, "ct_config: CS_TIMEOUT set to %d seconds.\n", SybTimeOut);)
+        }
+
+        if (login_timeout != NULL && *login_timeout != '\0' && atoi (login_timeout) > 0)
+        {
+            SybTimeOut = atoi (login_timeout);
+            if (ct_config( g_context,                  /* Context */
+                           CS_SET,                     /* Action */
+                           CS_LOGIN_TIMEOUT,           /* Property */
+                           (CS_VOID*)&SybTimeOut,      /* Buffer */
+                           CS_UNUSED,                  /* Buffer Length */
+                           NULL                        /* Output Length */
+                         ) != CS_SUCCEED)
+	    {
+                DBG(sqsh_debug(DEBUG_ERROR, "ct_config: Failed to set CS_LOGIN_TIMEOUT to %d seconds.\n", SybTimeOut);)
+                goto connect_fail;
+            }
+            DBG(sqsh_debug(DEBUG_ERROR, "ct_config: CS_LOGIN_TIMEOUT set to %d seconds.\n", SybTimeOut);)
+        }
 
         /*
          * If the user overrode the default interfaces file location, then
          * configure the interfaces file as such.
          */
-        if (interfaces != NULL) 
+        if (interfaces != NULL && *interfaces != '\0') /* sqsh-2.1.6 sanity check */
         {
             if (ct_config( g_context,                  /* Context */
                                 CS_SET,                     /* Action */
@@ -493,7 +691,7 @@ int cmd_connect( argc, argv )
                                 (CS_VOID*)interfaces,       /* Buffer */
                                 CS_NULLTERM,                /* Buffer Length */
                                 NULL                        /* Output Length */
-                             ) != CS_SUCCEED)
+                         ) != CS_SUCCEED)
                 goto connect_fail;
         }
 
@@ -507,70 +705,55 @@ int cmd_connect( argc, argv )
         goto connect_fail;
 
     /*-- Set username --*/
-    if (ct_con_props( g_connection,               /* Connection */
-                      CS_SET,                     /* Action */
-                      CS_USERNAME,                /* Property */
-                      (CS_VOID*)username,         /* Buffer */
-                      CS_NULLTERM,                /* Buffer Lenth */
-                      (CS_INT*)NULL               /* Output Length */
-                         ) != CS_SUCCEED)
-        goto connect_fail;
-
-#if defined(CS_SEC_NETWORKAUTH)
-    if(kerberos_on == NULL) {
-#endif
-    /*-- Set password --*/
-    if (ct_con_props( g_connection,               /* Connection */
-                      CS_SET,                     /* Action */
-                      CS_PASSWORD,                /* Property */
-                      (CS_VOID*)g_password,       /* Buffer */
-                      (g_password == NULL) ? CS_UNUSED : CS_NULLTERM,
-                      (CS_INT*)NULL               /* Output Length */
-                         ) != CS_SUCCEED)
-        goto connect_fail;
-#if defined(CS_SEC_NETWORKAUTH)
-    } else {
-	CS_INT kerb = CS_TRUE;
-	if( ct_con_props( g_connection,               /* Connection */
-                      CS_SET,                     /* Action */
-                      CS_SEC_NETWORKAUTH,                /* Property */
-                      (CS_VOID*)&kerb,       /* Buffer */
-                      CS_UNUSED,
-                      (CS_INT*)NULL               /* Output Length */
-                         ) != CS_SUCCEED)
-        goto connect_fail;
-
-        if(server_principal != NULL) {
-	    if( ct_con_props( g_connection,               /* Connection */
-			      CS_SET,                     /* Action */
-			      CS_SEC_SERVERPRINCIPAL,                /* Property */
-                      (CS_VOID*)server_principal,       /* Buffer */
-                      CS_NULLTERM,
-                      (CS_INT*)NULL               /* Output Length */
-                         ) != CS_SUCCEED)
-        goto connect_fail;
-	}
+    if (username != NULL && *username != '\0')    /* sqsh-2.1.6 sanity check */
+    {
+        if (ct_con_props( g_connection,           /* Connection */
+                          CS_SET,                 /* Action */
+                          CS_USERNAME,            /* Property */
+                          (CS_VOID*)username,     /* Buffer */
+                          CS_NULLTERM,            /* Buffer Length */
+                          (CS_INT*)NULL           /* Output Length */
+                        ) != CS_SUCCEED)
+            goto connect_fail;
     }
 
-
-#endif
-
-
-
-    if (appname == NULL)
-	appname = "sqsh";
+    /*-- sqsh-2.1.6 feature - Use network authentication or set password --*/
+    if (NetAuthRequired == CS_TRUE)
+    {
+        if (SetNetAuth ( g_connection,            /* Connection */
+                         principal,               /* Server principal */
+                         keytab_file,             /* DCE keytab file */
+                         secmech,                 /* Security mechanism */
+                         secure_options           /* Security options */
+                       ) != CS_SUCCEED)
+            goto connect_fail;
+    }
+    else
+    {
+        if (ct_con_props( g_connection,           /* Connection */
+                          CS_SET,                 /* Action */
+                          CS_PASSWORD,            /* Property */
+                          (CS_VOID*)g_password,   /* Buffer */
+                          (g_password == NULL) ? CS_UNUSED : CS_NULLTERM,
+                          (CS_INT*)NULL           /* Output Length */
+                        ) != CS_SUCCEED)
+            goto connect_fail;
+    }
 
     /*-- Set application name --*/
-    if (ct_con_props( g_connection,               /* Connection */
-                      CS_SET,                     /* Action */
-                      CS_APPNAME,                 /* Property */
-                      (CS_VOID*)appname,          /* Buffer */
-                      CS_NULLTERM,                /* Buffer Lenth */
-                      (CS_INT*)NULL               /* Output Length */
-                          ) != CS_SUCCEED)
-        goto connect_fail;
+    if (appname != NULL && *appname != '\0')      /* sqsh-2.1.5 */
+    {
+        if (ct_con_props( g_connection,           /* Connection */
+                          CS_SET,                 /* Action */
+                          CS_APPNAME,             /* Property */
+                          (CS_VOID*)appname,      /* Buffer */
+                          CS_NULLTERM,            /* Buffer Length */
+                          (CS_INT*)NULL           /* Output Length */
+                        ) != CS_SUCCEED)
+            goto connect_fail;
+    }
     
-    if (tds_version != NULL && tds_version != '\0')
+    if (tds_version != NULL && *tds_version != '\0') /* sqsh-2.1.6 fix on *tds_version */
     {
         if (strcmp(tds_version, "4.0") == 0)
             version = CS_TDS_40;
@@ -578,6 +761,8 @@ int cmd_connect( argc, argv )
             version = CS_TDS_42;
         else if (strcmp(tds_version, "4.6") == 0)
             version = CS_TDS_46;
+        else if (strcmp(tds_version, "4.9.5") == 0)
+            version = CS_TDS_495;
         else if (strcmp(tds_version, "5.0") == 0)
             version = CS_TDS_50;
 	else version = CS_TDS_50;
@@ -601,7 +786,7 @@ int cmd_connect( argc, argv )
     }
 
     /*-- Packet Size --*/
-    if (packet_size != NULL) 
+    if (packet_size != NULL && *packet_size != '\0') /* sqsh-2.1.6 sanity check */
     {
         i = atoi(packet_size);
         if (ct_con_props( g_connection,            /* Connection */
@@ -662,7 +847,7 @@ int cmd_connect( argc, argv )
     }
 
     /*-- Character Set --*/
-    if (charset != NULL) 
+    if (charset != NULL && *charset != '\0')      /* sqsh-2.1.6 sanity check */
     {
         if (cs_locale( g_context,                 /* Context */
                        CS_SET,                    /* Action */
@@ -841,24 +1026,26 @@ connect_succeed:
      * connection.
      */
     env_commit( g_env );
+    timeouts = 0; /* sqsh-2.1.6 */
 
     if (locale != NULL)
         cs_loc_drop( g_context, locale );
 
     /* Set chained mode, if necessary. */
-    if ( chained != NULL ) {
-	if( check_opt_capability( g_connection ) ) 
-	{
-	    CS_BOOL value = (*chained == '1' ? CS_TRUE : CS_FALSE);
-
-	    /* fprintf(stderr, "Setting chained mode to %d\n", value); */
-	    
-	    retcode = ct_options( g_connection, CS_SET, CS_OPT_CHAINXACTS,
-				  &value, CS_UNUSED, NULL);
-	    if(retcode != CS_SUCCEED) {
-		/* XXX */
-	    }
-	}
+    if ( chained != NULL && *chained != '\0') /* sqsh-2.1.6 sanity check */
+    {
+        if ( check_opt_capability( g_connection ) ) 
+        {
+            CS_BOOL value = (*chained == '1' ? CS_TRUE : CS_FALSE);
+            retcode = ct_options( g_connection, CS_SET, CS_OPT_CHAINXACTS,
+                                  &value, CS_UNUSED, NULL);
+            if (retcode != CS_SUCCEED)
+            {
+                fprintf (stderr, 
+                "\\connect: WARNING: Unable to set transaction mode %s\n",
+                (*chained == '1' ? "on" : "off"));
+            }
+        }
     }
 
     return_code = CMD_LEAVEBUF;
@@ -1002,24 +1189,6 @@ static int wrap_print( outfile, str )
     }
 
     return True ;
-}
-
-static int kerb_get_principal(char *kerb_proc, char *server, char *principal, int len) 
-{
-	FILE *fin;
-	char buff[255];
-	
-	principal[0] = 0;
-	
-	if((fin = popen(kerb_proc, "r")) == NULL) {
-		return 0;
-	}
-	while(fgets(buff, 200, fin)) {
-		strncpy(buff, principal, len);
-	}
-	fclose(fin);
-	
-	return 1;
 }
 
 /*
@@ -1212,17 +1381,29 @@ static CS_RETCODE syb_cs_cb ( ctx, msg )
 }
 
 /*
- * syb_err_handler():
- */
+ * Function syb_client_cb() error handler
+ *
+ * sqsh-2.1.6 feature - Client call back modified to facilitate handling
+ *                      of query and login timeouts.
+*/
+#define ERROR_SNOL(e,s,n,o,l) \
+  ( (CS_SEVERITY(e) == s) && (CS_NUMBER(e) == n) \
+  &&  (CS_ORIGIN(e) == o) && (CS_LAYER(e)  == l) )
+
 static CS_RETCODE syb_client_cb ( ctx, con, msg )
     CS_CONTEXT    *ctx;
     CS_CONNECTION *con;
     CS_CLIENTMSG  *msg;
 {
+    CS_INT status = 0;
+    char  *server;
+    char  *max_timeout;
+
+
     /*
      * Let the CS-Lib handler print the message out.
      */
-    (void)syb_cs_cb( ctx, msg );
+    (void) syb_cs_cb( ctx, msg );
 
     /*
      * If the dbprocess is dead or the dbproc is a NULL pointer and
@@ -1231,16 +1412,243 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
      */
     if (sg_login == False)
     {
+        env_get( g_env, "DSQUERY", &server ) ;
         if (CS_SEVERITY(msg->msgnumber) >= CS_SV_COMM_FAIL || ctx == NULL || 
             con == NULL)
         {
-            DBG(sqsh_debug(DEBUG_ERROR,
-                "syb_client_cb: Aborting on severity %d\n", 
-                CS_SEVERITY(msg->msgnumber) );)
-
+            fprintf (stderr, "%s: Aborting on severity %d\n", server, CS_SEVERITY(msg->msgnumber) );
             sqsh_exit(255) ;
         }
     }
 
+    /*
+    ** Is it a timeout error?
+    */
+    if ( ERROR_SNOL(msg->msgnumber, CS_SV_RETRY_FAIL, 63, 2, 1 ) )
+    {
+        timeouts++;
+        env_get( g_env, "DSQUERY", &server ) ;
+        env_get( g_env, "max_timeout", &max_timeout ) ;
+        if (max_timeout != NULL && *max_timeout != '\0' && atoi(max_timeout) > 0)
+		if (timeouts >= atoi(max_timeout))
+        	{
+	            fprintf (stderr, "%s: Query or command timeout detected, session aborted\n", server);
+	            fprintf (stderr, "%s: The client connection has detected this %d time(s).\n", server, timeouts);
+	            fprintf (stderr, "%s: Aborting on max_timeout limit %s\n", server, max_timeout );
+	            sqsh_exit(255) ;
+	        }
+
+        if (ct_con_props (con, CS_GET, CS_LOGIN_STATUS, (CS_VOID *)&status, CS_UNUSED, NULL) != CS_SUCCEED)
+        {
+            fprintf (stderr,"%s: ct_con_props() failed\n", server);
+            return CS_FAIL;
+        }
+
+        if (status)
+        {
+            /* Result set timeout */
+            (CS_VOID) ct_cancel(con, (CS_COMMAND *) NULL, CS_CANCEL_ATTN);
+            fprintf (stderr, "%s: Query or command timeout detected, command/batch cancelled\n", server);
+            fprintf (stderr, "%s: The client connection has detected this %d time(s).\n", server, timeouts);
+            return CS_SUCCEED;
+        }
+        else
+        {
+            /* Login timeout */
+            fprintf (stderr, "%s: Login timeout detected, aborting connection attempt\n", server);
+            return CS_FAIL;
+        }
+    }
     return CS_SUCCEED ;
 }
+
+
+/*
+ * sqsh-2.1.6 feature
+ *
+ * Function: SetNetAuth
+ *
+ * Purpose:  Enable network user authentication using the appropriate security
+ *           mechanism (Kerberos, DCE or PAM) and set available options.
+ *
+ * Return :  CS_FAIL or CS_SUCCEED
+*/
+static CS_RETCODE
+SetNetAuth (conn, principal, keytab_file, secmech, req_options)
+    CS_CONNECTION *conn;
+    CS_CHAR       *principal;
+    CS_CHAR       *keytab_file;
+    CS_CHAR       *secmech;
+    CS_CHAR       *req_options;
+{
+
+#if defined(CS_SEC_NETWORKAUTH)
+
+    CS_CHAR buf[CS_MAX_CHAR+1];
+    CS_INT  buflen;
+    CS_INT  i;
+    CS_BOOL OptSupported;
+    CS_CHAR *cp;
+
+    NET_SEC_SERVICE nss[] = {
+      /* 
+       * CS_SEC_NETWORKAUTH must be the first entry
+     */
+    { CS_SEC_NETWORKAUTH,    'u', "Network user authentication (unified login)" },
+    { CS_SEC_CONFIDENTIALITY,'c', "Data confidentiality" },
+    { CS_SEC_INTEGRITY,      'i', "Data integrity" },
+    { CS_SEC_MUTUALAUTH,     'm', "Mutual client/server authentication" },
+    { CS_SEC_DATAORIGIN,     'o', "Data origin stamping" },
+    { CS_SEC_DETECTSEQ,      'q', "Data out-of-sequence detection" },
+    { CS_SEC_DETECTREPLAY,   'r', "Data replay detection" },
+    { CS_SEC_CHANBIND,       'b', "Channel binding" },
+    { CS_UNUSED,             ' ', "" }
+    };
+
+
+    DBG(sqsh_debug(DEBUG_ENV, "SetNetAuth - principal:   %s\n", (principal   == NULL ? "NULL" : principal));)
+    DBG(sqsh_debug(DEBUG_ENV, "SetNetAuth - keytab_file: %s\n", (keytab_file == NULL ? "NULL" : keytab_file));)
+    DBG(sqsh_debug(DEBUG_ENV, "SetNetAuth - secmech:     %s\n", (secmech     == NULL ? "NULL" : secmech));)
+    DBG(sqsh_debug(DEBUG_ENV, "SetNetAuth - req_options: %s\n", (req_options == NULL ? "NULL" : req_options));)
+
+    /*
+     * Set optional server principal. (Server principal name without the realm name)
+     */
+    if (principal != NULL && *principal != '\0')
+    {
+        if (ct_con_props( g_connection,           /* Connection */
+                          CS_SET,                 /* Action */
+                          CS_SEC_SERVERPRINCIPAL, /* Property */
+                          (CS_VOID*)principal,    /* Buffer */
+                          CS_NULLTERM,            /* Buffer Length */
+                          (CS_INT*)NULL           /* Output Length */
+                        ) != CS_SUCCEED)
+        {
+            DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Failed to set principal %s.\n", principal);)
+            return CS_FAIL;
+        }
+        DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully set principal %s.\n", principal);)
+    }
+
+    /*
+     * Set optional keytab file for DCE network authentication.
+     */
+    if (keytab_file != NULL && *keytab_file != '\0')
+    {
+        if (ct_con_props( g_connection,           /* Connection */
+                          CS_SET,                 /* Action */
+                          CS_SEC_KEYTAB,          /* Property */
+                          (CS_VOID*)keytab_file,  /* Buffer */
+                          CS_NULLTERM,            /* Buffer Length */
+                          (CS_INT*)NULL           /* Output Length */
+                        ) != CS_SUCCEED)
+        {
+            DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Failed to set keytab %s.\n", keytab_file);)
+            return CS_FAIL;
+        }
+        DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully set keytab %s.\n", keytab_file);)
+    }
+
+    /*
+     * Set the security mechanism.
+     * Note: If you do not supply a mechanism, or use "default", the first available
+     * configured security mechanism from the libtcl.cfg file will be used.
+    */
+    for (i = 0, cp = secmech ; cp != NULL && *cp != '\0'; buf[i++] = tolower(*cp++));
+    buf[i] = '\0';
+
+    if (secmech != NULL && *secmech != '\0' && strcmp(buf, "default") != 0)
+    {
+        if (ct_con_props( g_connection,           /* Connection */
+                          CS_SET,                 /* Action */
+                          CS_SEC_MECHANISM,       /* Property */
+                          (CS_VOID*)secmech,      /* Buffer */
+                          CS_NULLTERM,            /* Buffer Length */
+                          (CS_INT*)NULL           /* Output Length */
+                        ) != CS_SUCCEED)
+        {
+            DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Failed to set secmech %s.\n", secmech);)
+            return CS_FAIL;
+        }
+        DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully set secmech %s.\n", secmech);)
+    }
+
+    /*
+     * Always set the CS_SEC_NETWORKAUTH option. (Option defined in nss[0]).
+    */
+    OptSupported = CS_TRUE;
+    if (ct_con_props(conn, CS_SET, nss[0].service, &OptSupported,
+        CS_UNUSED, NULL) != CS_SUCCEED)
+    {
+        DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Failed to enable option %s.\n", nss[0].name);)
+        return CS_FAIL;
+    }
+    DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully enabled option %s.\n", nss[0].name);)
+
+    /*
+     * Request for the secmech actually in use.
+    */
+    if (ct_con_props( g_connection,           /* Connection */
+                      CS_GET,                 /* Action */
+                      CS_SEC_MECHANISM,       /* Property */
+                      (CS_VOID*)buf,          /* Buffer */
+                      CS_MAX_CHAR,            /* Buffer Length */
+                      (CS_INT*)&buflen        /* Output Length */
+                    ) != CS_SUCCEED)
+    {
+        DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Failed to get secmech name.\n");)
+        return CS_FAIL;
+    }
+    DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully obtained secmech name %s.\n", buf);)
+    env_put( g_env, "secmech", buf, ENV_F_TRAN );
+
+    /*
+     * Loop through the list of all other available security options
+     * and check if the current option is requested (-V option),
+     * otherwise continue with the next option.
+     * Note: If the req_options pointer is NULL or is empty, all
+     * possible options supported by the secmech are enabled.
+     * (Should we report on non-existent options requested, or leave
+     * it just the way it is?)
+    */
+    for (i = 1; nss[i].service != CS_UNUSED; i++)
+    {
+        if (req_options != NULL && strlen(req_options) > 0 &&
+            strchr (req_options, nss[i].optchar) == NULL)
+            continue;
+
+        /*
+        * First check if the secmech supports the requested service.
+        */
+        if (ct_con_props(conn, CS_SUPPORTED, nss[i].service, &OptSupported,
+            CS_UNUSED, NULL) != CS_SUCCEED)
+        {
+            DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Failed to request support for option %s.\n",
+                           nss[i].name);)
+            return CS_FAIL;
+        }
+
+        /*
+        * Is the service supported by the secmech, then activate it.
+        */
+        if (OptSupported == CS_TRUE)
+        {
+            if ( ct_con_props(conn, CS_SET, nss[i].service, &OptSupported,
+                             CS_UNUSED, NULL) != CS_SUCCEED)
+            {
+                DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Failed to enable option %s.\n",
+                               nss[i].name);)
+                return CS_FAIL;
+            }
+            DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully enabled option %s.\n",
+                           nss[i].name);)
+        }
+    }
+    return CS_SUCCEED;
+#else
+    fprintf (stderr, "SQSH Error: Network authentication not supported by the Open Client version at the time sqsh\n");
+    fprintf (stderr, "            was build. Upgrade your Open Client and rebuild sqsh to enable unified login.\n");
+    return CS_FAIL;
+#endif
+}
+
