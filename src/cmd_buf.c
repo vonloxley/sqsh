@@ -33,6 +33,7 @@
 #include "sqsh_getopt.h"
 #include "sqsh_buf.h"
 #include "sqsh_stdin.h"
+#include "sqsh_expand.h" /* sqsh-2.1.6 */
 #include "cmd.h"
 
 /*-- Current Version --*/
@@ -458,6 +459,7 @@ int cmd_buf_edit( argc, argv )
 	extern char *sqsh_optarg ;
 	extern int   sqsh_optind ;
 	int          c ;
+	varbuf_t    *exp_buf;               /* sqsh-2.1.6 feature */
 
 	/*
 	 * The editor can only be run in interactive mode.
@@ -536,8 +538,20 @@ int cmd_buf_edit( argc, argv )
 
 	env_get( g_env, "tmp_dir", &tmp_dir );
 
-	if (tmp_dir == NULL)
+	if (tmp_dir == NULL || *tmp_dir == '\0') /* sqsh-2.1.6 sanity check */
 		tmp_dir = SQSH_TMP;
+	else /* sqsh-2.1.6 feature - Expand tmp_dir variable */
+	{
+		if ((exp_buf = varbuf_create( 512 )) == NULL)
+		{
+			fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+			sqsh_exit( 255 );
+		}
+		if (sqsh_expand( tmp_dir, exp_buf, 0 ) == False)
+			tmp_dir = SQSH_TMP;
+		else
+			tmp_dir = varbuf_getstr( exp_buf );
+	}
 
 	/*
 	 * Build the name of the file in which we will place the buffer
@@ -546,6 +560,7 @@ int cmd_buf_edit( argc, argv )
 	 * the same program.
 	 */
 	sprintf( path, "%s/sqsh-edit.%d.sql", tmp_dir, (int)getpid() );
+	varbuf_destroy( exp_buf ); /* sqsh-2.1.6 feature */
 
 	/*
 	 * Attempt to save the read buffer into the file that we built.
@@ -582,3 +597,37 @@ int cmd_buf_edit( argc, argv )
 
 	return CMD_ALTERBUF;
 }
+
+/*
+ * cmd_buf_del():
+ *
+ * sqsh-2.1.6 feature - Implements user command \buf-del, which deletes
+ * a numbered buffer from the history list.
+ */
+int cmd_buf_del( argc, argv )
+	int    argc ;
+	char  *argv[] ;
+{
+	/*
+	 * Check your arguments.
+	 */
+	if( argc != 2 )
+        {
+		fprintf( stderr, "Use: \\buf-del buf\n" ) ;
+		return CMD_FAIL ;
+	}
+
+	/*
+	 * Delete the buffer.
+	 */
+	if ( buf_del( argv[1] ) == True )
+		fprintf(stdout, "Buffer %s destroyed and list renumbered\n", argv[1]);
+	else
+        {
+		fprintf( stderr, "\\buf-del %s: %s\n", argv[1],
+                         sqsh_get_errstr() ) ;
+		return CMD_FAIL ;
+	}
+	return CMD_CLEARBUF ;
+}
+
