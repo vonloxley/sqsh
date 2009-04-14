@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.7 2008/04/08 18:20:49 mpeppler Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.6 2008/04/06 10:03:08 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -76,50 +76,53 @@ typedef struct sqsh_flag_st {
  * is maintained in this manner so that I can have print_usage()
  * to the format for me...I got tired of re-doing it every time
  * I added a new flag.
+ * sqsh-2.1.6 - New parameters added and list neatly ordered.
  */
 static sqsh_flag_t sg_flags[] = {
-/* Flag    Argument         Description
-   -----   ---------        ----------------------------------- */
-    { "-a", "count",        "Max. # of errors before abort"      },
-    { "-A", "packet_size",  "Adjust TDS packet size (512)"       },
-    { "-b", "",             "Suppress banner message on startup" },
-    { "-B", "",             "Turn off file buffering on startup" },
-    { "-c", "[cmdend]",     "Alias for the 'go' command"         },
-    { "-C", "sql",          "Send sql statment to server"        },
-    { "-d", "severity",     "Min. severity level to display"     },
-    { "-D", "database",     "Change database context on startup" },
-    { "-e", "",             "Echo batch prior to executing"      },
-    { "-E", "editor",       "Replace default editor (vi)"        },
-    { "-f", "severity",     "Min. severity level for failure"    },
-    { "-h", "",             "Disable headers and footers"        },
-    { "-H", "hostname",     "Set the client hostname"            },
-    { "-i", "filename",     "Read input from file"               },
-    { "-I", "interfaces",   "Alternate interfaces file"          },
-    { "-J", "charset",      "Client character set"               },
-    { "-k", "keywords",     "Specify alternate keywords file"    },
-    { "-K", "",             "Use Kerberos Authentication"        },
-    { "-l", "level",        "Set debugging level"                },
-    { "-m", "mode",         "Set display mode (normal)"          },
-    { "-n", "on|off",       "Set chained transaction mode"       },
-    { "-N", "appname",      "Set Application Name (sqsh)"        },
-    { "-L", "var=value",    "Set the value of a given variable"  },
-    { "-o", "filename",     "Direct all output to file"          },
-    { "-p", "",             "Display performance stats"          },
-    { "-P", "[password]",   "Sybase password (NULL)"             },
-    { "-r", "[sqshrc]",     "Specify name of .sqshrc"            },
-    { "-R", "server principal", "Kerberos server principal"      },
-    { "-s", "colsep",       "Alternate column separator (\\t)"   },
-    { "-S", "server",       "Name of Sybase server ($DSQUERY)"   },
-    { "-t", "[filter]",     "Filter batches through program"     },
-    { "-U", "username",     "Name of Sybase user"                },
-    { "-v", "",             "Display current version and exit"   },
-    { "-w", "width",        "Adjust result display width"        },
-    /* The -\250 option is used internally only when hiding the password */
-    { "-\250", "",             ""                                   },
-    { "-X", "",             "Enable client password encryption"  },
-    { "-y", "dir",          "Override value of $SYBASE"          },
-    { "-z", "language",     "Alternate display language"         },
-    { "-Z", "program",		"Program to fetch server principal"  },
+/* Flag    Argument           Description
+   -----   ---------          ----------------------------------- */
+    { "-a", "count",          "Max. # of errors before abort"      },
+    { "-A", "packet_size",    "Adjust TDS packet size"             },
+    { "-b", "",               "Suppress banner message on startup" },
+    { "-B", "",               "Turn off file buffering on startup" },
+    { "-c", "[cmdend]",       "Alias for the 'go' command"         },
+    { "-C", "sql",            "Send sql statement to server"       },
+    { "-d", "severity",       "Min. severity level to display"     },
+    { "-D", "database",       "Change database context on startup" },
+    { "-e", "",               "Echo batch prior to executing"      },
+    { "-E", "editor",         "Replace default editor (vi)"        },
+    { "-f", "severity",       "Min. severity level for failure"    },
+    { "-G", "TDS version",    "TDS version to use"                 },
+    { "-h", "",               "Disable headers and footers"        },
+    { "-H", "hostname",       "Set the client hostname"            },
+    { "-i", "filename",       "Read input from file"               },
+    { "-I", "interfaces",     "Alternate interfaces file"          },
+    { "-J", "charset",        "Client character set"               },
+    { "-k", "keywords",       "Specify alternate keywords file"    },
+    { "-K", "keytab",         "Network security keytab file (DCE)" },
+    { "-l", "level",          "Set debugging level"                },
+    { "-L", "var=value",      "Set the value of a given variable"  },
+    { "-m", "mode",           "Set display mode (normal)"          },
+    { "-n", "{on|off}",       "Set chained transaction mode"       },
+    { "-N", "appname",        "Set Application Name (sqsh)"        },
+    { "-o", "filename",       "Direct all output to file"          },
+    { "-p", "",               "Display performance stats"          },
+    { "-P", "[password]",     "Sybase password (NULL)"             },
+    { "-Q", "query_timeout",  "Query timeout period in seconds"    },
+    { "-r", "[sqshrc]",       "Specify name of .sqshrc"            },
+    { "-R", "principal",      "Network security server principal"  },
+    { "-s", "colsep",         "Alternate column separator (\\t)"   },
+    { "-S", "server",         "Name of Sybase server ($DSQUERY)"   },
+    { "-t", "[filter]",       "Filter batches through program"     },
+    { "-T", "login_timeout",  "Login timeout period in seconds"    },
+    { "-U", "username",       "Name of Sybase user"                },
+    { "-v", "",               "Display current version and exit"   },
+    { "-V", "[cimorq]",       "Requested network security options" },
+    { "-w", "width",          "Adjust result display width"        },
+    { "-X", "",               "Enable client password encryption"  },
+    { "-y", "dir",            "Override value of $SYBASE"          },
+    { "-z", "language",       "Alternate display language"         },
+    { "-Z", "secmech",        "Network security mechanism"         },
 };
 
 int
@@ -284,16 +287,14 @@ main( argc, argv )
      * these variables has side effects.  For example, setting
      * $script automatically sets $interactive to 0 and redirects
      * stdin from the script file.
+     * sqsh-2.1.6 - New parameters added to the list and cases neatly ordered
      */
     while ((ch = sqsh_getopt_combined( "SQSH", argc, argv,
-        "\250;a:A:bBc;C:d:D:ef:E:hH:i:I:J:k:K;l:L:m:n:N:o:pP;r;R:s:S:t;U:vV:w:Xy:z:Z:" )) != EOF)
+        "\250;a:A:bBc;C:d:D:eE:f:G:hH:i:I:J:k:K:l:L:m:n:N:o:pP;Q:r;R:s:S:t;T:U:vV;w:Xy:z:Z;" )) != EOF)
     {
         ret = 0;
         switch (ch) 
         {
-            case 'V' :
-                ret = env_set( g_env, "tds_version", sqsh_optarg );
-                break;
             case 'a' :
                 ret = env_set( g_env, "thresh_exit", sqsh_optarg );
                 break;
@@ -342,6 +343,9 @@ main( argc, argv )
             case 'f' :
                 ret = env_set( g_env, "thresh_fail", sqsh_optarg );
                 break;
+            case 'G' : /* sqsh-2.1.6 */
+                ret = env_set( g_env, "tds_version", sqsh_optarg );
+                break;
             case 'h' :
                 ret = env_set( g_env, "headers", "0" );
 
@@ -368,21 +372,12 @@ main( argc, argv )
             case 'k' :
                 ret = env_set( g_env, "keyword_file", sqsh_optarg );
                 break;
-            case 'K':
-            	ret = env_set( g_env, "kerberos_on", "1");
-            	break;
+            case 'K' : /* sqsh-2.1.6 */
+                ret = env_set( g_env, "keytab_file", sqsh_optarg );
+                break;
             case 'l' :
                 ret = env_set( g_env, "debug", sqsh_optarg );
                 break;
-            case 'm' :
-                ret = env_set( g_env, "style", sqsh_optarg );
-                break;
-            case 'n' :
-                ret = env_set( g_env, "chained", sqsh_optarg );
-                break;
-            case 'N':
-            	ret = env_set( g_env, "appname", sqsh_optarg);
-            	break;
             case 'L' :
                 cptr = sqsh_optarg;
                 i    = 0;
@@ -395,6 +390,15 @@ main( argc, argv )
                 }
                 ++cptr;
                 ret = env_set( g_env, str, cptr );
+                break;
+            case 'm' :
+                ret = env_set( g_env, "style", sqsh_optarg );
+                break;
+            case 'n' :
+                ret = env_set( g_env, "chained", sqsh_optarg );
+                break;
+            case 'N' :
+                ret = env_set( g_env, "appname", sqsh_optarg);
                 break;
             case 'o' :
                 fflush(stdout);
@@ -428,24 +432,21 @@ main( argc, argv )
                 }
                 
                 break;
-            case '\250':
-	        	{
-	        		char pwd[255];
-	        		memset(pwd, 0, 255);
-	        		/* XXX The fileno is hard-coded - not good! */
-	        		if(read(3, pwd, 255) <= 0) {
-	        			fprintf(stderr, "Can't read password");
-	        		} else {
-	        			ret = env_set( g_env, "password", pwd );
-	        		}
-	        		close(3);
-	        		close(4);
-	        	}
+            case 'Q' : /* sqsh-2.1.6 */
+                ret = env_set( g_env, "query_timeout", sqsh_optarg );
+                break;
             case 'r' :
+		/*
+		 * The alternative sqshrc file should already have been
+		 * processed above. Note that the -r option should be the
+		 * first option on the command line, otherwise the option
+		 * is ignored, also the option and the filename should be
+		 * separated by at leat a blank space.
+		*/
                 ret = True;
                 break;
-            case 'R':
-            	ret = env_set( g_env, "server_principal", sqsh_optarg);
+            case 'R' : /* sqsh-2.1.6 */
+                ret = env_set( g_env, "principal", sqsh_optarg);
                 break;
             case 's' :
                 ret = env_set( g_env, "colsep", sqsh_optarg );
@@ -460,6 +461,9 @@ main( argc, argv )
                     ret = env_set( g_env, "filter_prog", sqsh_optarg );
                 }
                 break;
+            case 'T' : /* sqsh-2.1.6 */
+                ret = env_set( g_env, "login_timeout", sqsh_optarg );
+                break;
             case 'U' :
                 ret = env_set( g_env, "username", sqsh_optarg );
                 username = sqsh_optarg;
@@ -467,6 +471,12 @@ main( argc, argv )
             case 'v' :
                 printf( "%s\n", g_version );
                 sqsh_exit(0);
+                break;
+            case 'V' : /* sqsh-2.1.6 */
+                if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
+                    ret = env_set( g_env, "secure_options", "cimoqr" );
+                else
+                    ret = env_set( g_env, "secure_options", sqsh_optarg );
                 break;
             case 'w' :
                 ret = env_set( g_env, "width", sqsh_optarg );
@@ -483,9 +493,27 @@ main( argc, argv )
             case 'z' :
                 ret = env_set( g_env, "language", sqsh_optarg );
                 break;
-            case 'Z':
-            	ret = env_set( g_env, "kerb_prog", sqsh_optarg);
+            case 'Z' : /* sqsh-2.1.6 */
+                if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
+                    ret = env_set( g_env, "secmech", "default");
+                else
+                    ret = env_set( g_env, "secmech", sqsh_optarg );
                 break;
+            case '\250' :
+                {
+                  char pwd[255];
+                  memset(pwd, 0, 255);
+                  /* XXX The fileno is hard-coded - not good! */
+                  if(read(3, pwd, 255) <= 0) {
+                    fprintf(stderr, "Can't read password");
+                  } else {
+                    ret = env_set( g_env, "password", pwd );
+                  }
+                  close(3);
+                  close(4);
+                }
+		break;
+
             default :
                 fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
                 print_usage();
@@ -657,10 +685,24 @@ main( argc, argv )
         /*
          * If the user has requested some form of keyword completion
          * then attempt to read the contents of the keywords file.
+         * sqsh-2.1.6 feature - Expand keyword_file variable
          */
         env_get( g_env, "keyword_file", &keyword_file );
-        if( keyword_file != NULL )
-            sqsh_readline_read( keyword_file );
+        if ( keyword_file != NULL && *keyword_file != '\0')
+        {
+            exp_buf = varbuf_create( 512 );
+            if (exp_buf == NULL)
+            {
+                fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+                sqsh_exit( 255 );
+            }
+            if (sqsh_expand( keyword_file, exp_buf, 0 ) != False)
+                sqsh_readline_read( varbuf_getstr( exp_buf) );
+            else
+                fprintf( stderr, "sqsh: Error expanding $keyword_file: %s\n",
+                       sqsh_get_errstr() );
+            varbuf_destroy( exp_buf );
+        }
     }
 
     /*
