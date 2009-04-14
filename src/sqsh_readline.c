@@ -30,6 +30,7 @@
 #include "sqsh_env.h"
 #include "sqsh_stdin.h"
 #include "sqsh_readline.h"
+#include "sqsh_expand.h"   /* sqsh-2.1.6 */
 
 #if defined(USE_READLINE)
 #include <readline/readline.h>
@@ -48,7 +49,7 @@ extern void add_history();
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.2 2004/11/05 15:53:45 mpeppler Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -91,6 +92,8 @@ int sqsh_readline_init()
     int   stifle_value;
     char *readline_histsize;
     char *readline_history;
+    /* sqsh-2.1.6 - New variables */
+    varbuf_t *exp_buf;
 
     /*
      * In non-interactive mode we don't need to bother with
@@ -118,11 +121,23 @@ int sqsh_readline_init()
 
     /*
      * Read in the readline history file if necessary.
+     * sqsh-2.1.6 feature - Expand readline_history variable
      */
     env_get( g_env, "readline_history", &readline_history );
-    if (readline_history != NULL)
+    if (readline_history != NULL && *readline_history != '\0')
     {
-        read_history( readline_history );
+        exp_buf = varbuf_create (512);
+        if (exp_buf == NULL)
+        {
+          fprintf (stderr, "sqsh: %s\n", sqsh_get_errstr());
+          sqsh_exit (255);
+        }
+        if (sqsh_expand (readline_history, exp_buf, 0) != False)
+          read_history( varbuf_getstr(exp_buf) );
+        else
+            fprintf( stderr, "sqsh: Error expanding $readline_history: %s\n",
+                sqsh_get_errstr() );
+        varbuf_destroy (exp_buf);
     }
 
     DBG(sqsh_debug( DEBUG_READLINE, "sqsh_readline_init: Initializing\n" );)
@@ -139,6 +154,8 @@ int sqsh_readline_exit()
 {
 #if defined(USE_READLINE)
     char *readline_history;
+    /* sqsh-2.1.6 - New variables */
+    varbuf_t *exp_buf;
 
     /*
      * In non-interactive mode we don't need to bother with
@@ -149,10 +166,24 @@ int sqsh_readline_exit()
         return True;
     }
 
+    /*
+     * sqsh-2.1.6 feature - Expand readline_history variable
+    */
     env_get( g_env, "readline_history", &readline_history );
-    if (readline_history != NULL)
+    if (readline_history != NULL && *readline_history != '\0')
     {
-        write_history( readline_history );
+        exp_buf = varbuf_create (512);
+        if (exp_buf == NULL)
+        {
+          fprintf (stderr, "sqsh: %s\n", sqsh_get_errstr());
+          sqsh_exit (255);
+        }
+        if (sqsh_expand (readline_history, exp_buf, 0) != False)
+          write_history( varbuf_getstr(exp_buf) );
+        else
+            fprintf( stderr, "sqsh: Error expanding $readline_history: %s\n",
+                sqsh_get_errstr() );
+        varbuf_destroy (exp_buf);
     }
 #endif /* USE_READLINE */
 
@@ -172,24 +203,47 @@ char* sqsh_readline( prompt )
     char *line;
 #if defined(USE_READLINE)
     char *cp;
-#endif
+    /* sqsh-2.1.6 - New variables */
+    char *ignoreeof = NULL;
 
-#if defined(USE_READLINE)
 
+    /* sqsh-2.1.6 feature - Expand color prompt */
+    prompt = expand_color_prompt (prompt, True);
     if (prompt != NULL)
     {
         /*
-         * Since we have no way of capturing any real error conditions
-         * from readline, if it returns NULL we just have to assume
-         * that we have hit EOF, and not some error condition.  From what
-         * can can tell from the readline library, there is no way to
-         * differentiate the two.
-         */
-        if ((line = readline( prompt )) == NULL)
+         * sqsh-2.1.6 feature - Obtain environment variable ignoreeof. This will
+         * indicate if we have to ignore ^D yes or no.
+        */
+        env_get( g_env, "ignoreeof", &ignoreeof );
+        if (ignoreeof == NULL || *ignoreeof == '0')
         {
-            sqsh_set_error( SQSH_E_NONE, NULL );
-            return NULL;
+            /*
+             *               Standard behaviour:
+             * Since we have no way of capturing any real error conditions
+             * from readline, if it returns NULL we just have to assume
+             * that we have hit EOF, and not some error condition.  From what
+             * we can tell from the readline library, there is no way to
+             * differentiate the two.
+            */
+            if ((line = readline( prompt )) == NULL)
+            {
+                sqsh_set_error( SQSH_E_NONE, NULL );
+                return NULL;
+            }
         }
+        else
+        {
+            /*
+            ** If ignoreeof is defined True, continue with readline
+            ** as long as NULL is returned (accidentally C-d pressed).
+            */
+            while ((line = readline( prompt )) == NULL) {
+                fprintf (stdout, "\nUse \"exit\" or \"quit\" to leave the sqsh shell.\n");
+                fflush  (stdout);
+            }
+        }
+
 
         /*
          * Attempt to find out if there is anything in this line except
