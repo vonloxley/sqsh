@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_job.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: sqsh_job.c,v 1.1.1.1 2004/04/07 12:35:06 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -981,6 +981,9 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 	char              *bg_ptr   = NULL ; /* Location of & */
 	char              *pipe_ptr = NULL ; /* Location of | */
 	char              *cp;
+	/* sqsh-2.1.6 - New variables */
+	varbuf_t	  *exp_buf;
+
 
 	/*
 	 * In a "real" shell both the | pipeline(s) and the & background
@@ -1037,10 +1040,24 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 
 			if( tmp_dir == NULL || *tmp_dir == '\0' )
 				tmp_dir = SQSH_TMP;
+			else /* sqsh-2.1.6 feature - Expand tmp_dir variable */
+		       	{
+				if ((exp_buf = varbuf_create( 512 )) == NULL)
+				{
+					fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+					sqsh_exit( 255 );
+				}
+				if (sqsh_expand( tmp_dir, exp_buf, 0 ) == False)
+					tmp_dir = SQSH_TMP;
+				else
+					tmp_dir = varbuf_getstr( exp_buf );
+			}
 
 			/*-- Create the defer file --*/
 			sprintf( defer_path, "%s/sqsh-dfr.%d-%d", 
 			         tmp_dir, (int) getpid(), job->job_id );
+
+			varbuf_destroy( exp_buf ); /* sqsh-2.1.6 feature */
 			
 			/*-- Let the job structure know where it is --*/
 			if( (job->job_output = sqsh_strdup( defer_path )) == NULL ) {
