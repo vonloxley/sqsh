@@ -66,6 +66,7 @@ int  cmd_buf_save   _ANSI_ARGS(( int, char** )) ;
 int  cmd_buf_load   _ANSI_ARGS(( int, char** )) ;
 int  cmd_buf_show   _ANSI_ARGS(( int, char** )) ;
 int  cmd_buf_append _ANSI_ARGS(( int, char** )) ;
+int  cmd_buf_del    _ANSI_ARGS(( int, char** )) ;   /* sqsh-2.1.6 feature */
 int  cmd_set        _ANSI_ARGS(( int, char** )) ;   /* Variable commands */
 int  cmd_jobs       _ANSI_ARGS(( int, char** )) ;   /* Job Control */
 int  cmd_wait       _ANSI_ARGS(( int, char** )) ;
@@ -148,11 +149,12 @@ static cmd_entry_t  sg_cmd_entry[] = {
 	{ "\\break",     NULL,          cmd_break        },
 	{ "\\buf-edit",  NULL,          cmd_buf_edit     },
 	{ "\\buf-copy",  NULL,          cmd_buf_copy     },
+	{ "\\buf-get",   NULL,          cmd_buf_get      },
 	{ "\\buf-save",  NULL,          cmd_buf_save     },
 	{ "\\buf-load",  NULL,          cmd_buf_load     },
 	{ "\\buf-show",  NULL,          cmd_buf_show     },
 	{ "\\buf-append",NULL,          cmd_buf_append   },
-	{ "\\buf-get",   NULL,          cmd_buf_get      },
+	{ "\\buf-del",   NULL,          cmd_buf_del      }, /* sqsh-2.1.6 feature */
 	{ ":r",          NULL,          cmd_buf_load     },
 	{ "vi",          NULL,          cmd_buf_edit     },
 	{ "emacs",       NULL,          cmd_buf_edit     },
