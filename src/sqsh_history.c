@@ -27,10 +27,11 @@
 #include "sqsh_error.h"
 #include "sqsh_history.h"
 #include "sqsh_varbuf.h"
+#include "sqsh_global.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_history.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_history.c,v 1.2 2005/04/05 16:17:42 mpeppler Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -38,6 +39,7 @@ USE(RCS_Id)
 static hisbuf_t* hisbuf_create  _ANSI_ARGS(( history_t*, char*, int )) ;
 static hisbuf_t* hisbuf_get     _ANSI_ARGS(( history_t*, int )) ;
 static int       hisbuf_destroy _ANSI_ARGS(( hisbuf_t* )) ;
+static unsigned long adler32    _ANSI_ARGS(( char*, int )) ;   /* sqsh-2.1.6 feature */
 
 /*
  * history_create():
@@ -170,6 +172,11 @@ int history_append( h, buf )
 {
     hisbuf_t  *hisbuf, *hb_tmp ;
     int        len ;
+    /* sqsh-2.1.6 - New variables */
+    register int   i;
+    unsigned long  chksum;
+    char          *histunique;
+
 
     /*-- Check parameters --*/
     if( h == NULL || buf == NULL ) {
@@ -190,6 +197,72 @@ int history_append( h, buf )
     }
 
     /*
+     * sqsh-2.1.6 feature - Calculate a checksum on the buffer.
+     * If we do not want to store duplicate history entries, then
+     * we search the linked list for an identical entry. If found,
+     * do not store the buffer in the list, but maintain MRU-LRU
+     * order; else continue as usual.
+    */
+     chksum = adler32 (buf, len);
+     DBG(sqsh_debug(DEBUG_ERROR, "sqsh_history: checksum of buffer: %u\n.\n", chksum);)
+     env_get (g_env, "histunique", &histunique);
+     if (histunique != NULL && *histunique != '0')
+     {
+       for (hb_tmp = h->h_start; hb_tmp != NULL && hb_tmp->hb_chksum != chksum;
+            hb_tmp = hb_tmp->hb_nxt);
+
+       /*
+        * If hb_tmp is not NULL we just found an identical history buffer entry.
+       */
+       if (hb_tmp != NULL)
+       {
+         /*
+          * - Nothing to do when it is already the first entry
+          *   (or only one).
+         */
+         if (hb_tmp == h->h_start)
+         {
+           sqsh_set_error( SQSH_E_NONE, NULL ) ;
+           return True;
+         }
+         else
+         {
+           /*
+            * Is it currently the last entry then we have to adjust h->h_end,
+            * else we have to pull the current entry out of the list.
+           */
+           if (hb_tmp == h->h_end)
+           {
+             h->h_end               = hb_tmp->hb_prv;
+             h->h_end->hb_nxt       = NULL;
+           }
+           else
+           {
+             hb_tmp->hb_prv->hb_nxt = hb_tmp->hb_nxt;
+             hb_tmp->hb_nxt->hb_prv = hb_tmp->hb_prv;
+           }
+         }
+         /*
+          * Now put the entry to the start of the list.
+          * (Also save the recent buffer number for renumbering the list).
+         */
+         i                        = h->h_start->hb_nbr;
+         h->h_start->hb_prv       = hb_tmp;
+         hb_tmp->hb_nxt           = h->h_start;
+         h->h_start               = hb_tmp;
+         hb_tmp->hb_prv           = NULL;
+         /*
+          * Adjust the buffer numbers in the list.
+         */
+         for (hb_tmp = h->h_start; hb_tmp != NULL && hb_tmp->hb_nbr != i;
+              hb_tmp->hb_nbr = i--, hb_tmp = hb_tmp->hb_nxt);
+           
+         sqsh_set_error( SQSH_E_NONE, NULL ) ;
+         return True;
+       }
+     }
+
+    /*
      * Go ahead an try to allocate a buffer before we try to
      * stick it into the history.
      */
@@ -197,6 +270,11 @@ int history_append( h, buf )
         sqsh_set_error( SQSH_E_NOMEM, NULL ) ;
         return False ;
     }
+
+    /*
+     * sqsh-2.1.6 feature - Store the checksum of the new buffer in the structure.
+    */
+    hisbuf->hb_chksum = chksum;
 
     /*
      * If the buffer is full, then we need to roll and entry off
@@ -267,6 +345,8 @@ int history_del( h, idx )
     int          idx ;
 {
     hisbuf_t   *hb ;
+    register int i ; /* sqsh-2.1.6 - New variable */
+
 
     /*-- Retrieve the appropriate history entry */
     if( (hb = hisbuf_get( h, idx )) == NULL )
@@ -285,7 +365,26 @@ int history_del( h, idx )
 
     hisbuf_destroy( hb ) ;
 
-    --h->h_nitems ;
+    /*
+     * sqsh-2.1.6 feature - Adjust h_nitems, h_next_br and renumber the list.
+    */
+    switch ( --h->h_nitems )
+    {
+        case 0 :
+            h->h_next_nbr = 1;
+	    break;
+
+        case 1 :
+	    h->h_start->hb_nbr = 1;
+            h->h_next_nbr = 2;
+	    break;
+
+        default :
+            for (hb = h->h_start, i = hb->hb_nbr, h->h_next_nbr = i + 1;
+                 hb != NULL; hb->hb_nbr = i--, hb = hb->hb_nxt);
+	    break;
+    }
+
     return True ;
 }
 
@@ -542,6 +641,7 @@ static hisbuf_t* hisbuf_create( h, buf, len )
     /*-- Initialize --*/
     hisbuf->hb_len = len ;
     hisbuf->hb_nbr = h->h_next_nbr++ ;
+    hisbuf->hb_chksum = 0 ; /* sqsh-2.1.6 feature */
     hisbuf->hb_nxt = NULL ;
     hisbuf->hb_prv = NULL ;
 
@@ -564,3 +664,28 @@ static int hisbuf_destroy( hb )
     }
     return True ;
 }
+
+
+/*
+ * sqsh-2.1.6 feature - Function adler32
+ *
+ * Calculate a simple checksum for the buffer pointed to by data over
+ * a length of len bytes, using the Adler algorithm.
+*/
+#define MOD_ADLER 65521
+ 
+static unsigned long adler32 (data, len)
+    char *data;
+    int   len;
+{
+    unsigned long a = 1, b = 0;
+
+    while (len-- > 0)
+    {
+        a = (a + *data++) % MOD_ADLER;
+        b = (b + a) % MOD_ADLER;
+    }
+
+    return (b << 16) | a;
+}
+

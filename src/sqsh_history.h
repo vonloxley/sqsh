@@ -32,6 +32,7 @@
 typedef struct hisbuf_st {
 	int               hb_nbr ;    /* History number */
 	int               hb_len ;    /* Total length of buffer */
+	unsigned long     hb_chksum;  /* sqsh-2.1.6 feature - buffer checksum */
 	char             *hb_buf ;    /* The buffer itself */
 	struct hisbuf_st *hb_nxt ;    /* Next buffer in chain */
 	struct hisbuf_st *hb_prv ;    /* Previous buffer in chain */
