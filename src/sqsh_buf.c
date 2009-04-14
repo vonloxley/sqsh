@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_buf.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_buf.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -445,3 +445,42 @@ int buf_append( buf_name, buf )
 
 	return r;
 }
+
+/*
+ * sqsh-2.1.6 feature - buf_del()
+ *
+ * Deletes a buffer from history. If buffer doesn't exist, then False is returned.
+ */
+int buf_del( buf_number )
+	char   *buf_number ;
+{
+    int i ;
+
+    /*-- Check parameters --*/
+    if ( buf_number == NULL )
+    {
+        sqsh_set_error( SQSH_E_BADPARAM, NULL ) ;
+        return False ;
+    }
+
+    if ( isdigit( (int)*(buf_number) ) )
+    {
+        i = atoi( buf_number) ;
+        if ( history_del( g_history, i ) == True )
+        {
+            sqsh_set_error( SQSH_E_NONE, NULL ) ;
+            return True ;
+        }
+        else
+        {
+            sqsh_set_error( SQSH_E_EXIST, NULL ) ;
+            return False ;
+        }
+    }
+    else
+    {
+        sqsh_set_error( SQSH_E_BADPARAM, NULL ) ;
+        return False ;
+    }
+}
+

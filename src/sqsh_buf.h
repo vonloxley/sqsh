@@ -32,5 +32,6 @@ int    buf_append  _ANSI_ARGS(( char*, char* )) ;
 int    buf_load    _ANSI_ARGS(( char*, char*, int )) ;
 int    buf_save    _ANSI_ARGS(( char*, char*, char* )) ;
 int    buf_can_put _ANSI_ARGS(( char* )) ;
+int    buf_del     _ANSI_ARGS(( char* )) ; /* sqsh-2.1.6 feature */
 
 #endif /* sqsh_buf_h_included */
