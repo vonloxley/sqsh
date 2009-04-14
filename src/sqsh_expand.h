@@ -47,5 +47,7 @@
 /*-- Prototype --*/
 int sqsh_expand  _ANSI_ARGS(( char*, varbuf_t*, int )) ;
 int sqsh_nexpand _ANSI_ARGS(( char*, varbuf_t*, int, int )) ;
+/* sqsh-2.1.6 feature - Expand color prompt function */
+char *expand_color_prompt _ANSI_ARGS(( char*, int )) ;
 
 #endif  /* sqsh_expand_h_included */
