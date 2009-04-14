@@ -52,7 +52,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_input.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: cmd_input.c,v 1.2 2004/11/05 13:01:14 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -682,10 +682,11 @@ static int input_read( output_buf, interactive )
         /*
          * If we haven't already allocated a buffer in which to
          * expand the prompt then we should do so.
+	 * sqsh-2.1.6 - expand buffer from 32 to 64 bytes.
          */
         if (sg_prompt_buf == NULL)
         {
-            if ((sg_prompt_buf = varbuf_create( 32 )) == NULL)
+            if ((sg_prompt_buf = varbuf_create( 64 )) == NULL)
             {
                 return -1;
             }
