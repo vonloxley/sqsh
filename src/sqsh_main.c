@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.6 2008/04/06 10:03:08 mpeppler Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.9 2009/04/14 12:25:24 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -158,6 +158,14 @@ main( argc, argv )
     int            i;
     varbuf_t      *exp_buf;
 
+    /*
+     * If termios.h defines TIOCGWINSZ, then we need to declare a
+     * structure in which to retrieve the current window size.
+     */
+#if defined(TIOCGWINSZ)
+    struct winsize  ws;
+#endif
+
 #if defined(SQSH_HIDEPWD)
     /*
      * If the password is passed in with the -P option then we do a little
@@ -165,14 +173,6 @@ main( argc, argv )
      * re-exec the program and read the pipe there.)
      */
     hide_password(argc, argv);
-#endif
-
-    /*
-     * If termios.h defines TIOCGWINSZ, then we need to declare a
-     * structure in which to retrieve the current window size.
-     */
-#if defined(TIOCGWINSZ)
-    struct winsize  ws;
 #endif
 
     /*
