@@ -1,6 +1,13 @@
-$Id: ReleaseNotes,v 1.4 2006/04/16 09:45:33 mpeppler Exp $
+$Id: ReleaseNotes,v 1.5 2008/04/06 10:21:49 mpeppler Exp $
 
 Release Notes
+
+sqsh 2.1.6
+
+Multiple changes contributed by Martin Wesdorp.
+This includes colorized output when using readline, handling of login and query
+timeouts, and most importantly updating the experimental kerberos
+support to be compatible with isql.
 
 sqsh 2.1.5
 
