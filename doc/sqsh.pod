@@ -23,7 +23,7 @@ sqsh - Interactive database shell
             [ -I interfaces ]
             [ -J charset ]
             [ -k keywords ]
-            [ -K ]
+            [ -K keytab]
             [ -l debug_flags ]
             [ -L var=value ]
             [ -m style ]
@@ -31,17 +31,21 @@ sqsh - Interactive database shell
             [ -o filename ]
             [ -p ]
             [ -P [password] ]
+            [ -Q value ]
             [ -r [sqshrc] ]
             [ -R server principal ]
             [ -s colsep ]
             [ -S server ]
             [ -t [filter] ]
+            [ -T value ]
             [ -U username ]
             [ -v ]
+            [ -V [cimorq]
             [ -w width ]
             [ -X ]
             [ -y directory ]
             [ -z language ]
+            [ -Z secmech ]
 
 =head1 DESCRIPTION
 
@@ -178,10 +182,11 @@ been  compiled into sqsh.  This file may also be set via
 the   $keyword_file   variable,   which   defaults    to
 $HOME/.sqsh_words.
 
-=item -K
+=item -K keytab
 
-If set, tells sqsh to use network authentication. The -P
-parameter will be ignored. See also the -R option below.
+Kerberos support. Specify the keytab file name for DCE.
+
+See the Kerberos Support section below for details.
 
 =item -l debug_flags
 
@@ -232,6 +237,26 @@ used to launch sqsh, so using B<-P> should not constitute a security hole.
 Alternatively, you can store your default password in .sqshrc file which is not readable by anyone
 other than yourself.
 
+=item -Q value
+
+Query timeout value (equivalent to isql's -t option). If set, will timeout a 
+long running query. Maps to the B<$query_timeout> variable.
+
+For example:
+
+   sqsh -SASE1502 -Usa -P -Q30
+   ASE1502.sa.master.1> cd tix
+   ASE1502.sa.tix.1> select count(*) from E_TIX;
+   Open Client Message
+   Layer 1, Origin 2, Severity 2, Number 63
+   ct_results(): user api layer: internal Client Library error: Read from the server has timed out.
+   ASE1502: Query or command timeout detected, command/batch cancelled
+   ASE1502: The client connection has detected this 1 time(s).
+
+See also the B<$max_timeout> variable, which controls the number of times a timeout 
+needs to be retried before the query is aborted.
+
+
 =item -r [sqshrc]
 
 Specifies an alternate I<.sqshrc>  file  to  be  processed,
@@ -241,8 +266,10 @@ command line, all other instances will be ignored.
 
 =item -R server_principal
 
-Specifies a I<server principal> to use  for  network  (kerberos) authentication. Using this has no effect if B<-K> is
-not set.
+Kerberos support: Specifies a I<server principal> to use  for  network  (kerberos) authentication, if
+the servername in the interfaces file differs from the real servername. 
+
+See the Kerberos Support section below for details.
 
 =item -s colsep
 
@@ -263,15 +290,27 @@ If I<filter> is not supplied,  then  $filter_prog  is  used
 (default  is ‘m4 -’). This value may also be set via the
 $filter and $filter_prog variables.
 
+=item -T value
+
+Specifies the login timeout (similar to isql's -l flag). If set
+specifies the number of seconds I<sqsh> will wait before timing out a
+login request. Maps to the B<$login_timeout> variable.
+
 =item -U username
 
 The Sybase I<username> to connect to the database as,  this
-defaults  to the username of the user running sqsh.  The
+defaults  to the username of the user running I<sqsh>.  The
 I<username> may also be set via the $username variable.
 
 =item -v
 
 Displays the version number, $version,, and exits.
+
+=item -V [cimork]
+
+Kerberos support: Specify the security options to use.
+
+See the Kerberos Support section below for details.
 
 =item -w width
 
@@ -283,7 +322,7 @@ defaults to 80.
 Initiates  the  login  connection  to  the  server  with
 client-side  password  encryption  (if  supported).   If
 either  SQL Server does not recognize this option, or if
-the version of CT-Lib used to compile _s_q_s_h does not support  this  option, then it will be ignored. This option
+the version of CT-Lib used to compile I<sqsh> does not support  this  option, then it will be ignored. This option
 may also be set using the $encryption environment  variable.
 
 =item -y directory
@@ -297,6 +336,12 @@ Specifies an alternate I<language> to display sqsh  prompts
 and messages.  Without the B<-z> flag, the server’s default
 language will be used.  This may also be set using  with
 the $language variable.
+
+=item -Z [secmech]
+
+Kerberos support: Specify the security mechanism to use.
+
+See the Kerberos Support section below for details. 
 
 =item  args...
 
@@ -326,9 +371,9 @@ you for a password  if  necessary).   Also,  if  database  activity  is
 required  within this startup file, the B<\connect> command (see B<COMMANDS>,
 below) may be executed.
 
-After the I<.sqshrc> file has been executed, _s_q_s_h then parses any  command
+After the I<.sqshrc> file has been executed, I<sqsh> then parses any  command
 line  options (thus any variables set in your I<.sqshrc> file may be overridden 
-by command line options). Following that,  if  _s_q_s_h  is  run  in
+by command line options). Following that,  if  I<sqsh>  is  run  in
 interactive  mode  (i.e. without B<-i> and if stdin is attached to a tty),
 it then looks for I<.sqsh_history> and loads the  contents  of  that  file
 into this history buffer (see B<BUFFERS>, below).
@@ -340,12 +385,12 @@ overridden using the $session variable.
 
 =head2 COMMAND LINE
 
-When a line is first read by _s_q_s_h, the first word is separated from the
+When a line is first read by I<sqsh>, the first word is separated from the
 line.   This  word is then expanded of all variables (see B<Variable Substitution>, below), 
 followed by command expansion (see B<Command Substitution>,  below).  The first word of the resulting string is then analyzed
-to see if it is either a valid _s_q_s_h command or alias.
+to see if it is either a valid I<sqsh> command or alias.
 
-The _s_q_s_h command line follows many of the same rules as  Bourne  shell,
+The I<sqsh> command line follows many of the same rules as  Bourne  shell,
 allowing  file redirection, pipelining, command substitution, and back-
 grounding via the same syntax.
 
@@ -407,7 +452,7 @@ prints out
 
 =head2 Expansion
 
-After  a  line of input has been read, _s_q_s_h attempts to expand the line
+After  a  line of input has been read, I<sqsh> attempts to expand the line
 of any aliases (see B<Aliasing>, below), following  that  it  attempts  to
 determine  if  the line begins with a command keyword.  Once a line has
 been determined to contain a command name it has two types of expansion
@@ -498,7 +543,7 @@ actually  has  any  effect  on  the  behavior of internal sqsh commands
 =item <word
 
 Use the file I<word> as the standard input for the command.
-Typically  very few _s_q_s_h commands actually read anything
+Typically  very few I<sqsh> commands actually read anything
 from stdin, so this will usually have no effect (see the
 B<\loop> command).
 
@@ -1073,7 +1118,7 @@ command.
 
 =item -x   
 
-Causes  the  function to be exported as a _s_q_s_h command.  That
+Causes  the  function to be exported as a I<sqsh> command.  That
 is, the function may be invoked  directly  without  requiring
 the B<\call> command.  This behavior is optional because command
 names can potentially conflict  with  T-SQL  keywords.   When
@@ -1128,6 +1173,108 @@ the  current  value  of  the  B<$?>  variable (which is set to 0 upon
 entry of the function).  Thus, if any SQL statements  are  invoked
 within  the  function, the default return value of B<$?>  will be the
 last error code returned during the processing of the  SQL  statement.
+
+=head2 Kerberos Support
+
+Starting with 2.1.6 sqsh provides the same command line options
+as isql to handle Kerberos network authentication.
+
+In version 2.1.5 experimental Kerberos support was added using the -K and -R options. -K was merely a switch
+to set Kerberos on. In sqsh 2.1.6 a more advanced implementation of network authentication is introduced,
+although still experimental.
+
+By using the parameters -K, -R, -V, -Z you can make use of your defined network security settings. (libtcl.cfg).
+The named options are identical to the ones defined for isql.
+
+=over 4
+
+=item -K keytab_file 
+
+keytab_file name for DCE.
+
+=item -R server_principal
+
+server principal name when Servername specified in interfaces differs 
+from the real servername
+
+=item -V 
+
+Specify security options to use (cimorq)
+
+=item -Z 
+
+Requested security mechanism name defined for Kerberos, DCE or PAM in your libtcl.cfg file. 
+
+=back
+
+For example, connecting to a remote server using Kerberos (which happens to be the default, i.e. first entry
+in libtcl.cfg [SECURITY] tab in this example):
+
+   ~> sqsh -SLINUX1502 -Uuser1 -RFC6A1502 -Z
+   LINUX1502.user1.master.1> select @@servername,@@authmech,show_sec_services();
+   ----------------  -----------  ------------------------------------------------------------------------
+   FC6A1502          kerberos     unifiedlogin mutualauth integrity confidentiality detectreplay detectseq
+
+See chapter 16 "External Authentication" from the Sybase System Administration Guide volume 1 for more
+information.
+
+   [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -Zcsfkrb5
+   Open Client Message
+   Layer 7, Origin 9, Severity 5, Number 1
+   ct_connect(): security service layer: internal security control layer error:
+                 Security service provider internal error -1765328352 occurred.
+   [user1@user1-fc6a ~]$ kinit
+   Password for user1@LOCALDOMAIN:
+   [user1@user1-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -Zcsfkrb5
+   FC6A1502.user1.master.1> select program_name from sysprocesses where spid=@@spid;
+   program_name
+   ------------------------------
+   sqsh-2.1.6
+
+  (1 row affected)
+
+Note that you can specify -V and or -Z without having to specify a value. Is the value empty for -Z
+or contains the value 'default' then the default will be used, which is the first active security driver
+in the libtcl.cfg file.
+
+When the connection succeeds, sqsh will store the real name of the security mechanism in the variable
+secmech. For example: "\echo $secmech" may show csfkrb5. The option -V takes a list of characters from the
+possible values of 'cimorq'. If you do not want to set a security service protocol then you have to specify
+-Vx for example. 'x' is not an existing option related to a security service and as a value is provided,
+sqsh will not fall back to the default of all options. When -V is empty however, then all possibly supported
+security protocols for the selected secmech will be enabled. The key letters are:
+
+   c -   Enable data confidentiality service
+   i -   Enable data integrity service
+   m -   Enable mutual authentication for connection establishment
+   o -   Enable data origin stamping service
+   q -   Enable out-of-sequence detection
+   r -   Enable data replay detection
+
+If you specify -V and/or -Z, sqsh will assume network authentication is tried and no password is required.
+
+If you have a network authenticated connection and want to \reconnect using normal ASE authentication with
+username and password, you have to reset the network authentication variables by specifying -Znone
+
+For example:
+
+   [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -Z
+   FC6A1502.user1.master.1> \echo $secmech
+   csfkrb5
+   FC6A1502.user1.master.1> \reconnect -SASE1502 -Usa -Psybase
+   Open Client Message
+   Layer 7, Origin 9, Severity 5, Number 8
+   ct_connect(): security service layer: internal security control layer error:
+   Consistency checks performed on the credential failed (minor status 0).
+   FC6A1502.user1.master.1> \reconnect -SASE1502 -Usa -Psybase -Znone
+   ASE1502.sa.master.1> 
+
+
+The first \reconnect fails because sqsh still wants to try network authentication. However, no user principal
+for 'sa' exists or no ticket is set and the connection fails. The second \reconnect succeeds as the -Znone
+reset appropriate variables.
+
+
 
 =head1 COMMANDS
 
@@ -1659,6 +1806,23 @@ behavior of alias (see section B<Aliasing>, below, for details).
 
 The  commands B<edit vi> and B<emacs> are automatically established upon
 startup of I<sqsh> for backward compatibility with I<isql>.
+
+=item \buf-del [buffer]
+
+Remove a history buffer from the history list.
+
+For example:
+
+   ASE1502.sa.master.1> \history
+   (1) exec sp_password myPforSA,NewPforU, user1
+   (2) sp_displaylogin user1
+   (3) ....
+
+If you want buffer 1 removed, you can type:
+
+   ASE1502.sa.master.1> \buf-del 1
+   Buffer 1 destroyed and list renumbered
+
 
 =back
 
@@ -2420,11 +2584,45 @@ number of history entries are  are  maintained  by  I<sqsh>
 (the  default is 10).  Note that decreasing the value of
 this variable causes some history entries to be lost.
 
+=item histunique (boolean)
+
+If set, I<sqsh> maintains a MRU-LRU order of executed buffers and does not store duplicate
+command buffers. For example, observe the following situation:
+
+   LINUX1502.user1.master.1> \history
+   (1) sp_who
+   (2) grant role mon_role to sa_role
+   (3) select * from monProcessActivity
+   (4) select @@authmech,show_sec_services()
+   (5) select @@servername,@@authmech,show_sec_services()
+   LINUX1502.user1.master.1> sp_who
+   LINUX1502.user1.master.2> go
+   ... output ommitted
+   LINUX1502.user1.master.1> \history
+   (1) grant role mon_role to sa_role
+   (2) select * from monProcessActivity
+   (3) select @@authmech,show_sec_services()
+   (4) select @@servername,@@authmech,show_sec_services()
+   (5) sp_who
+
+I<sp_who> is the last executed command and the buffer - originally the last in the list -
+is now on top of the list.
+
 =item hostname (string)
 
 Used during the connection process to  indicate  to  SQL
 Server  the name of the host from which I<sqsh> is connecting.  
 This variable may also be set using the B<-H> flag.
+
+=item ignoreeof (boolean)
+
+By default, I<sqsh> terminates if the user presses ^d (control-D) on
+an empty line and readline support is compiled in. If B<$ignoreeof> is set in 
+the sqshrc file you get a warning message instead:
+
+    CTRL-D: Use "exit" or "quit" to leave the sqsh shell.
+    
+This is equivalent to using "set -o ignoreeof" in the bash shell.
 
 =item interactive (boolean)
 
@@ -2492,6 +2690,12 @@ of  the  user  running I<sqsh> is used instead (if possible).  Note
 that B<$lock> will always expand to the string "*lock*"  if
 referenced.
 
+=item login_timeout (int)
+
+The number of seconds to wait when attempting to create a new connection
+to a data server. Default is 0 (infinite wait). See also the B<-T>
+command line option.
+
 =item newline_go (boolean)
 
 This  flag  is  used  as a horrible kludge to support an
@@ -2508,6 +2712,11 @@ Controls the maximum amount of data that  will  be  displayed
 setting will automatically truncate the output  of  particularly  
 large  datatypes  (such as TEXT) to the value
 supplied. The default setting is 8192 bytes (8KB).
+
+=item max_timeout (int)
+
+Controls the number of times a query needs to reach its time-out value
+before it is aborted. See B<query_timeout> and the B<-Q> command line flag.
 
 =item output_parms (boolean)
 
@@ -2544,6 +2753,11 @@ during  interactive  use  when  I<sqsh> requires additional
 input, such as during a line continuation.  The  default
 value is ‘--> ’.
 
+=item query_timeout (int)
+
+Number of seconds to wait for a query to return data. If the timeout is
+reached the query is aborted (canceled). See also B<$max_timeout> and
+the B<-Q> command line option.
 =item rcfile (path)
 
 Contains  a  colon  (:)  delimited list of sqsh resource
@@ -2893,6 +3107,44 @@ return the total number of batches that failed even if B<$batch_failcount>
 does not reach 3.
 
 =back
+
+=head2 Miscellaneous
+
+=head3 Colorizing sqsh prompts, etc.
+
+Color codes are presented in a string between {1;2;3}. If sqsh encounters a {
+(curly brace) in the prompt string it will assume a colorcode is supplied 
+and will act as such. No checks will be performed on the validity of the colorcode
+definition itself. The color definition consists of three values separated by
+a semicolon.
+
+The first code defines the Color Attribute Code with possible values: 0=none 1=bold
+
+The second value defines the Text Color Code: 30=black 31=red 32=green 33=yellow 34=blue 35=magenta 36=cyan 37=white
+
+The third value defines the Background Color Code: 40=black 41=red 42=green 43=yellow 44=blue 45=magenta 46=cyan 47=white
+The last colorcode for the background may be ommitted.
+
+Not all color and attribute combinations will present good results, depending
+on your terminal type and color scheme. But the following values work right
+for me on a xterm with a creamy white background color in Linux as well as
+rxvt in Cygwin with a black background window:
+
+Prompt: Blue text in white background "{0;34;47}"
+
+Command text: Yellow text             "{0;33}"
+
+sqsh will translate the colorcodes to an actual colorcode string that
+is presented to readline: for example "\001\033[0;36;47m\002"
+Note that if you want to use curly brackets in your prompt, you have to
+escape colorization by specifying a double brace, like {{...}}. For example:
+
+   \set prompt_color='{0;34;47}'
+   \set text_color='{0;33}'
+   \set prompt='$prompt_color{{$DSQUERY.$username.$database.$lineno}}>$text_color '
+
+Note, colorsupport is automatically available if sqsh is compiled and linked
+with readline support enabled.
 
 =head1 FILES
 
