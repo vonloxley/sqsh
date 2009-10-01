@@ -169,8 +169,8 @@ static var_entry_t  sg_var_entry[] = {
     { "time",             "%H:%M:%S",    var_set_notempty,    var_get_time    },
     /* sqsh-2.1.6 - New variables */
     { "appname",          "sqsh-2.1.6",  var_set_nullstr,     NULL            },
-    { "histunique",       "Off",         var_set_bool,        NULL            },
-    { "ignoreeof",        "Off",         var_set_bool,        NULL            },
+    { "histunique",       "0",           var_set_bool,        NULL            },
+    { "ignoreeof",        "0",           var_set_bool,        NULL            },
     { "login_timeout",    NULL,          var_set_nullint,     NULL            },
     { "query_timeout",    NULL,          var_set_nullint,     NULL            },
     { "max_timeout",      NULL,          var_set_nullint,     NULL            },
