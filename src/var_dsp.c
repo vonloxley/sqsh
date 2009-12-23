@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_dsp.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: var_dsp.c,v 1.2 2005/07/24 11:41:19 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -548,7 +548,8 @@ int var_set_bcp_trim( env, var_name, var_value )
 		return False;
 	}
 
-	if (*var_value == "1")
+	/* MW: Applied fix from patch 2061950 by Klaus-Martin Hansche. */
+	if (strcmp(*var_value , "1") == 0)
 	{
 		trim = True;
 	}
