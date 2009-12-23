@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_bcp.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: dsp_bcp.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -175,19 +175,18 @@ static void dsp_col( output, col_value, col_width )
 	{
 		/*
 		 * Traverse backwards over any whitespace that we find.
+		 * MW: Applied fix for bugreport 1959260 supplied by Stephen Doherty.
 		 */
 		end = (col_value + col_width - 1);
 
 		if (g_dsp_props.p_bcp_trim == True)
 		{
-			for (; end >= col_value && (*end == '\0' || isspace((int)*end));
+			for (; end > col_value && (*end == '\0' || isspace((int)*end));
 				--end);
 		}
 
-		if (end > col_value || (end == col_value && !isspace((int)*end))) {
-			for (; col_value <= end; ++col_value)
-				dsp_fputc( *col_value, output );
-		}
+		for (; col_value <= end; ++col_value)
+			dsp_fputc( *col_value, output );
 	}
 
 	return;
