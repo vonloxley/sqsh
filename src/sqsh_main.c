@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.10 2009/04/19 08:12:40 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.11 2009/12/23 14:59:20 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -603,12 +603,14 @@ main( argc, argv )
 
     /*
      * Uncomment this block of code if you want to ignore CTRL-\ signals
-     *
+     * i.e. remove outer #if 0 / #endif directives.
+    */
+#if 0
 #if defined (SIGQUIT)
     if (sqsh_stdin_isatty() && stdout_tty)
         sig_install( SIGQUIT, SIG_H_IGN, NULL, 0 );
+#endif /* SIGQUIT */
 #endif
-    */
 
     /*
      * If both input and output are connected to a tty *and* $banner
