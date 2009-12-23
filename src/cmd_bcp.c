@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.3 2004/04/12 21:02:13 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.4 2004/11/22 07:10:23 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -949,8 +949,9 @@ static bcp_data_t* bcp_data_bind ( cmd, result_type )
         return NULL;
     }
 
-    d = (bcp_data_t*)malloc( sizeof( bcp_data_t ) );
-    c = (bcp_col_t*)malloc( sizeof( bcp_col_t ) * ncols );
+    /*-- Fix for bug report 2920048, using calloc instead of malloc --*/
+    d = (bcp_data_t*)calloc( 1, sizeof( bcp_data_t ) );
+    c = (bcp_col_t*)calloc( ncols, sizeof( bcp_col_t ) );
 
     if (d == NULL || c == NULL) 
     {
@@ -988,7 +989,8 @@ static bcp_data_t* bcp_data_bind ( cmd, result_type )
         }
 
         /*-- Allocate enough space to hold data --*/
-        c->c_data = (CS_VOID*)malloc( c->c_format.maxlength );
+        /*-- Fix for bug report 2920048, using calloc instead of malloc --*/
+        c->c_data = (CS_VOID*)calloc( 1, c->c_format.maxlength );
 
         /*-- Clean up format --*/
         c->c_format.count  = 1;
