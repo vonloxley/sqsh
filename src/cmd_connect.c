@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.12 2008/04/06 10:03:08 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.16 2009/04/14 12:09:43 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -408,6 +408,22 @@ int cmd_connect( argc, argv )
      * this file immediatly prior to connecting to the database.
      */
     env_get( g_env, "session", &session );
+    if ( session != NULL && *session != '\0' )
+    {
+        if ((exp_buf = varbuf_create( 512 )) == NULL)
+        {
+            fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+            sqsh_exit( 255 );
+        }
+        if (sqsh_expand( session, exp_buf, 0 ) != False)
+            env_put( g_env, "session", varbuf_getstr( exp_buf ), ENV_F_TRAN );
+        else
+            fprintf( stderr, "sqsh: Error expanding $session: %s\n", sqsh_get_errstr() );
+        varbuf_destroy( exp_buf );
+        env_get( g_env, "session", &session);
+    }
+    DBG(sqsh_debug(DEBUG_ENV, "cmd_connect: session file is %s.\n", session);)
+
     if (session != NULL && access( session, R_OK ) != -1) 
     {
         if ((jobset_run( g_jobset, "\\loop -n $session", &exit_status )) == -1 ||
