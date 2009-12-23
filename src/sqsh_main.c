@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.9 2009/04/14 12:25:24 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.10 2009/04/19 08:12:40 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -402,8 +402,10 @@ main( argc, argv )
                 break;
             case 'o' :
                 fflush(stdout);
+                fflush(stderr);
                 if( (fd = sqsh_open( sqsh_optarg, O_WRONLY|O_CREAT, 0 )) == -1 ||
                      sqsh_dup2( fd, fileno(stdout) ) == -1 ||
+                     sqsh_dup2( fd, fileno(stderr) ) == -1 ||
                      sqsh_close( fd ) == -1 ) {
                     fprintf( stderr, "sqsh: -o: %s: %s\n", sqsh_optarg,
                                 sqsh_get_errstr() );
@@ -598,6 +600,15 @@ main( argc, argv )
 #endif /* SIGWINCH */
     }
 #endif /* TIOGWINSZ */
+
+    /*
+     * Uncomment this block of code if you want to ignore CTRL-\ signals
+     *
+#if defined (SIGQUIT)
+    if (sqsh_stdin_isatty() && stdout_tty)
+        sig_install( SIGQUIT, SIG_H_IGN, NULL, 0 );
+#endif
+    */
 
     /*
      * If both input and output are connected to a tty *and* $banner
