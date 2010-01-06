@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.11 2009/12/23 14:59:20 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.12 2009/12/23 15:10:47 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -52,6 +52,7 @@ static void print_usage      _ANSI_ARGS(( void ));
 #define SQSH_HIDEPWD
 
 #if defined(SQSH_HIDEPWD)
+#define MAXPWD 256
 static void hide_password _ANSI_ARGS(( int argc, char *argv[]));
 #endif
 
@@ -290,7 +291,7 @@ main( argc, argv )
      * sqsh-2.1.6 - New parameters added to the list and cases neatly ordered
      */
     while ((ch = sqsh_getopt_combined( "SQSH", argc, argv,
-        "\250;a:A:bBc;C:d:D:eE:f:G:hH:i:I:J:k:K:l:L:m:n:N:o:pP;Q:r;R:s:S:t;T:U:vV;w:Xy:z:Z;" )) != EOF)
+        "a:A:bBc;C:d:D:eE:f:G:hH:i:I:J:k:K:l:L:m:n:N:o:pP;Q:r;R:s:S:t;T:U:vV;w:Xy:z:Z;\250:" )) != EOF)
     {
         ret = 0;
         switch (ch) 
@@ -502,19 +503,39 @@ main( argc, argv )
                     ret = env_set( g_env, "secmech", sqsh_optarg );
                 break;
             case '\250' :
+#if defined(SQSH_HIDEPWD)
                 {
-                  char pwd[255];
-                  memset(pwd, 0, 255);
-                  /* XXX The fileno is hard-coded - not good! */
-                  if(read(3, pwd, 255) <= 0) {
-                    fprintf(stderr, "Can't read password");
+                  char  buf[MAXPWD];
+                  char *p;
+                  int   fdin, fdout;
+
+                  memset(buf, 0, MAXPWD);
+                  if (sqsh_optarg != NULL)
+                    strcpy (buf, sqsh_optarg);
+                  if (p = strchr(buf, '/')) {
+                    *p    = '\0';
+                    fdin  = atoi(buf);
+                    fdout = atoi(p+1);
+
+                    memset(buf, 0, MAXPWD);
+                    if (read(fdin, buf, MAXPWD-1) <= 0) {
+                      fprintf(stderr, "sqsh: Error: Can't read password from pipe (filedes=%d)\n", fdin);
+                      ret = False;
+                    } else {
+                      if (buf[0] == '\n')
+                        ret = env_set( g_env, "password", NULL );
+                      else
+                        ret = env_set( g_env, "password", buf );
+                    }
+                    close(fdin);
+                    close(fdout);
                   } else {
-                    ret = env_set( g_env, "password", pwd );
+                      fprintf(stderr, "sqsh: Error: Missing pipe file descriptors for password option 250\n");
+                      ret = False;
                   }
-                  close(3);
-                  close(4);
                 }
-		break;
+#endif
+                break;
 
             default :
                 fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
@@ -945,54 +966,59 @@ static void print_usage()
 
 #if defined(SQSH_HIDEPWD)
 static void hide_password (argc, argv)
-    int argc;
-    char *argv[];
+  int   argc;
+  char *argv[];
 {
-#define MAXPWD 255
-  int i;
-  char pwd[MAXPWD];
+  int  i, j;
+  int  filedes[2];
+  char buf[32];
+  char nullpwd[2];
+  char *pwd = NULL;
 
-  for(i = 1; i < argc; ++i) {
-    if(*(argv[i]) == '-' && *(argv[i] + 1) == 'P') {
-      char *p = NULL;
-      if(*(argv[i]+2)) {
-	p = (argv[i]+2);
-      } else if(i + 1 < argc && *(argv[i+1]) != '-') {
-	p = argv[i+1];
+  for (i = 1; i < argc; ++i) {
+    if (*(argv[i]) == '-' && *(argv[i] + 1) == 'P') {
+      if (*(argv[i]+2)) {
+        pwd = (argv[i]+2); /* Password passed on as: "sqsh -SSYBASE -Usa -Pxxxxxx" */
+      } else if (i + 1 < argc && *(argv[i + 1]) != '-') {
+        pwd = argv[i + 1]; /* Password passed on as: "sqsh -SSYBASE -Usa -P xxxxxx" */
+        /* Reshuffle the argv list to remove the password string */
+        for (j = i + 1; j < argc - 1; j++)
+          argv[j] = argv[j + 1];
+        argv[j] = NULL;
+        argc--;
+      }
+      if (pwd == NULL || (pwd != NULL && strlen(pwd) == 0))
+      {
+        nullpwd[0] = '\n';
+        nullpwd[1] = '\0';
+        pwd = nullpwd; /* Empty (NULL) password passed on as: "sqsh -SSYBASE -Usa -P " or "sqsh -SSYBASE -Usa -P '' " */
       }
 
-      /* If the password is set and is not empty */
-      if(p && *p) {
-	int filedes[2];
+      /* Create the pipe... */
+      if (pipe(filedes) == -1) {
+        perror("sqsh: Error: Can't pipe()");
+        return;
+      }
+      sprintf(buf, "-%c%d/%d", '\250', filedes[0], filedes[1]);
+      argv[i] = buf;
 
-	/* Make a copy of the password */
-	memset(pwd, 0, MAXPWD);
-	strncpy(pwd, p, MAXPWD);
-	/* Change the -P to -\250 */
-	*(argv[i] + 1) = '\250';
-	/* Null out the password in the argv[] array */
-	while(*p != '\0')
-	  *p++ = '\0';
-
-	/* Create the pipe... */
-	if(pipe(filedes) == -1) {
-	  perror("Can't pipe()");
-	  return;
-	}
-
-	/* ... and write the password on the pipe */
-	if(write(filedes[1], pwd, strlen(pwd)) != strlen(pwd)) {
-	  fprintf(stderr, "Failed to write to pipe\n");
-	  return;
-	}
-
-	/* Re-execute ourselves, with the modified argv[] */
-	execvp(argv[0], argv);
-
-	/* Not reached */
+      if (fork()) {
+        /* Re-execute ourselves, with the modified argv[] */
+        execvp(argv[0], argv);
+        /* Not reached */
+      } else {
+        /* ... and write the password to the pipe */
+        if (write(filedes[1], pwd, strlen(pwd)) != strlen(pwd)) {
+          fprintf(stderr, "sqsh: Error: Failed to write password to pipe (filedes=%d)\n", filedes[1]);
+          sqsh_exit(255);
+        }
+        close(filedes[0]);
+        close(filedes[1]);
+        sqsh_exit(0);
       }
     }
   }
 }
 
-#endif	
+#endif
+
