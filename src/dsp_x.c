@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_x.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: dsp_x.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -270,6 +270,7 @@ static int dsp_x_init( fd, width, height )
 	XmString     s_cancel;
 	cb_data_t    cd;                 /* Data for callbacks */
 	XtInputId    id;                 /* Id of input source */
+	Dimension    dim;
 	int          text_width;
 	int          orig_width;
 	int          argc;
@@ -378,6 +379,17 @@ static int dsp_x_init( fd, width, height )
 	cd.c_id      = id;
 
 	XtRealizeWidget( w_top );
+ 	/*
+ 	 * Ok, We want to prevent the button from being resized. The easiest
+ 	 * way to accomplish that is to set the max and the min.
+ 	 */
+ 	XtVaGetValues( w_btn_form, 
+		      XmNheight,       &dim, 
+ 		      NULL);
+	XtVaSetValues( w_btn_form, 
+ 		      XmNpaneMaximum,  dim, 
+ 		      XmNpaneMinimum,  dim, 
+ 		      NULL);
 	XtMainLoop();
 
 	exit(0);
@@ -671,3 +683,4 @@ static void dsp_x_input_cb (client_data, fd, id)
 
 #endif /* !USE_MOTIF */
 #endif /* USE_X11 */
+
