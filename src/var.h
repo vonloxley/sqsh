@@ -168,7 +168,7 @@ static var_entry_t  sg_var_entry[] = {
     { "date",             "%d-%b-%y",    var_set_notempty,    var_get_date    },
     { "time",             "%H:%M:%S",    var_set_notempty,    var_get_time    },
     /* sqsh-2.1.6 - New variables */
-    { "appname",          "sqsh-2.1.6",  var_set_nullstr,     NULL            },
+    { "appname",          "sqsh-2.1.7",  var_set_nullstr,     NULL            },
     { "histunique",       "0",           var_set_bool,        NULL            },
     { "ignoreeof",        "0",           var_set_bool,        NULL            },
     { "login_timeout",    NULL,          var_set_nullint,     NULL            },
@@ -178,6 +178,9 @@ static var_entry_t  sg_var_entry[] = {
     { "principal",        NULL,          var_set_nullstr,     NULL            },
     { "secmech",          NULL,          var_set_nullstr,     NULL            },
     { "secure_options",   NULL,          var_set_nullstr,     NULL            },
+    /* sqsh-2.1.7 - New variables */
+    { "exit_value",       "0",           var_set_int,         NULL            },
+    { "xwin_title",       NULL,          var_set_nullstr,     NULL            },
 } ;
 
 #endif /* SQSH_INIT */

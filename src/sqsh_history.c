@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_history.c,v 1.2 2005/04/05 16:17:42 mpeppler Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_history.c,v 1.3 2009/04/14 10:52:53 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -217,6 +217,12 @@ int history_append( h, buf )
        if (hb_tmp != NULL)
        {
          /*
+          * sqsh-2.1.7 - Adjust buffer access datetime and increase buffer usage count.
+         */
+         time( &hb_tmp->hb_dttm );
+         hb_tmp->hb_count++;
+
+         /*
           * - Nothing to do when it is already the first entry
           *   (or only one).
          */
@@ -275,6 +281,13 @@ int history_append( h, buf )
      * sqsh-2.1.6 feature - Store the checksum of the new buffer in the structure.
     */
     hisbuf->hb_chksum = chksum;
+
+    /*
+     * sqsh-2.1.7 - Set current date and time in hb_dttm and set the usage count
+     * of the buffer to 1 in hb_count.
+    */
+    time( &hisbuf->hb_dttm );
+    hisbuf->hb_count = 1;
 
     /*
      * If the buffer is full, then we need to roll and entry off
@@ -452,8 +465,10 @@ int history_save( h, save_file )
         /*
          * Since buffer can contain just about anything we need to 
          * provide some sort of separator.
+	 * sqsh-2.1.7 - Also store time_t of last buffer access and usage count.
          */
         fprintf( fptr, "--> History Entry <--\n" ) ;
+        fprintf( fptr, "--> History Info (%d:%d) <--\n", (int) hb->hb_dttm, hb->hb_count ) ;
         fputs( hb->hb_buf, fptr ) ;
 
     }
@@ -478,6 +493,11 @@ int history_load( h, load_file )
     FILE      *fptr ;
     char       str[1024] ;
     varbuf_t  *history_buf ;
+    /*
+     * sqsh-2.1.7 - Keep track of buffer usage count and last access datetime.
+    */
+    int        dttm  = 0;
+    int        count = 0;
 
     /*-- Check the arguments --*/
     if( h == NULL || load_file == NULL ) {
@@ -523,10 +543,34 @@ int history_load( h, load_file )
                     sqsh_set_error( SQSH_E_NOMEM, NULL ) ;
                     return False ;
                 }
+		/*
+		 * sqsh-2.1.7 - Adjust dttm and usage count for the current buffer.
+		 */
+		h->h_start->hb_dttm   = (time_t) dttm;
+		h->h_start->hb_count += count;
+		dttm  = 0;
+		count = 0;
             }
 
             varbuf_clear( history_buf ) ;
-        } else {
+        } else if ( strncmp( str, "--> History Info (", 18 ) == 0) {
+		/*
+		 * sqsh-2.1.7 - The history file may contain a new entry to store
+		 * last access date/time and buffer usage count.
+		 * During buffer allocation the initial count is set to 1. We do
+		 * not want to overwrite the value in the buffer, just add another
+		 * occurence to keep uniqueness count correct. Therefor substract
+		 * one from the value read from the history file.
+		 */
+		char *p;
+
+		p  = strchr (str, ')');
+		*p = '\0';
+		p  = strchr (str, ':');
+		count = atoi (p+1)-1;
+		*p = '\0';
+		dttm  = atoi (str+18);
+	} else {
             /*
              * Since this isn't an entry separator, it is a line that
              * needs to be added to the current buffer.
@@ -553,7 +597,11 @@ int history_load( h, load_file )
             sqsh_set_error( SQSH_E_NOMEM, NULL ) ;
             return False ;
         }
-
+	/*
+	 * sqsh-2.1.7 - Adjust dttm and usage count for the current buffer.
+	 */
+	h->h_start->hb_dttm   = (time_t) dttm;
+	h->h_start->hb_count += count;
     }
 
     varbuf_destroy( history_buf ) ;
@@ -642,6 +690,8 @@ static hisbuf_t* hisbuf_create( h, buf, len )
     hisbuf->hb_len = len ;
     hisbuf->hb_nbr = h->h_next_nbr++ ;
     hisbuf->hb_chksum = 0 ; /* sqsh-2.1.6 feature */
+    hisbuf->hb_dttm   = 0 ; /* sqsh-2.1.7 feature */
+    hisbuf->hb_count  = 0 ; /* sqsh-2.1.7 feature */
     hisbuf->hb_nxt = NULL ;
     hisbuf->hb_prv = NULL ;
 

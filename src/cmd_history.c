@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_history.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: cmd_history.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -46,11 +46,33 @@ int cmd_history( argc, argv )
 	hisbuf_t   *hb ;
 	char       *line ;
 	char       *nl ;
+	/*
+	 * sqsh-2.1.7: Feature to display extended buffer info like datetime
+	 * of last buffer access and buffer usage count.
+	*/
+	struct tm *ts;
+	char       dttm[32];
+	char       hdrinfo[64];
+	char      *datetime  = NULL;
+	int        show_info = False;
 
 	/*-- Check the arguments --*/
-	if( argc != 1 ) {
-		fprintf( stderr, "Use: \\history\n" ) ;
+	if( argc > 2 ) {
+		fprintf( stderr, "Use: \\history [-i]\n" ) ;
 		return CMD_FAIL ;
+	}
+
+	/*
+	 * If an argument is supplied, then additional buffer information
+	 * is requested like number of buffer accesses or last access date/time.
+	 * Format the date and time according to the datetime variable.
+	 */
+	if (argc == 2)
+	{
+		show_info = True;
+		env_get( g_env, "datetime", &datetime);
+		if (datetime == NULL || datetime[0] == '\0' || (strcmp(datetime,"default") == 0))
+			datetime = "%Y%m%d %H:%M:%S";
 	}
 
 	/*
@@ -64,9 +86,19 @@ int cmd_history( argc, argv )
 		line = hb->hb_buf ;
 		while( (nl = strchr( line, '\n' )) != NULL ) {
 			if( line == hb->hb_buf ) {
-				printf( "(%d) %*.*s\n", hb->hb_nbr, nl - line, nl - line, line ) ;
+				if (show_info == True) {
+				  ts  = localtime( &hb->hb_dttm );
+				  strftime( dttm, sizeof(dttm), datetime, ts );
+				  sprintf( hdrinfo, "(%2d - %2d/%s) ",
+                                           hb->hb_nbr, hb->hb_count, dttm ) ;
+				}
+				else
+				  sprintf( hdrinfo, "(%d) ", hb->hb_nbr ) ;
+
+				printf( "%s%*.*s\n", hdrinfo, nl - line, nl - line, line ) ;
+
 			} else {
-				printf( "     %*.*s\n", nl - line, nl - line, line ) ;
+				printf( "%*s%*.*s\n", strlen(hdrinfo), " ", nl - line, nl - line, line ) ;
 			}
 
 			line = nl + 1 ;

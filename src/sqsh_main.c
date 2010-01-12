@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.12 2009/12/23 15:10:47 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.13 2010/01/06 21:30:41 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -144,6 +144,7 @@ main( argc, argv )
     char          *thresh_exit;
     char          *batch_failcount;
     char          *exit_failcount;
+    char          *exit_value;
     char          *keyword_file;
     char           str[512];
     int            ch;
@@ -622,9 +623,9 @@ main( argc, argv )
     }
 #endif /* TIOGWINSZ */
 
-    /*
-     * Uncomment this block of code if you want to ignore CTRL-\ signals
-     * i.e. remove outer #if 0 / #endif directives.
+   /*
+    * Uncomment this block of code if you want to ignore CTRL-\ signals
+    * i.e. remove outer #if 0 / #endif directives.
     */
 #if 0
 #if defined (SIGQUIT)
@@ -811,9 +812,15 @@ main( argc, argv )
      * This point is reached if \loop returned either CMD_LEAVEBUF,
      * CMD_ALTERBUF, CMD_CLEARBUF, or CMD_EXIT, all of which indicate
      * that nothing went wrong.  Normally isql would just exit(0) here.
-     * However, we are not isql, and if exit_failcount is 1, then we
-     * exit with the total number of batches that failed.
+     * However, we are not isql, and if exit_value is explicitly set
+     * with \exit n, then we use that return value, otherwise if
+     * exit_failcount is 1, then we exit with the total number of
+     * batches that failed.
      */
+    env_get( g_env, "exit_value", &exit_value );
+    if ( exit_value != NULL && atoi(exit_value) != 0 )
+        sqsh_exit( atoi(exit_value) );
+
     env_get( g_env, "exit_failcount", &exit_failcount );
     env_get( g_env, "batch_failcount", &batch_failcount );
     if( exit_failcount != NULL && *exit_failcount == '1' &&

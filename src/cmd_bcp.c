@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.4 2004/11/22 07:10:23 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.5 2009/12/23 14:06:50 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -340,24 +340,43 @@ int cmd_bcp( argc, argv )
     }
 
     /*-- Find the appropriate BLK_VERSION_xxx value --*/
+    /*-- sqsh-2.1.7 - Make it compile with freetds-0.82 --*/
 #if defined(CS_VERSION_150)
     if(blk_ver == -1 && g_cs_ver == CS_VERSION_150) {
+#if defined(BLK_VERSION_150)
 	blk_ver = BLK_VERSION_150;
-    }
-#endif
-#if defined(CS_VERSION_125)
-    if(blk_ver == -1 && g_cs_ver == CS_VERSION_125) {
-	blk_ver = BLK_VERSION_125;
-    }
-#endif
-#if defined(CS_VERSION_120)
-    if(blk_ver == -1 && g_cs_ver == CS_VERSION_120)
-	blk_ver = BLK_VERSION_120;
-#endif
-#if defined(CS_VERSION_110)
-    if(blk_ver == -1 && g_cs_ver == CS_VERSION_110)
+#else
 	blk_ver = BLK_VERSION_110;
 #endif
+    }
+#endif
+
+#if defined(CS_VERSION_125)
+    if(blk_ver == -1 && g_cs_ver == CS_VERSION_125) {
+#if defined(BLK_VERSION_125)
+	blk_ver = BLK_VERSION_125;
+#else
+	blk_ver = BLK_VERSION_110;
+#endif
+    }
+#endif
+
+#if defined(CS_VERSION_120)
+    if(blk_ver == -1 && g_cs_ver == CS_VERSION_120) {
+#if defined(BLK_VERSION_120)
+	blk_ver = BLK_VERSION_120;
+#else
+	blk_ver = BLK_VERSION_110;
+#endif
+    }
+#endif
+
+#if defined(CS_VERSION_110)
+    if(blk_ver == -1 && g_cs_ver == CS_VERSION_110) {
+	blk_ver = BLK_VERSION_110;
+    }
+#endif
+
     if(blk_ver == -1)
 	blk_ver = BLK_VERSION_100;
 

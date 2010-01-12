@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_vert.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: dsp_vert.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -471,6 +471,18 @@ static void dsp_wrap( output, indent, width, str, str_len )
 	char *new_start;
 	int   first_loop = 1;
 	int   i;
+
+	/*
+	 * sqsh-2.1.7 - If str is an empty string, just print a newline.
+	 * When this happens, it is actually some sort of error, that is,
+	 * we received no data at all for a non-nullable column.
+	 * Shouldn't we print some sort of error message, or just continue as if
+	 * nothing happened?
+	*/
+	if (str_len == 0) {
+		dsp_fputc( '\n', output );
+		return;
+	}
 
 	/*
 	 * Our "real" usable width is the total screen width minus the

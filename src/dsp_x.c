@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_x.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: dsp_x.c,v 1.2 2010/01/07 09:33:23 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -92,8 +92,6 @@ int dsp_x( output, cmd, flags, dsp_func )
 {
 	int    fd_pair[2];               /* Pair of pipes to communicate */
 	int    ret;                      /* Return value from display method */
-	int    argc;                     /* Required by XtInitialize */
-	char  *argv[1];                  /* Required by XtInitialize */
 	int    width;                    /* Width of screen */
 	int    height;                   /* Height of screen */
 	char   number[20];               /* Holder for number */
@@ -276,15 +274,26 @@ static int dsp_x_init( fd, width, height )
 	int          argc;
 	char        *argv[1];
 	char        *cp;
+	char        *xwin_title = NULL;
 
 	/*
 	 * At this point we are in the child process, the rest is pretty
 	 * easy.  We simply open a window and simply place every line we
 	 * receive from the parent through the fd file descriptor
 	 * into a window.
+	 * sqsh-2.1.7 - Pass on a window title through argv[0].
 	 */
-	argc    = 0;
-	argv[0] = NULL;
+	env_get( g_env, "xwin_title", &xwin_title );
+	if (xwin_title != NULL && *xwin_title != '\0')
+	{
+	  argc    = 1;
+	  argv[0] = xwin_title;
+	}
+	else
+	{
+	  argc    = 0;
+	  argv[0] = NULL;
+	}
 
 	/*
 	 * Calculate the number of lines in the SQL Text buffer.
@@ -493,8 +502,9 @@ static int dsp_x_init( fd, width, height )
    cb_data_t    cd;                 /* Data for callbacks */
    XtInputId    id;                 /* Id of input source */
    int          text_width;
-	int          argc;
-	char        *argv[1];
+   int          argc;
+   char        *argv[1];
+   char        *xwin_title = NULL;
 
    XFontStruct  *font = NULL; /* Font for text widget */
 
@@ -503,9 +513,19 @@ static int dsp_x_init( fd, width, height )
 	 * easy.  We simply open a window and simply place every line we
 	 * receive from the parent through the fd file descriptor
 	 * into a window.
+	 * sqsh-2.1.7 - Pass on a window title through argv[0].
 	 */
-	argc    = 0;
-	argv[0] = NULL;
+	env_get( g_env, "xwin_title", &xwin_title );
+	if (xwin_title != NULL && *xwin_title != '\0')
+	{
+	  argc    = 1;
+	  argv[0] = xwin_title;
+	}
+	else
+	{
+	  argc    = 0;
+	  argv[0] = NULL;
+	}
 
 	/*-- Intialize our X Session --*/
 	w_top = XtInitialize( "sqsh", "Sqsh", NULL, 0, &argc, argv );
@@ -521,8 +541,8 @@ static int dsp_x_init( fd, width, height )
 		XtNright,             XtChainRight,
 		XtNwidth,             200,
 		XtNheight,            100,
-		XtNscrollHorizontal,  XawtextScrollWhenNeeded,
-		XtNscrollVertical,    XawtextScrollWhenNeeded,
+		XtNscrollHorizontal,  XawtextScrollAlways,
+		XtNscrollVertical,    XawtextScrollAlways,
 		XtNeditType,          XawtextAppend,
 		NULL );
 

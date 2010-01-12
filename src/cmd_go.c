@@ -41,7 +41,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_go.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: cmd_go.c,v 1.1.1.1 2004/04/07 12:35:01 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -107,7 +107,7 @@ int cmd_go( argc, argv )
 	 */
 	env_tran( g_env );
 
-	while ((ch = sqsh_getopt( argc, argv, "nfhps:m:x;w:d:t;" )) != EOF) 
+	while ((ch = sqsh_getopt( argc, argv, "nfhps:m:x;w:d:t;T:" )) != EOF) 
 	{
 		switch (ch) 
 		{
@@ -180,6 +180,16 @@ int cmd_go( argc, argv )
 					have_error = True;
 				}
 				break;
+			case 'T' :
+				/*
+				 * sqsh-2.1.7 - Set a window title when using X result windows.
+				 */
+				if (env_put( g_env, "xwin_title", sqsh_optarg, ENV_F_TRAN ) == False)
+				{
+					fprintf( stderr, "\\go: -T: %s\n", sqsh_get_errstr() );
+					have_error = True;
+				}
+				break;
 
 			default :
 				fprintf( stderr, "\\go: %s\n", sqsh_get_errstr() );
@@ -195,16 +205,18 @@ int cmd_go( argc, argv )
 	{
 		fprintf( stderr, 
 			"Use: \\go [-d display] [-h] [-f] [-n] [-p] [-m mode] [-s sec]\n"
-			"          [-t [filter]] [-w width] [-x [xgeom]] [xacts]\n"
+			"          [-t [filter]] [-w width] [-x [xgeom]] [-T title] [xacts]\n"
 			"     -d display When used with -x, send result to named display\n"
 			"     -h         Suppress headers\n"
 			"     -f         Suppress footers\n"
 			"     -n         Do not expand variables\n"
+			"     -p         Report runtime statistics\n"
 			"     -m mode    Switch display mode for result set\n"
 			"     -s sec     Sleep sec seconds between transactions\n"
 			"     -t filter  Filter SQL through program\n"
 			"     -w width   Override value of $width\n"
 			"     -x xgeom   Override current value of $xgeom\n"
+			"     -T title   Used in conjunction with -x to set window title\n"
 			"     xacts      Repeat batch xacts times\n" );
 
 		env_rollback( g_env );
