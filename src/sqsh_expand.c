@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.3 2004/11/04 19:47:25 mpeppler Exp $";
+static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.4 2009/04/14 10:15:27 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -675,10 +675,10 @@ static int expand_variable( cpp, str_end, buf, flags )
     /*
      * Move str forward until we reach the end of the name of
      * the variable.  We are still in part of the name if we
-     * see the characters [?a-zA-Z0-9_].
+     * see the characters [?a-zA-Z0-9_] and special character # and *.
      */
     while (!(str_end == NULL && str == str_end) && *str != '\0' && 
-        (isalnum((int)*str) || *str == '_' || *str == '?' || *str == '#'))
+        (isalnum((int)*str) || strchr("#*?_$", *str)  ))
     {
         if (!isdigit((int)*str))
         {
@@ -694,23 +694,6 @@ static int expand_variable( cpp, str_end, buf, flags )
      */
     var_name_end = str;
 
-#if 0
-    /* FIXME - this needs testing! */
-    /*
-     * patch from Michael Chepelev:
-     * To avoid coredumps in we enter $$, $., $, and some other sequences
-     * we check if the name string is empty. If it is -
-     * then keep the $ and treat it just as we would any other character.
-     */
-    if( var_name_start == var_name_end )
-    {
-	if (varbuf_charcat( buf, *str++ ) == -1)
-	    return False;
-	*cpp = str;
-	return True;
-    }
-#endif
-
     /*
      * If we are in a braced variable name then we better have
      * hit a closing brace.
@@ -725,6 +708,20 @@ static int expand_variable( cpp, str_end, buf, flags )
         ++str;
     }
 
+    /*
+     * patch from Michael Chepelev:
+     * To avoid coredumps if we enter $$, $., $, and some other sequences
+     * we check if the name string is empty. If it is -
+     * then keep the $ and treat it just as we would any other character.
+     */
+
+    if( var_name_start == var_name_end )
+    {
+	if (varbuf_charcat( buf, *str++ ) == -1)
+	    return False;
+	*cpp = str;
+	return True;
+    }
     /*
      * Check for special case. First, $# is the number of arguments.
      */
@@ -748,6 +745,19 @@ static int expand_variable( cpp, str_end, buf, flags )
         return(True);
     }
 
+
+    /*
+     * Next, $$ is the current processid.
+     */
+    if (*var_name_start == '$' && 
+        (var_name_end - var_name_start) == 1)
+    {
+        sprintf(nbr, "%d", getpid() );
+        varbuf_strcat( buf, nbr );
+        *cpp = str;
+        return(True);
+    }
+
     /*
      * Next, $* is the complete list of arguments.
      */
@@ -765,6 +775,8 @@ static int expand_variable( cpp, str_end, buf, flags )
                 varbuf_strcat( buf, g_func_args[g_func_nargs-1].argv[i] );
             }
         }
+        *cpp = str;
+        return(True);
     }
 
     /*
@@ -784,8 +796,8 @@ static int expand_variable( cpp, str_end, buf, flags )
         /*
          * If invalid argument number, then just leave blank.
          */
-        if (arg_nbr < 0 || 
-            arg_nbr > g_func_args[g_func_nargs-1].argc)
+        if (g_func_nargs == 0 || arg_nbr < 0 || 
+            arg_nbr > g_func_args[g_func_nargs-1].argc - 1)
         {
             *cpp = str;
             return(True);
@@ -798,7 +810,7 @@ static int expand_variable( cpp, str_end, buf, flags )
 
     /*
      * First, check to see if the variable is available in our
-     * "extneral" environment.
+     * "external" environment.
      */
     r = env_nget( g_env, var_name_start, &var_value, 
         var_name_end - var_name_start);

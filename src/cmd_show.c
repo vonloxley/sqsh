@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_show.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: cmd_show.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -52,11 +52,13 @@ int cmd_show( argc, argv )
 
 	/*-- Check the argument count --*/
 	if( argc != 2 ) {
-		fprintf( stderr, "Use: \\show [job_id]\n" ) ;
+		fprintf( stderr, "Use: \\show job_id\n" ) ;
 		return CMD_FAIL ;
 	}
-
-	job_id = (job_id_t)atoi(argv[1]) ;
+        if ((job_id = (job_id_t)atoi(argv[1])) <= 0) {
+	        fprintf( stderr, "\\show: Invalid job_id %s\n", argv[1] ) ;
+	        return CMD_FAIL ;
+	}
 
 	switch( jobset_is_done( g_jobset, job_id ) ) {
 		case  -1 :  

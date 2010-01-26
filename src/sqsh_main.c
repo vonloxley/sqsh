@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.13 2010/01/06 21:30:41 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.14 2010/01/12 13:26:38 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -146,12 +146,14 @@ main( argc, argv )
     char          *exit_failcount;
     char          *exit_value;
     char          *keyword_file;
+    char          *term_title;
     char           str[512];
     int            ch;
     uid_t          uid;
     struct passwd *pwd;
     int            fd;
     int            stdout_tty;  /* True if stdout is a tty */
+    int            stdin_tty;   /* True if stdin is a tty */
     int            show_banner = True;
     int            set_width   = False;
     int            read_file   = False;  /* True if -i supplied */
@@ -405,7 +407,7 @@ main( argc, argv )
             case 'o' :
                 fflush(stdout);
                 fflush(stderr);
-                if( (fd = sqsh_open( sqsh_optarg, O_WRONLY|O_CREAT, 0 )) == -1 ||
+                if( (fd = sqsh_open( sqsh_optarg, O_WRONLY|O_CREAT|O_TRUNC, 0 )) == -1 ||
                      sqsh_dup2( fd, fileno(stdout) ) == -1 ||
                      sqsh_dup2( fd, fileno(stderr) ) == -1 ||
                      sqsh_close( fd ) == -1 ) {
@@ -506,6 +508,11 @@ main( argc, argv )
             case '\250' :
 #if defined(SQSH_HIDEPWD)
                 {
+		  /*
+ 		   * sqsh-2.1.7 - Incorporated patch by David Wood
+		   * to solve a problem with pipes already in use. (Patch-id 2607434)
+		   * The actual pipe file descriptors will now be passed on with the \250 option.
+		  */
                   char  buf[MAXPWD];
                   char *p;
                   int   fdin, fdout;
@@ -577,15 +584,33 @@ main( argc, argv )
         {
             argv[sqsh_optind-1] = argv[0];
         }
-        g_func_args[g_func_nargs].argc = argc - sqsh_optind;
+        g_func_args[g_func_nargs].argc = argc - sqsh_optind + 1;
         g_func_args[g_func_nargs].argv = &(argv[sqsh_optind-1]);
         ++g_func_nargs;
     }
 
     /*
      * Figure out if stdin or stdout is connected to a tty.
+     *
+     * sqsh-2.1.7 - Note, if a file is provided with -i, stdin will be directed
+     * to this file in \cmd_loop. So at this point, technically speaking, stdin
+     * is still connected to a tty. That's why we can't use sqsh_stdin_isatty()
+     * here as it will always return True.
      */
     stdout_tty = isatty( fileno(stdout) );
+    if (isatty (fileno(stdin)) && !read_file && !sql)
+        stdin_tty = True;
+    else
+        stdin_tty = False;
+    DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: : stdin_tty: %d, stdout_tty: %d\n",
+        stdin_tty, stdout_tty));
+    if (stdin_tty && !stdout_tty)
+    {
+        fprintf( stderr, "sqsh: Error: Cannot run in interactive mode with redirected output\n" );
+        sqsh_exit( 255 );
+    }
+    if (stdin_tty && stdout_tty)
+	    g_interactive = True;
 
 #if defined(TIOCGWINSZ)
     /*
@@ -623,16 +648,42 @@ main( argc, argv )
     }
 #endif /* TIOGWINSZ */
 
-   /*
-    * Uncomment this block of code if you want to ignore CTRL-\ signals
-    * i.e. remove outer #if 0 / #endif directives.
-    */
-#if 0
 #if defined (SIGQUIT)
-    if (sqsh_stdin_isatty() && stdout_tty)
+    /*
+     * Disable the CTRL-\ (SIGQUIT) signal when in interactive mode.
+     */
+    if (g_interactive)
         sig_install( SIGQUIT, SIG_H_IGN, NULL, 0 );
 #endif /* SIGQUIT */
-#endif
+
+    /*
+     * Set a TERM window title when running in interactive mode
+     * and variable term_title is set.
+     */
+    if (g_interactive)
+    {
+        env_get( g_env, "term_title", &term_title );
+        if (term_title != NULL && *term_title != '\0')
+        {
+            exp_buf = varbuf_create( 64 );
+
+            if (exp_buf == NULL)
+            {
+                fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+                sqsh_exit( 255 );
+            }
+
+            if (sqsh_expand( term_title, exp_buf, 0 ) == False)
+            {
+                fprintf( stderr, "sqsh: Error expanding $term_title: %s\n",
+                    sqsh_get_errstr() );
+                sqsh_exit( 255 );
+            }
+            fprintf (stdout, "%c]0;%s %s%c",
+                     '\033', argv[0], varbuf_getstr( exp_buf ), '\007' );
+            varbuf_destroy( exp_buf );
+        }
+    }
 
     /*
      * If both input and output are connected to a tty *and* $banner
@@ -641,7 +692,7 @@ main( argc, argv )
      */
     env_get( g_env, "banner", &banner );
     if (show_banner && (banner == NULL || *banner == '1') && 
-        sqsh_stdin_isatty() && stdout_tty)
+        g_interactive)
     {
         printf( "%s ", g_version );
         DBG(printf( "(DEBUG) " );)
@@ -675,9 +726,9 @@ main( argc, argv )
 
     /*
      * Before we go any further we need to do a little work if
-     * we are not connected to a tty.
+     * we are connected to a tty.
      */
-    if (sqsh_stdin_isatty())
+    if (stdin_tty)
     {
         /*
          * Next, we need to try to load the history file, if one is
@@ -738,14 +789,14 @@ main( argc, argv )
                        sqsh_get_errstr() );
             varbuf_destroy( exp_buf );
         }
-    }
 
-    /*
-     * Initialize the readline "sub-system".  This basically consists
-     * of installing handlers for readline keyword completion and
-     * sucking in the readline history file.
-     */
-    sqsh_readline_init();
+        /*
+         * Initialize the readline "sub-system".  This basically consists
+         * of installing handlers for readline keyword completion and
+         * sucking in the readline history file.
+         */
+        sqsh_readline_init();
+    }
 
     /*
      * If a single SQL statement was supplied on the command line
@@ -809,13 +860,11 @@ main( argc, argv )
     }
 
     /*
-     * This point is reached if \loop returned either CMD_LEAVEBUF,
-     * CMD_ALTERBUF, CMD_CLEARBUF, or CMD_EXIT, all of which indicate
-     * that nothing went wrong.  Normally isql would just exit(0) here.
-     * However, we are not isql, and if exit_value is explicitly set
-     * with \exit n, then we use that return value, otherwise if
-     * exit_failcount is 1, then we exit with the total number of
-     * batches that failed.
+     * This point is reached if \loop returned CMD_EXIT. Normally
+     * isql would just exit(0) here. However, we are not isql,
+     * and if exit_value is explicitly set with \exit n, then
+     * we use that return value, otherwise if exit_failcount is 1,
+     * then we exit with the total number of batches that failed.
      */
     env_get( g_env, "exit_value", &exit_value );
     if ( exit_value != NULL && atoi(exit_value) != 0 )
@@ -972,6 +1021,11 @@ static void print_usage()
 }
 
 #if defined(SQSH_HIDEPWD)
+/*
+ * sqsh-2.1.7 - Incorporated patch by David Wood
+ * to solve a problem with pipes already in use. (Patch-id 2607434)
+ * The actual pipe file descriptors will now be passed on with the \250 option.
+*/
 static void hide_password (argc, argv)
   int   argc;
   char *argv[];
@@ -998,7 +1052,8 @@ static void hide_password (argc, argv)
       {
         nullpwd[0] = '\n';
         nullpwd[1] = '\0';
-        pwd = nullpwd; /* Empty (NULL) password passed on as: "sqsh -SSYBASE -Usa -P " or "sqsh -SSYBASE -Usa -P '' " */
+        pwd = nullpwd; /* Empty (NULL) password passed on as:
+			* "sqsh -SSYBASE -Usa -P " or "sqsh -SSYBASE -Usa -P '' " */
       }
 
       /* Create the pipe... */

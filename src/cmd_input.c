@@ -52,7 +52,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_input.c,v 1.2 2004/11/05 13:01:14 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_input.c,v 1.3 2009/04/14 09:45:43 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -434,11 +434,11 @@ int cmd_input()
                              */
 
                         /*
-                         * CMD_CLEARBUF: The command has requested that we clear
+                         * CMD_RESETBUF: The command has requested that we clear
                          * our global buffer.  For this we simply clear g_sqlbuf
                          * and set lineno back to 1.
                          */
-                        case CMD_CLEARBUF:
+                        case CMD_RESETBUF:
                             /*
                              * Save the workbuffer away into the history. Note,
                              * if $interactive is set to 0, then this entry will
@@ -452,6 +452,15 @@ int cmd_input()
                                 sprintf( number, "%d", history_get_nbr(g_history) );
                                 env_set( g_env, "histnum", number );
                             }
+                            varbuf_clear( g_sqlbuf );
+                            env_set( g_env, "lineno", "=1" ) ;  /* Set to 1 */
+                            break;
+
+                        case CMD_CLEARBUF:
+                            /*
+			     * sqsh-2.1.7 - The same as CMD_RESETBUF but without
+			     * saving the buffer to the history.
+                             */
                             varbuf_clear( g_sqlbuf );
                             env_set( g_env, "lineno", "=1" ) ;  /* Set to 1 */
                             break;
@@ -507,6 +516,7 @@ int cmd_input()
                  * jobset_run() returned a non-negative value, so it launched
                  * a background process.  The only thing we need to do it
                  * let the user know it was launched.
+		 * sqsh-2.1.7 - Also save and clear the command buffer.
                  */
                 default :
                     if (interactive)
@@ -514,6 +524,16 @@ int cmd_input()
                         job_pid = jobset_get_pid( g_jobset, job_id );
                         fprintf( stdout, "Job #%d running [%d]\n", (int)job_id,
                                     (int)job_pid );
+                        if (!no_hist)
+                        {
+                            history_append( g_history, varbuf_getstr(g_sqlbuf) );
+
+                            /*-- Set histnum to be current history number --*/
+                            sprintf( number, "%d", history_get_nbr(g_history) );
+                            env_set( g_env, "histnum", number );
+                        }
+                        varbuf_clear( g_sqlbuf );
+                        env_set( g_env, "lineno", "=1" ) ;  /* Set to 1 */
                     }
 
             } /* switch (jobset_run()) */

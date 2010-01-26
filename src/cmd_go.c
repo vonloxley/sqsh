@@ -41,7 +41,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_go.c,v 1.1.1.1 2004/04/07 12:35:01 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: cmd_go.c,v 1.2 2010/01/12 13:26:38 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -203,21 +203,23 @@ int cmd_go( argc, argv )
 	 */
 	if( (argc - sqsh_optind) > 1 || have_error) 
 	{
-		fprintf( stderr, 
-			"Use: \\go [-d display] [-h] [-f] [-n] [-p] [-m mode] [-s sec]\n"
-			"          [-t [filter]] [-w width] [-x [xgeom]] [-T title] [xacts]\n"
-			"     -d display When used with -x, send result to named display\n"
-			"     -h         Suppress headers\n"
-			"     -f         Suppress footers\n"
-			"     -n         Do not expand variables\n"
-			"     -p         Report runtime statistics\n"
-			"     -m mode    Switch display mode for result set\n"
-			"     -s sec     Sleep sec seconds between transactions\n"
-			"     -t filter  Filter SQL through program\n"
-			"     -w width   Override value of $width\n"
-			"     -x xgeom   Override current value of $xgeom\n"
-			"     -T title   Used in conjunction with -x to set window title\n"
-			"     xacts      Repeat batch xacts times\n" );
+	    fprintf( stderr, 
+		"Use: \\go [-d display] [-h] [-f] [-n] [-p] [-m mode] [-s sec]\n"
+		"          [-t [filter]] [-w width] [-x [xgeom]] [-T title] [xacts]\n"
+		"     -d display  When used with -x, send result to named display\n"
+		"     -h          Suppress headers\n"
+		"     -f          Suppress footers\n"
+		"     -n          Do not expand variables\n"
+		"     -p          Report runtime statistics\n"
+		"     -m mode     Switch display mode for result set\n"
+		"     -s sec      Sleep sec seconds between transactions\n"
+		"     -t [filter] Filter SQL through program\n"
+		"                 Optional filter value overrides default variable $filter_prog\n"
+		"     -w width    Override value of $width\n"
+		"     -x [xgeom]  Send result set to a XWin output window\n"
+		"                 Optional xgeom value overrides default variable $xgeom\n"
+		"     -T title    Used in conjunction with -x to set window title\n"
+		"     xacts       Repeat batch xacts times\n" );
 
 		env_rollback( g_env );
 		return CMD_FAIL;
@@ -556,7 +558,7 @@ cmd_go_interrupt:
 	if (!sqsh_stdin_isatty())
 		return_code = CMD_INTERRUPTED;
 	else
-		return_code = CMD_CLEARBUF;
+		return_code = CMD_RESETBUF;
 
 	goto cmd_go_leave;
 
@@ -566,13 +568,13 @@ cmd_go_error:
 	 * that the work buffer be cleared.
 	 */
 	if( clear_on_fail == NULL || *clear_on_fail == '1' )
-		return_code = CMD_CLEARBUF;
+		return_code = CMD_RESETBUF;
 	else
 		return_code = CMD_FAIL;
 	goto cmd_go_leave;
 
 cmd_go_succeed:
-	return_code = CMD_CLEARBUF;
+	return_code = CMD_RESETBUF;
 
 cmd_go_leave:
 	if (dsp_old != -1)

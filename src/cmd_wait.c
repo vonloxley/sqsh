@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_wait.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: cmd_wait.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -56,10 +56,17 @@ int cmd_wait( argc, argv )
 		return CMD_FAIL ;
 	}
 
-	job_id = (job_id_t)atoi(argv[1]) ;
+	/*
+	 * sqsh-2.1.7 - Check for valid job_id.
+	 * Note that we may pass a negative value to jobset_wait.
+	 */
+	if ((job_id = (job_id_t)atoi(argv[1])) == 0) {
+		fprintf( stderr, "\\wait: Invalid job_id %s\n", argv[1] ) ;
+		return CMD_FAIL ;
+	}
 
 	if( (res_id = jobset_wait( g_jobset, job_id, &exit_status,
-										JOB_BLOCK )) == -1 ) {
+				   JOB_BLOCK )) == -1 ) {
 		fprintf( stderr, "\\wait: %s\n", sqsh_get_errstr() ) ;
 		return CMD_FAIL ;
 	}
@@ -76,7 +83,7 @@ int cmd_wait( argc, argv )
 	 * the job.
 	 */
 	/*-- Get the name of the defer file --*/
-	defer_file = jobset_get_defer( g_jobset, job_id ) ;
+	defer_file = jobset_get_defer( g_jobset, res_id ) ;
 
 	/*
 	 * If there is a defer_file, then we will stat the file

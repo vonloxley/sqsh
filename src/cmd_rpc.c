@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_rpc.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: cmd_rpc.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -108,7 +108,7 @@ int cmd_rpc( argc, argv )
 	 * to the command line flags, this indicates that all occurances
 	 * of -o are to be left in place as if they were non-flags.
 	 */
-	while ((ch = sqsh_getopt( argc, argv, "rfhm:w:d:x;u-i-d-b-n-m-c-o-" )) 
+	while ((ch = sqsh_getopt( argc, argv, "rfhm:w:d:x;T:u-i-d-b-n-m-c-o-" )) 
 		!= EOF) 
 	{
 		switch (ch) 
@@ -122,14 +122,14 @@ int cmd_rpc( argc, argv )
 			case 'w' :
 				if (env_put( g_env, "width", sqsh_optarg, ENV_F_TRAN ) == False)
 				{
-					fprintf( stderr, "\\go: -h: %s\n", sqsh_get_errstr() );
+					fprintf( stderr, "\\rpc: -h: %s\n", sqsh_get_errstr() );
 				}
 				break;
 
 			case 'd' :
 				if (env_put( g_env, "DISPLAY", sqsh_optarg, ENV_F_TRAN ) == False)
 				{
-					fprintf( stderr, "\\go: -d: %s\n", sqsh_get_errstr() );
+					fprintf( stderr, "\\rpc: -d: %s\n", sqsh_get_errstr() );
 					have_error = True;
 				}
 				break;
@@ -141,11 +141,22 @@ int cmd_rpc( argc, argv )
 				{
 					if (env_put( g_env, "xgeom", sqsh_optarg, ENV_F_TRAN ) == False)
 					{
-						fprintf( stderr, "\\go: -x: %s\n", sqsh_get_errstr() );
+						fprintf( stderr, "\\rpc: -x: %s\n", sqsh_get_errstr() );
 						have_error = True;
 					}
 				}
 				break;
+			case 'T' :
+				/*
+				 * sqsh-2.1.7 - Set a window title when using X result windows.
+				*/
+				if (env_put( g_env, "xwin_title", sqsh_optarg, ENV_F_TRAN ) == False)
+				{
+					fprintf( stderr, "\\rpc: -T: %s\n", sqsh_get_errstr() );
+					have_error = True;
+				}
+				break;
+
 			case 'f' :
 				dsp_flags |= DSP_F_NOFOOTERS;
 				break;
@@ -178,6 +189,7 @@ int cmd_rpc( argc, argv )
 			"     -h         Suppress footers\n"
 			"     -m mode    Switch display mode for result set\n"
 			"     -x [xgeom] X display\n"
+			"     -T title   X display window title\n"
 			"     -w width   Display width\n"
 			"\n"
 			"  Parameter Options\n"
@@ -404,7 +416,7 @@ cmd_rpc_interrupt:
 	if (!sqsh_stdin_isatty())
 		return_code = CMD_ABORT;
 	else
-		return_code = CMD_CLEARBUF;
+		return_code = CMD_RESETBUF;
 
 	goto cmd_rpc_leave;
 
@@ -419,7 +431,7 @@ cmd_rpc_fail:
 	goto cmd_rpc_leave;
 
 cmd_rpc_succeed:
-	return_code = CMD_CLEARBUF;
+	return_code = CMD_RESETBUF;
 
 cmd_rpc_leave:
 	if (dsp_old != -1)

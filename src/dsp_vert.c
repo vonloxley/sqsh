@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_vert.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_vert.c,v 1.3 2010/01/12 13:26:38 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -278,7 +278,7 @@ int dsp_vert( output, cmd, flags )
 						}
 
 						/*-- Display output --*/
-						dsp_wrap( output, max_col_width+1, screen_width,
+						dsp_wrap( output, max_col_width+2, screen_width,
 						          col_data_ptr, col_data_len );
 						dsp_fputc( '\n', output );
 					}
@@ -405,7 +405,7 @@ int dsp_vert( output, cmd, flags )
 						}
 
 						/*-- Display output --*/
-						dsp_wrap( output, max_col_width+1, screen_width,
+						dsp_wrap( output, max_col_width+2, screen_width,
 						          col_data_ptr, col_data_len );
 					}
 

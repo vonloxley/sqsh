@@ -173,7 +173,7 @@ int cmd_do( argc, argv )
 	*/
 	do_buf = varbuf_create( 512 );
 
-	if ((ret = cmd_body_input( do_buf )) != CMD_CLEARBUF)
+	if ((ret = cmd_body_input( do_buf )) != CMD_RESETBUF)
 	{
 		varbuf_destroy( do_buf );
 		env_rollback( g_env );
@@ -234,7 +234,7 @@ int cmd_do( argc, argv )
 	/*
 	** Default return code.
 	*/
-	ret = CMD_CLEARBUF;
+	ret = CMD_RESETBUF;
 
 	/*
 	** Create the new connection for the sub-batch.
@@ -467,7 +467,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 	}
 
 	ct_cmd_drop( cmd );
-	return(CMD_CLEARBUF);
+	return(CMD_RESETBUF);
 }
 
 /*
@@ -660,7 +660,7 @@ int cmd_body_input( buf )
 
 	sig_restore();
 	memcpy((void*)&(sg_jmp_buf), (void*)&(orig_jmpbuf), sizeof(JMP_BUF));
-	return(CMD_CLEARBUF);
+	return(CMD_RESETBUF);
 }
 
 /*

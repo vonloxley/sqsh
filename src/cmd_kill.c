@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_kill.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: cmd_kill.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -47,11 +47,18 @@ int cmd_kill( argc, argv )
 
 	/*-- Check the argument count --*/
 	if( argc != 2 ) {
-		fprintf( stderr, "Use: \\kill [job_id]\n" ) ;
+		fprintf( stderr, "Use: \\kill job_id\n" ) ;
 		return CMD_FAIL ;
 	}
 
-	job_id = atoi(argv[1]) ;
+	/*
+	 * sqsh-2.1.7 - Check for valid job number.
+	 */
+	if ((job_id = atoi(argv[1])) <= 0) {
+		fprintf( stderr, "\\kill: Invalid job_id %s\n", argv[1] ) ;
+		return CMD_FAIL ;
+	}
+
 	if( (jobset_end( g_jobset, job_id )) == False ) {
 		fprintf( stderr, "\\kill: %s\n", sqsh_get_errstr() ) ;
 		return CMD_FAIL ;

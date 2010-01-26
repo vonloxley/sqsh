@@ -40,12 +40,13 @@
 #define CMD_LEAVEBUF         1    /* Command was succesfull, didn't touch */
                                   /* the current buffer */
 #define CMD_ALTERBUF         2    /* Command altered the current buffer */
-#define CMD_CLEARBUF         3    /* Command cleared current buffer */
-#define CMD_EXIT             4    /* Command requests that cmd_loop() exit */
-#define CMD_ABORT            5    /* Request cmd_loop() abort */
-#define CMD_INTERRUPTED      6    /* Request cmd_loop() abort */
-#define CMD_RETURN           7    /* Pop up a level */
-#define CMD_BREAK            8    /* Pop up a level */
+#define CMD_CLEARBUF         3    /* Command cleared current buffer (no buf save) */
+#define CMD_RESETBUF         4    /* Command reset current buffer (with buf save) */
+#define CMD_EXIT             5    /* Command requests that cmd_loop() exit */
+#define CMD_ABORT            6    /* Request cmd_loop() abort */
+#define CMD_INTERRUPTED      7    /* Request cmd_loop() abort */
+#define CMD_RETURN           8    /* Pop up a level */
+#define CMD_BREAK            9    /* Pop up a level */
 
 /*
  * Place all prototypes for custom commands here.
@@ -56,9 +57,11 @@ int  cmd_connect    _ANSI_ARGS(( int, char** )) ;
 int  cmd_bcp        _ANSI_ARGS(( int, char** )) ;
 int  cmd_reconnect  _ANSI_ARGS(( int, char** )) ;
 int  cmd_rpc        _ANSI_ARGS(( int, char** )) ;
+int  cmd_clear      _ANSI_ARGS(( int, char** )) ;   /* sqsh-2.1.7 */
 int  cmd_reset      _ANSI_ARGS(( int, char** )) ;   /* Buffer commands */
 int  cmd_redraw     _ANSI_ARGS(( int, char** )) ;
 int  cmd_history    _ANSI_ARGS(( int, char** )) ;
+int  cmd_hist_save  _ANSI_ARGS(( int, char** )) ;   /* sqsh-2.1.7 */
 int  cmd_buf_edit   _ANSI_ARGS(( int, char** )) ;
 int  cmd_buf_copy   _ANSI_ARGS(( int, char** )) ;
 int  cmd_buf_get    _ANSI_ARGS(( int, char** )) ;
@@ -121,6 +124,7 @@ static cmd_entry_t  sg_cmd_entry[] = {
 	{ "\\quit",      NULL,          cmd_exit         },
 	{ "\\done",      NULL,          cmd_exit         },
 	{ "\\connect",   NULL,          cmd_connect      },
+	{ "\\clear",     NULL,          cmd_clear        }, /* sqsh-2.1.7 */
 	{ "\\reset",     NULL,          cmd_reset        },
 	{ "\\set",       NULL,          cmd_set          },
 	{ "\\echo",      NULL,          cmd_echo         },
@@ -138,6 +142,7 @@ static cmd_entry_t  sg_cmd_entry[] = {
 	{ "\\unalias",   NULL,          cmd_unalias      },
 	{ "\\redraw",    NULL,          cmd_redraw       },
 	{ "\\history",   NULL,          cmd_history      },
+	{ "\\hist_save", NULL,          cmd_hist_save    },  /* sqsh-2.1.7 */
 	{ "\\shell",     NULL,          cmd_shell        },
 	{ "\\do",        NULL,          cmd_do           },
 	{ "\\func",      NULL,          cmd_func         },

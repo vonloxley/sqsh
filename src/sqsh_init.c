@@ -44,7 +44,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_init.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_init.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -255,6 +255,7 @@ void sqsh_exit( exit_status )
 {
 	char      *history;
 	char      *histsave;
+	char      *term_title;
 	CS_INT     con_status;
 	varbuf_t  *exp_buf;
 
@@ -275,8 +276,7 @@ void sqsh_exit( exit_status )
 			histsave = NULL;
 		}
 
-		if (sqsh_stdin_isatty() &&
-		    (histsave == NULL || *histsave == '1')       &&
+		if (g_interactive && (histsave == NULL || *histsave == '1') &&
 		    history != NULL && history_get_nitems( g_history ) > 0)
 		{
 			exp_buf = varbuf_create( 512 );
@@ -305,9 +305,10 @@ void sqsh_exit( exit_status )
 	}
 
 	/*
-	 * Clean up readline and write out the history buffer.
+	 * Clean up readline.
 	 */
-	sqsh_readline_exit();
+	if ( g_interactive )
+		sqsh_readline_exit();
 
 	if( g_connection != NULL )
 	{
@@ -329,7 +330,6 @@ void sqsh_exit( exit_status )
 			DBG(sqsh_debug(DEBUG_ERROR, "sqsh_exit: Closing connection\n");)
 			ct_close( g_connection, CS_FORCE_CLOSE );
 		}
-
 		ct_con_drop( g_connection );
 	}
 
@@ -341,6 +341,16 @@ void sqsh_exit( exit_status )
 
 	if( g_buf != NULL )
 		env_destroy( g_buf ) ;
+
+	/*
+	 * sqsh-2.1.7 - Reset term_title.
+	 */
+	if (g_env != NULL && g_interactive)
+	{
+		env_get( g_env, "term_title", &term_title );
+		if (term_title != NULL && *term_title != '\0')
+		    fprintf (stdout, "%c]0;%c", '\033', '\007' );
+	}
 
 	if( g_env != NULL )
 		env_destroy( g_env ) ;

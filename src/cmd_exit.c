@@ -30,7 +30,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_exit.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: cmd_exit.c,v 1.2 2010/01/12 13:26:38 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -60,7 +60,7 @@ int cmd_exit( argc, argv )
 	if( argc == 2 ) {
 		if (env_set (g_env, "exit_value", argv[1]) != True)
 		{
-			fprintf( stderr, "sqsh: \\exit [n]: Invalid argument (%s)\n", argv[1] ) ;
+			fprintf( stderr, "\\exit [n]: Invalid argument (%s)\n", argv[1] ) ;
 			return CMD_FAIL ;
 		}
 	}

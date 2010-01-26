@@ -119,7 +119,7 @@ extern alias_t    *g_alias ;
 /*
  * g_jobset: This is the current list of background jobs running within
  *           the current process.  This structure is re-initialized within
- *           the context of a child process by cmd_fork().
+ *           the context of a child process by sqsh_fork().
  */
 extern jobset_t   *g_jobset ;
 
@@ -146,5 +146,10 @@ extern char       *g_version ;
 extern int         g_password_set;
 extern char       *g_password;
 extern char       *g_lock;
+
+/*
+ * g_interactive: Global indicator if sqsh was started in interactive mode.
+ */
+extern int         g_interactive;
 
 #endif

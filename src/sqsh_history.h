@@ -47,6 +47,7 @@ typedef struct hisbuf_st {
 typedef struct history_st {
 	int       h_size ;             /* Total size of the history */
 	int       h_nitems ;           /* Number of items in history */
+	int       h_change ;           /* Number of changed items since last hist_save */
 	int       h_next_nbr ;         /* Next available history number */
 	hisbuf_t *h_start ;            /* Youngest buffer */
 	hisbuf_t *h_end ;              /* Oldest buffer */
@@ -54,6 +55,9 @@ typedef struct history_st {
 
 #define HISTORY_HEAD      -1
 #define HISTORY_TAIL      -2
+#define HISTSAVE_INIT      0
+#define HISTSAVE_LOAD     -1
+#define HISTSAVE_FORCE    -2
 
 /*-- Prototypes --*/
 history_t* history_create     _ANSI_ARGS(( int )) ;
@@ -64,6 +68,7 @@ int        history_get_nbr    _ANSI_ARGS(( history_t* )) ;
 int        history_append     _ANSI_ARGS(( history_t*, char* )) ;
 int        history_find       _ANSI_ARGS(( history_t*, int, char** )) ;
 int        history_del        _ANSI_ARGS(( history_t*, int )) ;
+int        history_range_del  _ANSI_ARGS(( history_t*, int, int )) ;
 int        history_clear      _ANSI_ARGS(( history_t* )) ;
 int        history_save       _ANSI_ARGS(( history_t*, char* )) ;
 int        history_load       _ANSI_ARGS(( history_t*, char* )) ;

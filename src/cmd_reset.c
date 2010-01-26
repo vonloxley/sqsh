@@ -31,9 +31,30 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_reset.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: cmd_reset.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
+
+/*
+ * cmd_clear:
+ *
+ * sqsh-2.1.7 - Clears the current g_sqlbuf without saving the buffer
+ * in the history.
+ */
+int cmd_clear( argc, argv )
+	int    argc ;
+	char  *argv[] ;
+{
+	if( argc != 1 ) {
+		fprintf( stderr, "Too many arguments to \\clear\n" ) ;
+		return CMD_FAIL ;
+	}
+#if defined(USE_READLINE)
+	if (g_interactive)
+	        _rl_clear_screen();
+#endif
+	return CMD_CLEARBUF ;
+}
 
 /*
  * cmd_reset:
@@ -45,9 +66,10 @@ int cmd_reset( argc, argv )
 	char  *argv[] ;
 {
 	if( argc != 1 ) {
-		fprintf( stderr, "Too many arguments to reset\n" ) ;
+		fprintf( stderr, "Too many arguments to \\reset\n" ) ;
 		return CMD_FAIL ;
 	}
 
-	return CMD_CLEARBUF ;
+	return CMD_RESETBUF ;
 }
+

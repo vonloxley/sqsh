@@ -65,7 +65,7 @@ int cmd_if( argc, argv )
 
 	if (argc < 1)
 	{
-		fprintf( stderr, "use: \\if <command>\n" );
+		fprintf( stderr, "Use: \\if <command>\n" );
 		fprintf( stderr, "         <body>\n" );
 		fprintf( stderr, "     \\elif <command>\n" );
 		fprintf( stderr, "         <body>\n" );
@@ -413,7 +413,12 @@ int cmd_if_input( if_buf, else_buf )
 			if (sqsh_get_error() == SQSH_E_NONE)
 			{
 				fprintf( stderr, "\\if: \\fi expected.\n" );
-				return(CMD_FAIL);
+				/*
+				 * sqsh-2.1.7 - Logical fix: Do not return CMD_FAIL before the
+				 * signalling context and original jump buffer are restored.
+				 *
+				 * return(CMD_FAIL);
+				 */
 			}
 
 			sig_restore();

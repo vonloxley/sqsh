@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_history.c,v 1.3 2009/04/14 10:52:53 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_history.c,v 1.4 2010/01/12 13:26:38 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -40,6 +40,8 @@ static hisbuf_t* hisbuf_create  _ANSI_ARGS(( history_t*, char*, int )) ;
 static hisbuf_t* hisbuf_get     _ANSI_ARGS(( history_t*, int )) ;
 static int       hisbuf_destroy _ANSI_ARGS(( hisbuf_t* )) ;
 static unsigned long adler32    _ANSI_ARGS(( char*, int )) ;   /* sqsh-2.1.6 feature */
+static void      hist_auto_save _ANSI_ARGS(( history_t* )) ;   /* sqsh-2.1.7 feature */
+
 
 /*
  * history_create():
@@ -67,6 +69,7 @@ history_t* history_create( size )
     /*-- Initialize elements of structure --*/
     h->h_size     = size ;
     h->h_nitems   = 0 ;
+    h->h_change   = HISTSAVE_INIT ;
     h->h_start    = NULL ;
     h->h_next_nbr = 1 ;
     h->h_end      = NULL ;
@@ -154,6 +157,7 @@ int history_set_size( h, size )
 
         --h->h_nitems ;
     }
+    hist_auto_save ( h ) ;
 
     h->h_size = size ;
 
@@ -204,7 +208,7 @@ int history_append( h, buf )
      * order; else continue as usual.
     */
      chksum = adler32 (buf, len);
-     DBG(sqsh_debug(DEBUG_ERROR, "sqsh_history: checksum of buffer: %u\n.\n", chksum);)
+     DBG(sqsh_debug(DEBUG_ERROR, "sqsh_history: checksum of buffer: %u\n", chksum);)
      env_get (g_env, "histunique", &histunique);
      if (histunique != NULL && *histunique != '0')
      {
@@ -262,7 +266,8 @@ int history_append( h, buf )
          */
          for (hb_tmp = h->h_start; hb_tmp != NULL && hb_tmp->hb_nbr != i;
               hb_tmp->hb_nbr = i--, hb_tmp = hb_tmp->hb_nxt);
-           
+         hist_auto_save ( h ) ;
+
          sqsh_set_error( SQSH_E_NONE, NULL ) ;
          return True;
        }
@@ -320,6 +325,7 @@ int history_append( h, buf )
         h->h_start         = hisbuf ;
     }
     ++h->h_nitems ;
+    hist_auto_save ( h ) ;
 
     sqsh_set_error( SQSH_E_NONE, NULL ) ;
     return True ;
@@ -379,24 +385,83 @@ int history_del( h, idx )
     hisbuf_destroy( hb ) ;
 
     /*
-     * sqsh-2.1.6 feature - Adjust h_nitems, h_next_br and renumber the list.
+     * sqsh-2.1.6 feature - Adjust h_nitems, h_next_nbr and renumber the list.
     */
     switch ( --h->h_nitems )
     {
         case 0 :
             h->h_next_nbr = 1;
-	    break;
+            break;
 
         case 1 :
-	    h->h_start->hb_nbr = 1;
+            h->h_start->hb_nbr = 1;
             h->h_next_nbr = 2;
-	    break;
+            break;
 
         default :
             for (hb = h->h_start, i = hb->hb_nbr, h->h_next_nbr = i + 1;
                  hb != NULL; hb->hb_nbr = i--, hb = hb->hb_nxt);
-	    break;
+            break;
     }
+    hist_auto_save ( h );
+
+    return True ;
+}
+
+/*
+ * sqsh-2.1.7 - history_range_del():
+ *
+ * Deletes entries idx_start through idx_end from history h.
+ */
+int history_range_del( h, idx_start, idx_end )
+    history_t   *h ;
+    int          idx_start ;
+    int          idx_end ;
+{
+    hisbuf_t   *hb ;
+    register int i ;
+
+    for ( i = idx_start; i <= idx_end; i++ ) {
+        /*-- Retrieve the appropriate history entry */
+        if( (hb = hisbuf_get( h, i )) == NULL )
+            continue ;
+
+        /*-- Unlink the node --*/
+        if( hb->hb_prv != NULL )
+            hb->hb_prv->hb_nxt = hb->hb_nxt ;
+        else
+            h->h_start = hb->hb_nxt ;
+
+        if( hb->hb_nxt != NULL )
+            hb->hb_nxt->hb_prv = hb->hb_prv ;
+        else
+            h->h_end = hb->hb_prv ;
+
+        hisbuf_destroy( hb ) ;
+	h->h_nitems--;
+    }
+
+    /*
+     * Adjust h_next_nbr and renumber the list.
+    */
+    switch ( h->h_nitems )
+    {
+        case 0 :
+            h->h_next_nbr = 1;
+            break;
+
+        case 1 :
+            h->h_start->hb_nbr = 1;
+            h->h_next_nbr = 2;
+            break;
+
+        default :
+            for (hb = h->h_start, i = hb->hb_nbr, h->h_next_nbr = i + 1;
+                 hb != NULL; hb->hb_nbr = i--, hb = hb->hb_nxt);
+            break;
+    }
+    h->h_change = HISTSAVE_FORCE;
+    hist_auto_save ( h );
 
     return True ;
 }
@@ -422,6 +487,7 @@ int history_clear( h )
     h->h_start  = NULL ;
     h->h_end    = NULL ;
     h->h_nitems = 0 ;
+    h->h_change = HISTSAVE_INIT ;
 
     return True ;
 }
@@ -451,7 +517,7 @@ int history_save( h, save_file )
     saved_mask = umask(0066);
     if( (fptr = fopen( save_file, "w" )) == NULL ) {
         sqsh_set_error( errno, "%s: %s", save_file, strerror( errno ) ) ;
-	umask(saved_mask);
+        umask(saved_mask);
         return False ;
     }
     umask(saved_mask);
@@ -463,9 +529,9 @@ int history_save( h, save_file )
      */
     for( hb = h->h_end; hb != NULL; hb = hb->hb_prv ) {
         /*
-         * Since buffer can contain just about anything we need to 
+         * Since buffer can contain just about anything we need to
          * provide some sort of separator.
-	 * sqsh-2.1.7 - Also store time_t of last buffer access and usage count.
+         * sqsh-2.1.7 - Also store time_t of last buffer access and usage count.
          */
         fprintf( fptr, "--> History Entry <--\n" ) ;
         fprintf( fptr, "--> History Info (%d:%d) <--\n", (int) hb->hb_dttm, hb->hb_count ) ;
@@ -474,6 +540,7 @@ int history_save( h, save_file )
     }
 
     fclose( fptr ) ;
+    h->h_change = HISTSAVE_INIT;
 
     sqsh_set_error( SQSH_E_NONE, NULL ) ;
     return True ;
@@ -522,6 +589,11 @@ int history_load( h, load_file )
         return False ;
     }
 
+    /*
+     * sqsh-2.1.7 - Value HISTSAVE_LOAD indicates we are performing
+     * a load and we do not want to save history in hist_auto_save().
+     */
+    h->h_change = HISTSAVE_LOAD;
     while( fgets( str, sizeof(str), fptr ) != NULL ) {
         /*
          * If we hit the separator for history entries then we need
@@ -541,36 +613,37 @@ int history_load( h, load_file )
                     fclose( fptr ) ;
                     varbuf_destroy( history_buf ) ;
                     sqsh_set_error( SQSH_E_NOMEM, NULL ) ;
+                    h->h_change = HISTSAVE_INIT;
                     return False ;
                 }
-		/*
-		 * sqsh-2.1.7 - Adjust dttm and usage count for the current buffer.
-		 */
-		h->h_start->hb_dttm   = (time_t) dttm;
-		h->h_start->hb_count += count;
-		dttm  = 0;
-		count = 0;
+                /*
+                 * sqsh-2.1.7 - Adjust dttm and usage count for the current buffer.
+                */
+                h->h_start->hb_dttm   = (time_t) dttm;
+                h->h_start->hb_count += count;
+                dttm  = 0;
+                count = 0;
             }
 
             varbuf_clear( history_buf ) ;
         } else if ( strncmp( str, "--> History Info (", 18 ) == 0) {
-		/*
-		 * sqsh-2.1.7 - The history file may contain a new entry to store
-		 * last access date/time and buffer usage count.
-		 * During buffer allocation the initial count is set to 1. We do
-		 * not want to overwrite the value in the buffer, just add another
-		 * occurence to keep uniqueness count correct. Therefor substract
-		 * one from the value read from the history file.
-		 */
-		char *p;
+            /*
+             * sqsh-2.1.7 - The history file may contain a new entry to store
+             * last access date/time and buffer usage count.
+             * During buffer allocation the initial count is set to 1. We do
+             * not want to overwrite the value in the buffer, just add another
+             * occurence to keep uniqueness count correct. Therefor substract
+             * one from the value read from the history file.
+             */
+            char *p;
 
-		p  = strchr (str, ')');
-		*p = '\0';
-		p  = strchr (str, ':');
-		count = atoi (p+1)-1;
-		*p = '\0';
-		dttm  = atoi (str+18);
-	} else {
+            p  = strchr (str, ')');
+            *p = '\0';
+            p  = strchr (str, ':');
+            count = atoi (p+1)-1;
+            *p = '\0';
+            dttm  = atoi (str+18);
+        } else {
             /*
              * Since this isn't an entry separator, it is a line that
              * needs to be added to the current buffer.
@@ -579,6 +652,7 @@ int history_load( h, load_file )
                 fclose( fptr ) ;
                 varbuf_destroy( history_buf ) ;
                 sqsh_set_error( SQSH_E_NOMEM, NULL ) ;
+                h->h_change = HISTSAVE_INIT;
                 return False ;
             }
         }
@@ -595,17 +669,19 @@ int history_load( h, load_file )
         if( history_append( h, varbuf_getstr( history_buf ) ) == False ) {
             varbuf_destroy( history_buf ) ;
             sqsh_set_error( SQSH_E_NOMEM, NULL ) ;
+            h->h_change = HISTSAVE_INIT;
             return False ;
         }
-	/*
-	 * sqsh-2.1.7 - Adjust dttm and usage count for the current buffer.
-	 */
-	h->h_start->hb_dttm   = (time_t) dttm;
-	h->h_start->hb_count += count;
+        /*
+         * sqsh-2.1.7 - Adjust dttm and usage count for the current buffer.
+        */
+        h->h_start->hb_dttm   = (time_t) dttm;
+        h->h_start->hb_count += count;
     }
 
     varbuf_destroy( history_buf ) ;
     sqsh_set_error( SQSH_E_NONE, NULL ) ;
+    h->h_change = HISTSAVE_INIT;
     return True ;
 }
 
@@ -723,7 +799,7 @@ static int hisbuf_destroy( hb )
  * a length of len bytes, using the Adler algorithm.
 */
 #define MOD_ADLER 65521
- 
+
 static unsigned long adler32 (data, len)
     char *data;
     int   len;
@@ -737,5 +813,61 @@ static unsigned long adler32 (data, len)
     }
 
     return (b << 16) | a;
+}
+
+
+/*
+ * sqsh-2.1.7 feature - Autosave history after more than x
+ * configured changes (Variable hist_auto_save).
+*/
+static void hist_auto_save ( h )
+    history_t *h;
+{
+    varbuf_t *exp_buf;
+    char     *history;
+    char     *histsave;
+    char     *hist_auto_save;
+
+
+    /*
+     * If we are currently loading the history file, then we do
+     * not want to start autosaving the history, so back off.
+     */
+    if (h->h_change == HISTSAVE_LOAD)
+        return;
+
+    /*
+     * Only try to autosave the history if we have histsave on
+     * and a history file and a hist_auto_save value configured.
+     */
+    env_get (g_env, "history",        &history);
+    env_get (g_env, "hist_auto_save", &hist_auto_save);
+    env_get (g_env, "histsave",       &histsave);
+    if ( history        == NULL || *history        == '\0' ||
+         hist_auto_save == NULL || *hist_auto_save == '0'  ||
+         histsave       == NULL || *histsave       == '0')
+        return;
+
+    if ( h->h_change != HISTSAVE_FORCE && 
+         ++h->h_change < atoi(hist_auto_save) )
+        return;
+
+    /*
+     * Expand the history file and save the buffers to the history.
+     * history_save() will also reset the h_change counter.
+     */
+    exp_buf = varbuf_create( 256 );
+    if (exp_buf != NULL)
+    {
+        if ( sqsh_expand( history, exp_buf, 0 ) == True )
+        {
+            history_save( h, varbuf_getstr(exp_buf) );
+            DBG(sqsh_debug(DEBUG_ERROR, "sqsh_history: History automatically saved to %s\n",
+                varbuf_getstr(exp_buf));)
+        }
+        varbuf_destroy( exp_buf );
+    }
+
+    return;
 }
 

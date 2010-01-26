@@ -67,7 +67,7 @@ int cmd_for( argc, argv )
 	*/
 	for_buf = varbuf_create( 512 );
 
-	if ((ret = cmd_body_input( for_buf )) != CMD_CLEARBUF)
+	if ((ret = cmd_body_input( for_buf )) != CMD_RESETBUF)
 	{
 		varbuf_destroy( for_buf );
 		env_rollback( g_env );
@@ -81,7 +81,7 @@ int cmd_for( argc, argv )
 
 	if (argc < 4 || strcmp(argv[2], "in") != 0)
 	{
-		fprintf( stderr, "use: \\for <variable> in <word> [<word> ...]\n" );
+		fprintf( stderr, "Use: \\for <variable> in <word> [<word> ...]\n" );
 		varbuf_destroy( for_buf );
 		return(CMD_FAIL);
 	}

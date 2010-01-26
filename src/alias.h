@@ -42,6 +42,7 @@ static alias_entry_t  sg_alias_entry[] = {
 /*	NAME             BODY                                 */
 /*	------------     ------------------------------------ */
 	{ "!",           "\\buf-append !. !!*"           },
+	{ "clear",       "\\clear"                       }, /* sqsh-2.1.7 */
 	{ "reset",       "\\reset"                       },
 	{ "exit",        "\\exit"                        },
 	{ "quit",        "\\exit"                        },

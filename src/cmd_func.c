@@ -78,7 +78,7 @@ int cmd_func( argc, argv )
 
     if ((argc - sqsh_optind) != 1)
     {
-        fprintf( stderr, "use: \\func [-x] <name>\n" );
+        fprintf( stderr, "Use: \\func [-x] <name>\n" );
         fprintf( stderr, "         <body>\n" );
         fprintf( stderr, "     \\done\n" );
         return(CMD_FAIL);
@@ -102,7 +102,7 @@ int cmd_func( argc, argv )
     ** is defined in cmd_do.c.
     */
     if ((ret = cmd_body_input( input_buf )
-        != CMD_CLEARBUF))
+        != CMD_RESETBUF))
     {
         varbuf_destroy( input_buf );
         env_rollback(g_env);
@@ -137,7 +137,7 @@ int cmd_func( argc, argv )
     }
 
     varbuf_destroy( input_buf );
-    return(CMD_CLEARBUF);
+    return(CMD_RESETBUF);
 }
 
 /*

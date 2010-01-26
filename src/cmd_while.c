@@ -112,7 +112,7 @@ int cmd_while( argc, argv )
 	** Read the body of the command up to the \done.
 	*/
 	if ((ret = cmd_body_input( while_buf )
-		!= CMD_CLEARBUF))
+		!= CMD_RESETBUF))
 	{
 		varbuf_destroy( while_buf );
 		varbuf_destroy( expand_buf );

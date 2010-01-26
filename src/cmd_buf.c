@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_buf.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: cmd_buf.c,v 1.3 2009/04/14 09:09:32 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -613,21 +613,19 @@ int cmd_buf_del( argc, argv )
 	 */
 	if( argc != 2 )
         {
-		fprintf( stderr, "Use: \\buf-del buf\n" ) ;
+		fprintf( stderr, "Use: \\buf-del { x | x-y }\n" ) ;
 		return CMD_FAIL ;
 	}
 
 	/*
-	 * Delete the buffer.
+	 * Delete the buffer (or range of buffers (sqsh-2.1.7)).
 	 */
-	if ( buf_del( argv[1] ) == True )
-		fprintf(stdout, "Buffer %s destroyed and list renumbered\n", argv[1]);
-	else
+	if ( buf_del( argv[1] ) == False )
         {
 		fprintf( stderr, "\\buf-del %s: %s\n", argv[1],
                          sqsh_get_errstr() ) ;
 		return CMD_FAIL ;
 	}
-	return CMD_CLEARBUF ;
+	return CMD_RESETBUF ;
 }
 

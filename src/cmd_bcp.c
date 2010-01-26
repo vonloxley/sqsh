@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.5 2009/12/23 14:06:50 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.6 2010/01/12 13:26:38 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -846,7 +846,7 @@ int cmd_bcp( argc, argv )
                  secs, secs / (double)total_rows, (double)total_rows / secs );
     }
     
-    return_code = CMD_CLEARBUF;
+    return_code = CMD_RESETBUF;
     goto leave;
 
 return_interrupt:
@@ -855,7 +855,7 @@ return_interrupt:
     ct_cancel( bcp_con, (CS_COMMAND*)NULL, CS_CANCEL_ALL );
     ct_cancel( g_connection, (CS_COMMAND*)NULL, CS_CANCEL_ALL );
 
-    return_code = CMD_CLEARBUF;
+    return_code = CMD_RESETBUF;
     goto leave;
 
 return_fail:

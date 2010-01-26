@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_job.c,v 1.1.1.1 2004/04/07 12:35:06 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: sqsh_job.c,v 1.2 2009/04/14 10:46:27 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -113,10 +113,11 @@ jobset_t* jobset_create( hsize )
 	 * Allocate a sigcld_t.  This will act as a handle on all of the
 	 * SIGCHLD events that will be received due to background jobs
 	 * completing.
+	 * sqsh-2.1.7 - Logical fix: Free js->js_jobs before a free of js.
 	 */
 	if( (js->js_sigcld = sigcld_create()) == NULL ) {
-		free( js );
 		free( js->js_jobs );
+		free( js );
 		sqsh_set_error( sqsh_get_error(), "sigcld_create: %s",
 		                sqsh_get_errstr() );
 	 	return NULL;
@@ -594,7 +595,8 @@ job_id_t jobset_wait( js, job_id, exit_status, block_type )
 		return jobset_wait_all( js, exit_status, block_type );
 
 	/*-- Find out if the job exists --*/
-	for( j = js->js_jobs[js->js_hsize % job_id];
+	/* (sqsh-2.1.7 - Bug fix for bucket calculation) --*/
+	for( j = js->js_jobs[job_id % js->js_hsize];
 		  j != NULL && j->job_id != job_id ; j = j->job_nxt );
 
 	/*-- If we can't, error --*/
@@ -624,21 +626,24 @@ job_id_t jobset_wait( js, job_id, exit_status, block_type )
 	pid = sigcld_wait( js->js_sigcld, j->job_pid, exit_status, wait_type );
 
 	/*
-	 * Propogate any errors back to the caller.
-	 */
-	if( pid == -1 ) {
-		sqsh_set_error( sqsh_get_error(), "sigcld_wait: %s",
-							 sqsh_get_errstr() );
-		return -1;
-	}
-
-	/*
 	 * If block_type was JOB_NONBLOCK and there were no jobs pending,
 	 * then return 0.
 	 */
 	if( pid == 0 ) {
 		sqsh_set_error( SQSH_E_NONE, NULL );
 		return 0;
+	}
+
+	/*
+	 * Propagate any errors back to the caller.
+	 * sqsh-2.1.7 - If we missed a SIGCLD signal and the pid is already
+	 * finished, then just mark the job as completed and continue
+	 * as normal. Then you can use \show to check the deferred output
+	 * so far and get the job out of the queue.
+	 */
+	if( pid == -1 ) {
+		sqsh_set_error( sqsh_get_error(), "sigcld_wait: %s",
+				sqsh_get_errstr() );
 	}
 
 	/*
@@ -662,7 +667,7 @@ int jobset_end( js, job_id )
 	int         exit_status;
 
 	/*-- Always check your parameters --*/
-	if( js == NULL ) {
+	if( js == NULL || job_id <= 0 ) {
 		sqsh_set_error( SQSH_E_BADPARAM, NULL );
 		return False;
 	}
@@ -904,7 +909,7 @@ static job_id_t jobset_wait_all( js, exit_status, block_type )
 	pid = sigcld_wait( js->js_sigcld, -1, exit_status, wait_type );
 
 	/*
-	 * Propogate any errors back to the caller.
+	 * Propagate any errors back to the caller.
 	 */
 	if( pid == -1 ) {
 		sqsh_set_error( sqsh_get_error(), "sigcld_wait: %s", sqsh_get_errstr() );
@@ -1066,7 +1071,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 			}
 
 			/*-- Now, open the file --*/
-			if( (defer_fd = sqsh_open(defer_path,O_CREAT|O_WRONLY,0600)) == -1 ) {
+			if( (defer_fd = sqsh_open(defer_path,O_CREAT|O_WRONLY|O_TRUNC,0600)) == -1 ) {
 				sqsh_set_error( sqsh_get_error(), "Unable to open %s: %s", 
 				                defer_path, sqsh_get_errstr() );
 				return False;

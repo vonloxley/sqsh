@@ -30,7 +30,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_fork.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_fork.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -71,8 +71,22 @@ pid_t sqsh_fork()
 			 * Since the child process doesn't have any children of it's
 			 * own (per se), we don't want it to inherit the children of
 			 * the parent process.
+			 * sqsh-2.1.7 - Running jobset_clear on the global jobset will
+			 * eventually unlink deferred output files of still running
+			 * brother and sister processes. To fix this, just create a
+			 * new global jobset. Also reset the global history pointer
+			 * and g_interactive to false, just in case.
+		       	 * Then allow the parent process some time to administer things
+			 * by sleeping for a while, before starting the real job.
 			 */
-			jobset_clear(g_jobset) ;
+			g_history = NULL ;
+			g_interactive = False ;
+			if( (g_jobset = jobset_create( 47 )) == NULL ) {
+			    sqsh_set_error( sqsh_get_error(), "jobset_create: %s",
+			    sqsh_get_errstr() ) ;
+			    exit(255) ;		/* Exit child if something is wrong */
+			}
+			sleep (1) ;
 			break ;
 
 		default :    /* Parent process */

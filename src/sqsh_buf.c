@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_buf.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_buf.c,v 1.2 2009/04/14 09:21:12 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -447,25 +447,43 @@ int buf_append( buf_name, buf )
 }
 
 /*
- * sqsh-2.1.6 feature - buf_del()
+ * buf_del()
  *
- * Deletes a buffer from history. If buffer doesn't exist, then False is returned.
+ * sqsh-2.1.6 - Deletes a buffer from history.
+ *              If buffer doesn't exist, then False is returned.
+ * sqsh-2.1.7 - Allow range deletes ( x-y ).
  */
-int buf_del( buf_number )
-	char   *buf_number ;
+int buf_del( parm )
+    char *parm ;
 {
-    int i ;
+    int   i ;
+    int   j ;
+    char  arg[12];
+    char *p ;
 
     /*-- Check parameters --*/
-    if ( buf_number == NULL )
+    if ( parm == NULL || strlen (parm) > sizeof(arg) - 1)
     {
         sqsh_set_error( SQSH_E_BADPARAM, NULL ) ;
         return False ;
     }
+    strcpy (arg, parm);
 
-    if ( isdigit( (int)*(buf_number) ) )
+
+    if ( (p = strchr( arg, '-' )) != NULL) {
+        *p = '\0';
+	i  = atoi( arg );
+	j  = atoi( p+1 );
+	if ( i == 0 || j == 0 || i >= j ) {
+            sqsh_set_error( SQSH_E_BADPARAM, NULL ) ;
+            return False ;
+        }
+        history_range_del( g_history, i, j ) ;
+        sqsh_set_error( SQSH_E_NONE, NULL ) ;
+        return True ;
+    }
+    else if ( (i = atoi( arg )) > 0)
     {
-        i = atoi( buf_number) ;
         if ( history_del( g_history, i ) == True )
         {
             sqsh_set_error( SQSH_E_NONE, NULL ) ;

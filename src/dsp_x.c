@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_x.c,v 1.2 2010/01/07 09:33:23 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_x.c,v 1.3 2010/01/12 13:26:38 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -49,7 +49,7 @@ int dsp_x( output, cmd, flags, dsp_func )
 	dsp_t       *dsp_func;
 {
 	fprintf( stderr, "dsp_x: X11 support not compiled into sqsh\n" );
-	return DSP_SUCCEED;
+	return DSP_FAIL;
 }
 
 #else

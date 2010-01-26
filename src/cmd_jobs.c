@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_jobs.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: cmd_jobs.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -51,8 +51,8 @@ int cmd_jobs( argc, argv )
 	 * This is probably unnecessary, but could save your ass if
 	 * you didn't mean to type exit.
 	 */
-	if( argc != 1 ) {
-		fprintf( stderr, "use: \\jobs\n" ) ;
+	if( argc > 2 || (argc == 2 && strcmp (argv[1], "-i") != 0)) {
+		fprintf( stderr, "Use: \\jobs [-i]\n" ) ;
 		return CMD_FAIL ;
 	}
 
@@ -78,6 +78,12 @@ int cmd_jobs( argc, argv )
 			else
 				printf( "Job #%d: %s (%d secs)\n", j->job_id, date_str,
 						  (int)(cur_time - j->job_start) ) ;
+			if (argc == 2 && strcmp ( argv[1], "-i") == 0) {
+				printf( "\tFlags    : %d\n", j->job_flags ) ;
+				printf( "\tOutput   : %s\n", j->job_output ) ;
+				printf( "\tStatus   : %d\n", j->job_status ) ;
+				printf( "\tChild pid: %d\n", j->job_pid ) ;
+			}
  		}
 	}
 

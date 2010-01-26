@@ -180,7 +180,9 @@ static var_entry_t  sg_var_entry[] = {
     { "secure_options",   NULL,          var_set_nullstr,     NULL            },
     /* sqsh-2.1.7 - New variables */
     { "exit_value",       "0",           var_set_int,         NULL            },
+    { "hist_auto_save",   "0",           var_set_int,         NULL            },
     { "xwin_title",       NULL,          var_set_nullstr,     NULL            },
+    { "term_title",       NULL,          var_set_nullstr,     NULL            },
 } ;
 
 #endif /* SQSH_INIT */
