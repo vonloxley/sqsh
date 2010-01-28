@@ -52,7 +52,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_input.c,v 1.3 2009/04/14 09:45:43 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_input.c,v 1.4 2010/01/26 15:03:50 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -195,6 +195,11 @@ int cmd_input()
         fprintf( stderr, "varbuf_create: %s\n", sqsh_get_errstr() );
         goto loop_fail;
     }
+
+    /*
+     * Save current signal context.
+     */
+    sig_save();
 
     /*
      * Install a new location to jump to in case we are
@@ -664,10 +669,11 @@ loop_done :
     }
     
     /*
-     * Restore the original signal handler (if any), and, just in case
+     * Restore the original signal context, and, just in case
      * cmd_loop() has been recursively called, restore the original
      * jump buffer.
      */
+    sig_restore();
     memcpy((void*)&(sg_jmp_buf),(void*)&(old_jmp_buf),sizeof(JMP_BUF));
 
     return ret;

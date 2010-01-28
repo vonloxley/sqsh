@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.6 2010/01/12 13:26:38 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.7 2010/01/26 15:03:50 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -293,6 +293,7 @@ int cmd_bcp( argc, argv )
     sg_interrupted    = False;
     sg_bcp_connection = NULL;
 
+    sig_save();
     sig_install( SIGINT, bcp_signal, (void*)NULL, 0 );
     sig_install( SIGPIPE, bcp_signal, (void*)NULL, 0 );
 
@@ -944,7 +945,8 @@ leave:
 
     if (bcp_locale != NULL)
         cs_loc_drop( g_context, bcp_locale );
-    
+
+    sig_restore();    
     return return_code;
 }
 

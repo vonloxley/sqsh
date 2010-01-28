@@ -33,7 +33,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_fd.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_fd.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -574,6 +574,7 @@ int sqsh_popen( shell_job, mode, outfd, infd )
 
 			/*-- Tell the sigcld sub-system to watch for child process --*/
 			sigcld_watch( sg_sigcld, pid ) ;
+			sigcld_unblock () ; /* sqsh-2.1.7 - Force unblock/enable signal handler */
 			return( fd ) ;
 
 	} /* switch (fork()) */

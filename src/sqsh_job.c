@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_job.c,v 1.2 2009/04/14 10:46:27 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_job.c,v 1.3 2010/01/26 15:03:50 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -408,22 +408,27 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 				 * We want the child to process signals a little differently
 				 * from the parent.  There is no real need for graceful re-
 				 * covery within the child.
+				 * sqsh-2.1.7 - Ignore SIGINT (Ctrl-C) interrupts from parent.
+				 *              Let the child perform a proper sqsh_exit().
+				 *              Return code is not very relevant here.
 				 */
 				while (sig_restore() >= 0);
-					
+				sig_install ( SIGINT, SIG_H_IGN, NULL, 0 );
 				ret = cmd->cmd_ptr( args_argc(job->job_args), 
 					args_argv(job->job_args) );
-				exit(ret);
+				sqsh_exit(0);
 
 			/*
 			 * Parent process. All we need to do is record the pid of the
 			 * child in the job structure, restore the  file descriptors
 			 * and return.
+			 * sqsh-2.1.7 - Make sure SIGCHLD signals are unblocked.
 			 */
 			default :  /* Parent */
 				
 				job->job_pid = child_pid;
 				sigcld_watch( js->js_sigcld, job->job_pid );
+				sigcld_unblock () ;
 		}
 
 		/*
@@ -635,18 +640,6 @@ job_id_t jobset_wait( js, job_id, exit_status, block_type )
 	}
 
 	/*
-	 * Propagate any errors back to the caller.
-	 * sqsh-2.1.7 - If we missed a SIGCLD signal and the pid is already
-	 * finished, then just mark the job as completed and continue
-	 * as normal. Then you can use \show to check the deferred output
-	 * so far and get the job out of the queue.
-	 */
-	if( pid == -1 ) {
-		sqsh_set_error( sqsh_get_error(), "sigcld_wait: %s",
-				sqsh_get_errstr() );
-	}
-
-	/*
 	 * If we have reached this point, then the job has completed so
 	 * it is just a matter of recording the exit status and returning.
 	 */
@@ -654,7 +647,21 @@ job_id_t jobset_wait( js, job_id, exit_status, block_type )
 	j->job_end     = time(NULL);
  	j->job_status  = *exit_status;
 
- 	sqsh_set_error( SQSH_E_NONE, NULL );
+	/*
+	 * Propagate any errors back to the caller.
+	 * sqsh-2.1.7 - If we missed a SIGCLD signal and the pid is already
+	 * finished, then remove the pid from the watch list, report an error
+	 * and continue as normal. Then you can use \show to check the deferred
+	 * output so far and get the job out of the queue.
+	 */
+	if( pid == -1 ) {
+		sigcld_unwatch ( js->js_sigcld, j->job_pid );
+		sqsh_set_error( sqsh_get_error(), "sigcld_wait: %s", sqsh_get_errstr() );
+	}
+	else {
+	 	sqsh_set_error( SQSH_E_NONE, NULL );
+	}
+
  	return j->job_id;
 }
 
@@ -1049,8 +1056,9 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 		       	{
 				if ((exp_buf = varbuf_create( 512 )) == NULL)
 				{
-					fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
-					sqsh_exit( 255 );
+					sqsh_set_error( sqsh_get_error(),"varbuf: %s",
+							sqsh_get_errstr() );
+					return False;
 				}
 				if (sqsh_expand( tmp_dir, exp_buf, 0 ) == False)
 					tmp_dir = SQSH_TMP;

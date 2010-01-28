@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_history.c,v 1.4 2010/01/12 13:26:38 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_history.c,v 1.5 2010/01/26 15:03:50 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -40,6 +40,7 @@ static hisbuf_t* hisbuf_create  _ANSI_ARGS(( history_t*, char*, int )) ;
 static hisbuf_t* hisbuf_get     _ANSI_ARGS(( history_t*, int )) ;
 static int       hisbuf_destroy _ANSI_ARGS(( hisbuf_t* )) ;
 static unsigned long adler32    _ANSI_ARGS(( char*, int )) ;   /* sqsh-2.1.6 feature */
+static int       chk_buf_ifs    _ANSI_ARGS(( char*, int )) ;   /* sqsh-2.1.7 feature */
 static void      hist_auto_save _ANSI_ARGS(( history_t* )) ;   /* sqsh-2.1.7 feature */
 
 
@@ -199,6 +200,13 @@ int history_append( h, buf )
         sqsh_set_error( SQSH_E_NONE, NULL ) ;
         return True ;
     }
+
+    /*
+     * sqsh-2.1.7 feature - Ignore 'empty' buffers with only
+     * IFS characters.
+     */
+    if (chk_buf_ifs (buf, len))
+        return True ;
 
     /*
      * sqsh-2.1.6 feature - Calculate a checksum on the buffer.
@@ -813,6 +821,27 @@ static unsigned long adler32 (data, len)
     }
 
     return (b << 16) | a;
+}
+
+
+/*
+ * sqsh-2.1.7 feature - Function chk_buf_ifs
+ *
+ * Check if the buffer only contains IFS characters.
+ * Return True if this is the case, else return False.
+*/
+static int chk_buf_ifs (data, len)
+    char *data;
+    int   len;
+{
+    char  *ifs = "\f\n\r\t\v ";
+    int    i;
+
+    for (i = 0; i < len && strchr(ifs, data[i]) != NULL; ++i);
+    if ( i == len )
+      return True;
+    else
+      return False;
 }
 
 
