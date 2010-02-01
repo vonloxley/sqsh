@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.16 2009/04/14 12:09:43 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.17 2009/12/23 15:17:40 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -174,7 +174,6 @@ int cmd_connect( argc, argv )
     CS_INT    SybTimeOut;
     CS_BOOL   NetAuthRequired;
     varbuf_t  *exp_buf;
-    char      tmp_str[30];
 
 #if defined(CTLIB_SIGPOLL_BUG) && defined(F_SETOWN)
     int       ctlib_fd;
@@ -489,9 +488,7 @@ int cmd_connect( argc, argv )
      * If a value of "none" is passed on to -Z, then we ignore all Network auth
      * settings and will login using a password altogether.
     */
-    for (i = 0, cp = secmech ; cp != NULL && *cp != '\0'; tmp_str[i++] = tolower(*cp++));
-    tmp_str[i] = '\0';
-    if (secmech != NULL && strcmp(tmp_str,"none") == 0)
+    if (secmech != NULL && strcasecmp(secmech, "none") == 0)
     {
         env_put (g_env, secmech, NULL, ENV_F_TRAN);
         env_put (g_env, secure_options, NULL, ENV_F_TRAN);
@@ -1504,7 +1501,6 @@ SetNetAuth (conn, principal, keytab_file, secmech, req_options)
     CS_INT  buflen;
     CS_INT  i;
     CS_BOOL OptSupported;
-    CS_CHAR *cp;
 
     NET_SEC_SERVICE nss[] = {
       /* 
@@ -1570,10 +1566,7 @@ SetNetAuth (conn, principal, keytab_file, secmech, req_options)
      * Note: If you do not supply a mechanism, or use "default", the first available
      * configured security mechanism from the libtcl.cfg file will be used.
     */
-    for (i = 0, cp = secmech ; cp != NULL && *cp != '\0'; buf[i++] = tolower(*cp++));
-    buf[i] = '\0';
-
-    if (secmech != NULL && *secmech != '\0' && strcmp(buf, "default") != 0)
+    if (secmech != NULL && *secmech != '\0' && strcasecmp(secmech, "default") != 0)
     {
         if (ct_con_props( g_connection,           /* Connection */
                           CS_SET,                 /* Action */

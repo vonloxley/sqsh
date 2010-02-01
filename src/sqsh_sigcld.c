@@ -30,7 +30,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_sigcld.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_sigcld.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -289,10 +289,10 @@ pid_t sigcld_wait( s, pid, exit_status, wait_type )
 			 * we are going to explicitly wait for the children
 			 * ourselves.
 			 */
-			sig_install( SIGCHLD, SIG_H_IGN, (void*)NULL, 0 ) ;
+			sig_install( SIGCHLD, SIG_H_DFL, (void*)NULL, 0 ) ;
 
 			do {
-				if( (got_pid = waitpid( -1, exit_status, 0 )) != -1 )
+				if( (got_pid = waitpid( pid, exit_status, 0 )) != -1 )
 					sigcld_set( got_pid, *exit_status ) ;
 			} while( got_pid != -1 && got_pid != pid ) ;
 
@@ -498,9 +498,9 @@ static pid_t sigcld_wait_all( s, exit_status, wait_type )
 			 * we are going to explicitly wait for the children
 			 * ourselves.
 			 */
-			sig_install( SIGCHLD, SIG_H_IGN, (void*)NULL, 0 ) ;
+			sig_install( SIGCHLD, SIG_H_DFL, (void*)NULL, 0 ) ;
 
-			if( (got_pid = waitpid( -1, exit_status, 0 )) > 0 )
+			if( (got_pid = waitpid( -1, exit_status, WNOHANG )) > 0 )
 				sigcld_set( got_pid, *exit_status ) ;
 
 			/*
@@ -513,6 +513,8 @@ static pid_t sigcld_wait_all( s, exit_status, wait_type )
 				sqsh_set_error( errno, "waitpid: %s", strerror(errno) ) ;
 				return -1 ;
 			}
+			else if( got_pid == 0 )
+				sleep ( 1 ) ;
 
 		}
 
