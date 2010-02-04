@@ -1,0 +1,700 @@
+		What is new or fixed in version sqsh-2.1.7
+
+				New features:
+
+
+1 - Command \exit accepts a return code (Solution to feature request 1954395).
+    You can now exit sqsh with an exit code. For example:
+
+    [1] SYBASE.sa.master 1> quit 5
+    ~> echo $?
+    5
+
+    This feature uses a new sqsh variable $exit_value (int) which can be
+    explicitly set using: \set exit_value=n
+    or you can use \exit x, (and its aliased counterparts like quit and exit).
+    The value must be of type integer, greater equal 0. (Most shells only
+    supports exit values up to 255, and it is your own responsibility to use
+    exit codes your shell can handle.)
+    When sqsh is going to terminate, it checks the value of $exit_value,
+    and when non-zero, it uses this value as exit code. Is $exit_value equal
+    to zero, then sqsh reverts to standard behavior. That is, it will check
+    variable $exit_failcount and when 1, it will use the value of
+    $batch_failcount as exit code. So basically $exit_value takes precedence
+    over $exit_failcount and $batch_failcount.
+
+2 - A new variable $xwin_title (string) is introduced to assign a name to an
+    X-windows result set window. (Solution to feature request 1027627).
+
+    You can assign a string to the variable $xwin_title using:
+
+    \set xwin_title='$DSQUERY result set $histnum'
+
+    Tip: You can set this as a default name in your .sqshrc file.
+    There is also a new option -T to the \go and \rpc commands to temporarily
+    assign another name string to $xwin_title. For example:
+
+    [1] SYBASE.sa.master 1> exec sp_who
+    [1] SYBASE.sa.master 2> \go -x -T"What is running on server $DSQUERY"
+
+    The string value will be used to assign a name to the window. Of course the
+    option -T is only useful in combination with the -x option. After that, the
+    original $xwin_title value will be restored.
+    The feature works for Motif widgets as well as for X/Athena widgets. When
+    you do not set the $xwin_title variable in your sqsh session and do not use
+    the -T option along with the -x option, then the name of the created result
+    set window will default to "main".
+
+3 - A new variable $term_title (string) is introduced. When set, sqsh will
+    alter the name of the xterm window when started up. For example:
+
+    \set term_title='$DSQUERY ($hostname)'
+
+    Sqsh will prepend the title string with its startup name (argv[0]
+    parameter). For example: "sqsh SYBPROD1 (ux-prd-5)"
+    This feature is very useful when you have multiple xterm/sqsh sessions
+    running connected to different servers. It will be easier to identify
+    your sessions on the Window Manager's task bar. When sqsh exits normally,
+    the window title is wiped out. The feature also works for rxvt type windows,
+    Putty and even Microsoft Windows MS-DOS COMMAND.com and CMD.exe windows,
+    when using a Cygwin build of sqsh. (Do not use $term_title on a console.)
+    Often the Shell will also set a window title with the connection name and
+    path. In bash for example, you can set variable PROMPT_COMMAND in the
+    .bashrc file, like:
+
+    PROMPT_COMMAND='echo -ne "\033]0;${USER}@${HOSTNAME}: ${PWD/$HOME/~}\007"'
+
+    So when you exit sqsh, the window title might be changed by the shell to
+    "sybase@ux-prd-5:/opt/sybase"
+
+4a- The command history will now keep track of the date and time of the last
+    access of a history buffer. Also the usage count of a buffer is tracked.
+    The latter is especially useful if you use the sqsh-2.1.6 histunique
+    feature. You can retrieve the additional information on buffers by
+    specifying a new parameter -i to the \history command. For example:
+
+4b- [19] SATURN.sa.master.1> \history -i
+    ( 1 -  1/ 1 Jan 1970 01:00:00) select host_name()
+    ( 2 -  1/ 1 Jan 1970 01:00:00) select * from sysloginroles
+    ...
+    (16 -  2/ 8 Jan 2010 22:14:41) sp_helpdevice
+    (17 -  3/ 9 Jan 2010 16:17:33) select convert(varchar(30),name),type,crdate
+                                   from sysobjects order by name
+    (18 - 12/ 9 Jan 2010 17:04:51) sp_who
+
+
+    The first number is the number of the history buffer. The second number is a
+    count of executions of the buffer. (This is not necessarily true as you can
+    also \reset a buffer without executing it, but still will be stored in the
+    history list (see 6)). The third item in the info list is the date and time
+    of the last buffer access. The remaining part is the content of the buffer
+    itself. You can influence the display format of the date and time by setting
+    the variable $datetime to a strftime format string.
+
+    [19] SATURN.sa.master.1> \echo $datetime
+    %e %b %Y %H:%M:%S
+    [19] SATURN.sa.master.1> select getdate()
+    [19] SATURN.sa.master.2> go
+
+     --------------------
+      9 Jan 2010 19:46:56
+
+    (1 row affected)
+
+    The contents of $datetime also has impact on how datetime columns will be
+    shown in sqsh. When set to default, sqsh will show datetime columns as:
+
+    [19] SATURN.sa.master.1> \set datetime='default'
+    [19] SATURN.sa.master.1> \echo $datetime
+    default
+    [19] SATURN.sa.master.1> select getdate()
+    [19] SATURN.sa.master.2> go
+
+     -------------------
+     Jan  9 2010  7:48PM
+
+
+    The extra information on buffer access time and usage count will also be
+    stored and retrieved in the history files. When you start sqsh-2.1.7 for
+    the first time using existing history data, the date will be set to 1 jan
+    1970 and a usage count to 1. When you open a sqsh-2.1.7 format history file
+    in an older version of sqsh, you will notice an extra line in the buffer
+    data:
+
+    --> History Info (1263053091:12) <--
+
+    for example. The line itself will be interpreted as a SQL comment, so has no
+    effect on buffer execution and will be saved again upon exit, so no data
+    is lost and the history can be loaded again in sqsh-2.1.7 as normal.
+
+4c- There is also a new parameter -x to the \history command to specify a number
+    of most recent command buffers to show. For example "\history -x 5" will
+    only show the 5 most recent buffers. An alias defined as
+    "\alias \hi='\history -i -x20'" will show the 20 most recent buffers with
+    full info displayed when you execute the \hi command.
+
+4d- Buffers only containing blanks, newlines, tabs etc, will not be added to
+    the history list when the buffer is reset (using the \reset command).
+
+5 - Ignore Ctrl-\ (SIGQUIT) signals to prevent accidental termination of sqsh
+    with a stack trace when running in interactive mode.
+
+6 - A new command \clear is implemented as a companion of the \reset command.
+    Where \reset writes the current buffer to the history list before flushing
+    the buffer, \clear only empties the buffer, without writing to the
+    history. Also, when readline is compiled in, the screen is cleared, as ^l
+    does. The \clear command is also aliased to 'clear'.
+
+7 - A new read only variable $$ is introduced to show the sqsh host process id.
+    Use "\echo $$" or "\echo ${$}" to show the process id, which should be the
+    same as the value of the master.dbo.sysprocesses.hostprocess column for the
+    current spid when connected to Sybase ASE from a Unix host. I.e.:
+
+    select hostprocess from master..sysprocesses where spid=@@spid;
+
+8 - A new command \hist_save is introduced to save the complete history to the
+    current $history file, or save it to a new file specified in the
+    "\hist_save [filename]" command.
+
+9 - A new variable $hist_auto_save (int) is introduced. When the history is
+    changed more often than the value of this variable, the history is
+    automatically saved to the current $history file. This prevents that you
+    potentially lose a lot of history data when your sqsh session crashes
+    unexpectedly.
+
+10- The \buf-del command introduced in sqsh-2.1.6 now accepts a range
+    specification of buffers to delete. For example "\buf-del 1-10" will delete
+    the first 10 history buffers. No result messages will be written anymore.
+    Be warned that the buffers may get re-numbered when you delete one or
+    more buffers from the history.
+
+11- The $session variable will now be expanded so it may contain variables
+    itself. E.g.: \set session=$HOME/.sqsh/.session_${DSQUERY}
+
+12- Improved TDS version request handling when using startup option -G.
+    Besides the versions 4.0, 4.2, 4.6, 4.9.5 and 5.0, also versions 7.0
+    and 8.0 are recognized when compiling sqsh with freetds-0.82. When you
+    request a specific TDS version, the variable $tds_version will be defined
+    and when that variable exists, sqsh will obtain the actual TDS version in
+    effect when the connection is established, and put that value back into the
+    $tds_version variable. So it may be that you request version 4.2, but still
+    get version 4.0, depending on the client-server capabilities.
+    Note that sqsh will not perform any input validation on the input of the -G
+    parameter. So when you specify an invalid value, the default version of 5.0
+    will be used without any warning. Normally speaking you do not need to
+    specify a TDS version (Tabular Data Stream, a Sybase and Microsoft protocol
+    used in client-server communication). The option -G can be useful to test
+    client-server capabilities, especially when using freetds.
+
+
+			Bug fixes in sqsh-2.1.7
+
+1 - Successive \bcp operation may fail because of binding issues in bulk copy
+    library operations. Solved by using calloc instead of malloc when
+    allocating buffers for bulkcopy transfer.
+    (Corresponding bug report: 2920048)
+
+2 - Fix for bug report 1959260 supplied by Stephen Doherty. When using
+    '\go -m bcp' a bcp out of a non-null char(1) or varchar() column with
+    only blank data, should produce a blank in the output, irrespective of the
+    $bcp_trim setting, in order to prevent subsequent bulk copy in errors.
+
+3 - Resizing the X windows result set window (go -x) with Motif widgets, only
+    resized the "Done" button. This is being fixed now with patch 1290313 by
+    John Griffin.
+
+4 - When using X/Athena widgets for \go -x, always create scrollbars for the
+    result windows. (X11 without Motif).
+
+5 - When using an output file with the -o option, stderr messages where not
+    captured in the output file but written to the terminal/xterm/tty.
+    If the output file already existed, it was not truncated when opened. So
+    it could happen that the output file still contained data from a previous
+    sqsh run when the output data produced in the last run was less then
+    that of the first run and thus the file was not totally overwritten.
+
+6 - Fixed a problem with the password hiding feature. (Solution to feature
+    request 1577984, bug report 1487118 and patch 2607434). Courtesy of
+    David Wood.
+
+7 - Fixed a problem with the default initialization of sqsh variables
+    $histunique and $ignoreeof. (Corresponding bug report 2871368)
+
+8 - Switching the variable $bcp_trim from off to on failed. Part of patch
+    2061950 (thanks to Klaus-Martin Hansche) fixed this issue.
+
+9 - The usage message of \go did lack a description of the -p option.
+    This one is added now.
+
+10- When creating a result set using the vertical display option (\go -m vert)
+    it could happen that if a non-null column received no data (caused by
+    data corruption or TDS protocol errors), the next column would be printed
+    on the same line. If no column data is received, a newline is now always
+    outputted.
+    In the same module fixed a minor error: when the column data exceeds the
+    screen width and has to wrap onto the next line, the indentation alignment
+    came 1 blank short. Is also fixed now.
+
+11- In the background jobs area a lot of improvements are implemented making
+    running background processes (\go &) in sqsh-2.1.7 much more reliable.
+
+a)  When two or more batch jobs where started in the background, the deferred
+    output files from already running jobs were removed. For example:
+
+    1> dbcc checkdb (order_prod)
+    2> go &
+    Job #1 running [349]
+    1> dbcc checkdb (cust_prod)
+    2> go &
+    Job #2 running [763]
+
+    When using $defer_bg = 1, a deferred output file will be created for each
+    individual job. However, a cleanup procedure executed during the startup of
+    the child process accidentally unlinked output files of already running
+    brother and sister processes.
+
+b)  The batch was not saved in the history. So the dbcc commands in the previous
+    example would not be saved in the history buffers.
+
+c)  SIGCHLD signals were not always handled by the designated signal handler.
+    As a consequence, the batches were never reported finished and output could
+    not be shown with the \show command.
+
+d)  The batch related command \jobs now accepts an option -i to show additional
+    information on the jobs. Also input parameters for \show and \wait
+    are checked for correctness. Erroneous parameters could otherwise produce
+    floating point exceptions or other unexpected results.
+
+    As an example, take a look at the next sqsh-2.1.6 session:
+
+    ~> sqsh-2.1.6 -SNEPTUNE
+    1> \echo "This sqsh version $version is not background job reliable" &
+    Job #1 running [12472]
+    1> \jobs
+    Job #1: 30-Jan-10 13:11:16 (5 secs)
+    1> \wait 1
+    \wait: Object does not exist
+    1> \show 1
+    \show: Job 1 has not completed
+    1> \wait -1
+    Segmentation fault (core dumped)
+
+    Although the child process is finished, it is not correctly signaled, so we
+    do not get a notification that the job is finished. When we try a "\wait 1",
+    the job cannot be found and "\show 1" claims the job is not finished yet.
+    When we finally try a "\wait -1" sqsh terminates with a segmentation fault.
+    The same session in sqsh-2.1.7:
+
+    ~> sqsh-2.1.7 -SNEPTUNE
+    1> \echo "This sqsh version $version is background job reliable" &
+    Job #1 running [16448]
+    1> \jobs
+    Job #1: 30-Jan-10 13:17:59 (1 secs)
+    Job #1 complete (output pending)
+    1> \wait 1
+    Job #1 complete (output pending)
+    1> \wait -1
+    \wait: No jobs pending
+    1> \show 1
+    This sqsh version sqsh-2.1.7 is background job reliable
+
+12- When sqsh is started with additional parameters to be passed on to the
+    -i input script, parameters ${#} and ${*} were not properly set and
+    references to ${0} in interactive mode produced segmentation faults.
+    Also the $* parameter which should produce a list of all parameters was
+    not correctly displayed. For example, the contents of an input script named
+    example.sqsh:
+
+    \echo $#
+    \echo $*
+    \echo ${0} ${1} ${2} ${3} ${4}
+
+    sqsh -SDBPRD1 -Usa -i example.sqsh a b -Psecret c
+
+    Should now correctly produce:
+
+    3
+    a b c
+    sqsh a b c
+
+13- When executing a SQL command with \go -x while no X11 support was compiled
+    into sqsh, the result buffer of the query would not be canceled. This led to
+    errors in subsequent batches. Fixed by returning a DSP_FAIL instead of
+    DSP_SUCCEED after the error message was printed.
+
+14- When specifying a new cmdend alias for the \go command, the alias was just
+    defined in the wrong direction. For example "sqsh ... -cGO" would define an
+    alias \go for the GO command. So when you entered GO, nothing happened as it
+    was not recognized as a sqsh command. When executing \go, an error was
+    generated because sqsh now tried to find the internal command GO which does
+    not exist. The definition of the alias must be reversed, i.e. GO is an alias
+    for the \go command, so when you enter GO, sqsh will execute \go.
+
+
+		Changed files in sqsh-2.1.7 compared to sqsh-2.1.6
+(Note, the Fx refers to the implemented feature and Bx refers to the bug fix.)
+
+
+alias.h
+	F6: Defined alias 'clear' for the \clear command.
+
+cmd.h
+	F6: Added definition of CMD_RESETBUF and assigned this to \reset
+	Existing CMD_CLEARBUF action now assigned to \clear
+	Commands \\clear and \\hist_save defined.
+
+cmd_bcp.c
+	Improved signaling by saving current signaling context when
+	defining SIGINT interrupt handler. Restoring afterwards.
+	When compiling sqsh with freetds-0.82, only BLK_VERSION_110
+	can be used.
+	CMD_CLEARBUF renamed to CMD_RESETBUF.
+	Fix for B1 implemented.
+
+cmd_buf.c
+	Implementation for F10 (\buf-del range specification)
+	CMD_CLEARBUF renamed to CMD_RESETBUF.
+
+cmd_connect.c
+	F11. Expand variable $session so that $session may contains variables
+	in its definition itself. E.g.
+	\set session=$HOME/.sqsh/.session_$DSQUERY
+	F12. Obtain effective tds_version setting when requesting for a specific
+	TDS version. Add version 7.0 and 8.0 of TDS when using freetds.
+
+cmd_do.c
+	CMD_CLEARBUF renamed to CMD_RESETBUF.
+
+cmd_exit.c
+	F1. Specify a return code to the \exit command.
+
+cmd_for.c
+	CMD_CLEARBUF renamed to CMD_RESETBUF.
+	Error message redefined.
+
+cmd_func.c
+	CMD_CLEARBUF renamed to CMD_RESETBUF.
+	Error message redefined.
+
+cmd_go.c
+	F2. Implemented option -T to specify an $xwin_title string.
+	B9. Added description of -p (statistics option) in help info.
+	CMD_CLEARBUF renamed to CMD_RESETBUF.
+
+cmd_history.c
+	F4. Extended buffer info (date/usage count) and most recent x
+	buffers to show (\history -i -x options)
+	F8. Added implementation of the \hist_save command.
+
+cmd_if.c
+	Signaling improvements.
+
+cmd_input.c
+	Signaling improvements.
+	CMD_CLEARBUF renamed to CMD_RESETBUF.
+	F6. Implemented action for \clear command.
+	B11. Write the SQL buffer to history too when batch is run in
+	background.
+
+cmd_jobs.c
+	B11. Implemented \jobs -i option for additional job information.
+
+cmd_kill.c
+	B11. Improved parameter verification to \kill command.
+
+cmd_reset.c
+	F6. Implementation of new \clear command.
+	CMD_CLEARBUF renamed to CMD_RESETBUF.
+
+cmd_rpc.c
+	F2. Implementation of -T option to specify an XWin title to the \rpc
+	command. Changed some of the error messages. (Changed \go to \rpc)
+	CMD_CLEARBUF renamed to CMD_RESETBUF.
+
+cmd_show.c
+	B11. Improved parameter verification to the \show command.
+
+cmd_wait.c
+	B11. Improved parameter verification to \wait command.
+	Pass correct job number to jobset_get_defer function when
+	\wait -1 was used.
+
+cmd_while.c
+	CMD_CLEARBUF renamed to CMD_RESETBUF.
+
+dsp_bcp.c
+	B2. Fix provided by Stephen Doherty.
+
+dsp_vert.c
+	Fixes for B10.
+
+dsp_x.c
+	Solution to B3, B4 and B13 and implementation of F2.
+
+sqsh_buf.c
+	F10. Implementation of \buf-del range deletes.
+
+sqsh_config.h
+	Renumbered version from sqsh-2.1.6 to sqsh-2.1.7
+
+sqsh_expand.c
+	B12. Fix for expanding variable $* in sqsh functions or interactively
+	accessing ${0} resulting in segmentation fault (\echo ${0}).
+	F7. Added expanding variable $$ to procid (${$}).
+	Enabled patch from Michael Chepelev to prevent core dumps
+	when referring to variables with special characters like $.
+
+sqsh_fd.c
+	Improve SIGCHLD signaling by making sure the correct signal
+	handler is activated.
+
+sqsh_fork.c
+	Fix for B11.
+
+sqsh_global.c
+	Initialize a new global C variable g_interactive to determine if
+	sqsh is initially started with stdin and stdout connected to a tty.
+	Default value is False.
+	Adapted the copyright message to include 2010.
+
+sqsh_global.h
+	Defined the global variable g_interactive.
+
+sqsh_history.c
+	F4, F8 and F9. Implemented feature additional buffer info, and history
+	automatic save feature (hist_auto_save).
+	F4b. Do not save buffers to history with only IFS characters
+	("\f\n\r\t\v ").
+	F10. Implement buffer range deletes.
+
+sqsh_history.h
+	F4. Define extra structure members hb_dttm and hb_count (hisbuf_t)
+	to keep track of additional buffer info. Structure member h_change
+	in history_t.
+	F8. Define status values HISTSAVE_INIT, HISTSAVE_LOAD and HISTSAVE_FORCE
+	to implement hist_auto_save.
+	F10. Define function history_range_del.
+
+sqsh_init.c
+	F3. Reset windows title ($term_title) upon exit.
+	Use g_interactive to determine if history must be saved and readline
+	functions cleaned up.
+
+sqsh_job.c
+	Logical fix in memory cleanup.
+	B11. Improve child SIGCHLD signaling of background jobs.
+	Improved \wait processing in case of missed SIGCHLD signals.
+	Also fixed an error in finding a job in a hash table for the "\wait id".
+	command (Error in hash bucket calculation), and fixed a segmentation
+	fault when using the "\wait -1" command.
+
+sqsh_main.c
+	F1. Implement feature \exit x ($exit_value).
+	F3. Implement feature term_title.
+	B6. Fix for password hiding feature using flexible named pipes.
+	B5. Fix for -o output file: Truncate existing file and redirect stderr.
+	B12. Fix error in parameter count passed on when -i is used
+	Improve determination of an interactive session, i.e. stdin and stdout
+	connected to a tty and what to do with history and readline in non-
+	interactive mode.
+	F5. Ignore SIGQUIT signals in interactive mode.
+	B14. Fix handling of -c cmdend aliases for the \go command.
+
+sqsh_sigcld.c
+	B11. Improved SIGCHLD signaling of background jobs.
+
+var.h
+	Variable $appname changed from sqsh-2.1.6 to sqsh-2.1.7
+	B7. $histunique and $ignoreeof initialized to 0 instead of 'Off'.
+	F1, F2, F3, F9. New variables $exit_value, $xwin_title, $term_title
+	and $hist_auto_save defined.
+
+var_dsp.c
+	B8. Fix problem when switching variable $bcp_trim from Off to On.
+
+
+
+
+
+				Notes
+
+1) If you have background jobs running and you issue a Ctrl-C in your current
+running foreground task, to interrupt processing, be aware that the SIGINT
+signal is also sent to the child processes, and that they will terminate
+as well. Although the child process resets all its signals with sig_restore,
+and asks to ignore SIGINT interrupts at interrupt stack level 0 during startup,
+the process will still setup (a) SIGINT handler(s) itself, before actively
+running a SQL batch, just as the parent does. So when a SIGINT interrupt
+arrives, the child will respond accordingly, which means stop processing in
+99% of the cases. So be careful with Ctrl-C when running background jobs.
+
+If you have multiple background jobs running and perform a "\wait <job_id>" on
+a specific job, you may have to do a specific "\wait <job_id>" or multiple
+"\wait -1" commands as well to get signaling information for the other
+processes, if they have finished during the time period of the first executed
+\wait. The explicit wait for a specific job/pid will temporarily disable the
+signal handler for SIGCHLD events. If other child processes terminate during
+this period, their signals will be suspended, until they are picked up by a
+waitpid which will be issued by the \wait command.
+
+
+2) Sessions that uses LDAP or Kerberos user authentication should be able to
+use background jobs. During testing of Kerberos connections, I came across the
+situation that the name of the security mechanism in the libtcl.cfg file was
+specified in uppercase "CSFKRB5" while the name of the secmech in the
+$SYBASE/config/objectid.dat file is "csfkrb5".
+When you just specify -Z or -Zdefault to setup a secure connection, you leave
+it up to OpenClient to select the appropriate secmech. So OpenClient will pick
+the first available entry, "CSFKRB5".
+During session establishment sqsh request the real name of the security
+mechanism being used, and that one is the secmech name from the objectid.dat
+file. That name is put in the sqsh variable $secmech.
+So the real secmech is stored in $secmech, and that is also the variable used
+for the security mechanism specified during \reconnect. When this secmech name
+is different from the libtcl.cfg security entry, it cannot be found during
+\reconnect, and the login fails. Using the same name with the same case in
+the libtcl.cfg file for your desired security mechanism as in objectid.dat
+(csfkrb5) will solve this issue.
+
+
+3) Connections that use SSL/TLS should also be able to use background jobs.
+When a login trigger checks if a login is already connected and does not allow
+multiple connections for the same login, for example, then the background job
+feature will not work.
+
+
+4) Build and run tests:
+- Sqsh-2.1.7 successfully built and tested on Windows-XP with Cygwin 1.7.1-1
+  and Sybase OpenClient 15.0 EBF17012 ESD #19.
+- On the same platform sqsh-2.1.7 also successfully builds and runs using
+  freetds-0.82 instead of Sybase OpenClient.
+  Note, do not use \bcp operations with freetds as unexpected results
+  and even database corruption may occur. Use the sqsh "go -m bcp" option to
+  create a bulkcopy file and use the freebcp utility to bulk copy in, instead.
+  Explained in one of the next notes.
+- Fedora Core 6, using Sybase OpenClient 15.0 EBF15821 ESD #13.
+- Fedora Core 6, using freetds-0.82.
+- Ubuntu 8.04 LTS, using Sybase OpenClient 15.0 EBF16297 ESD #16.
+
+
+5) sqsh-2.1.7 was successfully tested connecting to Sybase ASE 15.0.x, IQ 12.7,
+IQ 15.1, RepServer 15.2 all on Windows XP and Linux, 32 bits. The freetds
+version also successfully connects to Microsoft SQL server 2005.
+The sqsh -X option or $encryption=On variable setting will not work with Sybase
+IQ.
+
+
+6) I found out during code inspections that there is an undocumented variable
+${$?}. The variable contains the result of the last executed \if statement.
+The \if statement would be run as a child process running the 'test' command.
+The result can be 0 for False, 1 for True or 2 means some error occurred
+(test expression syntax error for example). I wonder if the usage of the "$?"
+parameter name was chosen on purpose or was a small coding mistake and was
+meant to be just "?". Well it does not hurt to keep it this way, as long as you
+are aware that conditional statements do not set variable "?" as a normal shell
+would.
+
+
+7) As one of my tests I used sqsh to reinstall the installmaster script of a
+newly created ASE 15.0.3 ESD#2 server. You have to set variable expansion
+of in sqsh, otherwise creation of the MDA monitoring tables will fail.
+( sqsh -S.. -U.. -P.. -i installmaster -o installmaster.log -Lexpand=0 )
+The install succeeds, however with 4 warnings from sqsh related to the usage
+of the 'go' command. When looking at the installmaster script there are 4
+locations where the 'go' command is appended with a comment like 'go\t-- }' or
+'go\t/* } */'. (The \t stands for the tab-character).
+Sqsh does not like the comments and complains about it. Eventually, the
+procedure that was about to be installed gets installed by the next go
+statement. For example, the procedure sp_showtext_output should be installed
+by 'go -- }'. Sqsh complains about it but continues reading the input file.
+The next statement is:
+
+if (@@error != 0) select syb_quit()
+go
+
+This statement was meant to check the results of the creation of the procedure,
+but now this statement will create the proc and be part of the procedure.
+So if the proc runs into an error and @@error is set when sp_showtext_output
+exits, you will get thrown out of the server. So be aware of running scripts
+with sqsh that were meant to be run by isql.
+
+
+8) Be aware that freetds does not support all datatypes Sybase ASE supports,
+like the DATE and TIME datatypes (4 byte size). When you have a table with a
+DATE or TIME column and query the table using freetds, the data will be
+presented as a datetime datatype (8 bytes). So consider the next example:
+
+1> create table freetds (id INT NOT NULL, insdate DATE NOT NULL)
+2> go
+1> insert freetds values (1, getdate())
+2> go
+(1 row affected)
+1> select * from freetds
+2> go
+ id          insdate
+ ----------- --------------------
+           1 31 Jan 2010 00:00:00
+
+(1 row affected)
+
+When reconnecting with a Sybase OCS capable version of sqsh the query result is:
+
+1> select * from freetds
+2> go
+ id          insdate
+ ----------- -----------
+           1 Jan 31 2010
+
+(1 row affected)
+
+When you select the data using the bcp output format and write it to a file
+(using the freetds version of sqsh again):
+
+1> select * from freetds
+2> go -m bcp > freetds.dat
+
+The contents of the file are: "1#31 Jan 2010 00:00:00". (The # is the column
+separator.) When you try to bcp this data back into the table using freetds,
+it assumes the datatype is a 8 bytes datetime datatype. However, the real
+datatype is a 4 byte DATE datatype. When you are lucky, the server will
+detect the error, but it may lead to data corruption as well when loading
+larger blocks of data, especially when using the \bcp command directly.
+
+~> freebcp tempdb..freetds in freetds.dat -SNEPTUNE -Usa -P... -t"#" -r"\n" -c
+
+Starting copy...
+Msg 4837, Level 16, State 1
+Server 'NEPTUNE', Line 1
+	Bad row data received from the client while bulk copying into object
+	813176728 partition 813176728 in database 2. Received a row of length
+	14 whilst maximum or expected row length is 10.
+
+Msg 4837, Level 16
+General SQL Server error: Check messages from the SQL Server
+
+Msg 3621, Level 10, State 0
+Server 'NEPTUNE', Line 1
+	Command has been aborted.
+
+bcp copy in failed
+
+MSSQL 2005 only supports DATETIME and SMALLDATETIME datatypes. When using these
+datatypes there should be no problem in using \bcp.
+
+
+9) Job runtime issues of background jobs. When you run a job in the background
+its starttime is stored in the job memory structure. Besides a list of job
+structures, sqsh maintains a list of running child pids. When you execute \jobs
+to see which jobs exists, the job runtime is calculated from the current
+system time. However, when the child process finishes, it is registered as
+complete by the signal handler in the pid list only. The job structure is not
+modified immediately. It is the read-eval-print loop of sqsh that polls the
+status of running jobs, and when found that a child process is finished, the
+corresponding job is marked complete and its end time marked. This means if you
+do not press enter on the sqsh command line regularly, the waittime accumulates
+in the total job run time. To solve this, the signal handler should keep track
+of the process end time, that can then be used by the job handler.
+Basically, if \jobs report a job (done - x secs), the time is the difference
+of the job start time and the job completion notification, not the real run
+time of the background process.
+
