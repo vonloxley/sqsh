@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.17 2009/12/23 15:17:40 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.18 2010/02/01 13:16:03 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -778,7 +778,14 @@ int cmd_connect( argc, argv )
             version = CS_TDS_495;
         else if (strcmp(tds_version, "5.0") == 0)
             version = CS_TDS_50;
-	else version = CS_TDS_50;
+#if !defined(CS_TDS_50)
+	else if (strcmp(tds_version, "7.0") == 0)
+            version = CS_TDS_70;
+	else if (strcmp(tds_version, "8.0") == 0)
+            version = CS_TDS_80;
+#endif
+	else version = CS_TDS_50; /* default version */
+
 
         if (ct_con_props(g_connection, CS_SET, CS_TDS_VERSION, 
             (CS_VOID*)&version, CS_UNUSED, (CS_INT*)NULL) != CS_SUCCEED)
@@ -996,6 +1003,50 @@ int cmd_connect( argc, argv )
         }
     }
 #endif /* CTLIB_SIGPOLL_BUG */
+
+    /*
+     * sqsh-2.1.7 - Determine the real tds_version being used if the user
+     * requested to set a specific tds_version.
+     */
+    if (tds_version != NULL && *tds_version != '\0')
+    {
+        if (ct_con_props( g_connection,           /* Connection */
+                          CS_GET,                 /* Action */
+                          CS_TDS_VERSION,         /* Property */
+                          (CS_VOID*)&version,     /* Buffer */
+                          CS_UNUSED,              /* Buffer Length */
+                          (CS_INT*)NULL ) == CS_SUCCEED)
+	{
+		switch (version) {
+			case CS_TDS_40:
+                        	env_set( g_env, "tds_version", "4.0" );
+				break;
+			case CS_TDS_42:
+                        	env_set( g_env, "tds_version", "4.2" );
+				break;
+			case CS_TDS_46:
+                        	env_set( g_env, "tds_version", "4.6" );
+				break;
+			case CS_TDS_495:
+                        	env_set( g_env, "tds_version", "4.9.5" );
+				break;
+			case CS_TDS_50:
+                        	env_set( g_env, "tds_version", "5.0" );
+				break;
+#if !defined(CS_TDS_50)
+			case CS_TDS_70:
+                        	env_set( g_env, "tds_version", "7.0" );
+				break;
+			case CS_TDS_80:
+                        	env_set( g_env, "tds_version", "8.0" );
+				break;
+#endif
+			default:
+                        	env_set( g_env, "tds_version", "unknown" );
+		}
+	}
+
+    }
 
     /*-- If autouse has been set, use it --*/
     if (autouse != NULL && *autouse != '\0') 

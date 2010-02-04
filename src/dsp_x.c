@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_x.c,v 1.3 2010/01/12 13:26:38 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_x.c,v 1.4 2010/01/26 15:03:50 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -275,6 +275,7 @@ static int dsp_x_init( fd, width, height )
 	char        *argv[1];
 	char        *cp;
 	char        *xwin_title = NULL;
+	varbuf_t    *exp_buf;
 
 	/*
 	 * At this point we are in the child process, the rest is pretty
@@ -286,13 +287,27 @@ static int dsp_x_init( fd, width, height )
 	env_get( g_env, "xwin_title", &xwin_title );
 	if (xwin_title != NULL && *xwin_title != '\0')
 	{
-	  argc    = 1;
-	  argv[0] = xwin_title;
+		exp_buf = varbuf_create( 64 );
+
+		if (exp_buf == NULL)
+		{
+			fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+			sqsh_exit( 255 );
+		}
+
+		if (sqsh_expand( xwin_title, exp_buf, 0 ) == False)
+		{
+			fprintf( stderr, "sqsh: Error expanding $xwin_title: %s\n",
+				sqsh_get_errstr() );
+			sqsh_exit( 255 );
+		}
+		argc    = 1;
+		argv[0] = varbuf_getstr( exp_buf );
 	}
 	else
 	{
-	  argc    = 0;
-	  argv[0] = NULL;
+		argc    = 0;
+		argv[0] = NULL;
 	}
 
 	/*
@@ -401,6 +416,7 @@ static int dsp_x_init( fd, width, height )
  		      NULL);
 	XtMainLoop();
 
+	varbuf_destroy( exp_buf );
 	exit(0);
 }
 
@@ -505,6 +521,7 @@ static int dsp_x_init( fd, width, height )
    int          argc;
    char        *argv[1];
    char        *xwin_title = NULL;
+   varbuf_t    *exp_buf;
 
    XFontStruct  *font = NULL; /* Font for text widget */
 
@@ -518,13 +535,27 @@ static int dsp_x_init( fd, width, height )
 	env_get( g_env, "xwin_title", &xwin_title );
 	if (xwin_title != NULL && *xwin_title != '\0')
 	{
-	  argc    = 1;
-	  argv[0] = xwin_title;
+		exp_buf = varbuf_create( 64 );
+
+		if (exp_buf == NULL)
+		{
+			fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+			sqsh_exit( 255 );
+		}
+
+		if (sqsh_expand( xwin_title, exp_buf, 0 ) == False)
+		{
+			fprintf( stderr, "sqsh: Error expanding $xwin_title: %s\n",
+				sqsh_get_errstr() );
+			sqsh_exit( 255 );
+		}
+		argc    = 1;
+		argv[0] = varbuf_getstr( exp_buf );
 	}
 	else
 	{
-	  argc    = 0;
-	  argv[0] = NULL;
+		argc    = 0;
+		argv[0] = NULL;
 	}
 
 	/*-- Intialize our X Session --*/
@@ -606,6 +637,7 @@ static int dsp_x_init( fd, width, height )
 	XtRealizeWidget( w_top );
 	XtMainLoop();
 
+	varbuf_destroy( exp_buf );
 	exit(0);
 }
 

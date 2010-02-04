@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.7 2010/01/26 15:03:50 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.8 2010/01/28 15:30:37 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -275,7 +275,7 @@ int cmd_bcp( argc, argv )
         fprintf(stderr, 
            "Use: \\bcp [-A packsetsize] [-b batchsize] [-I interfaces]\n"
            "          [-J charset] [-m maxerrors] [-N] [-P password]\n"
-           "          [-S server] [-U username] [-X] table_name\n");
+           "          [-S server] [-U username] [-X] [-z language] table_name\n");
         return CMD_FAIL;
     }
 

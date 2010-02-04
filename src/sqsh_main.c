@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.14 2010/01/12 13:26:38 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.15 2010/01/26 15:02:04 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -320,7 +320,7 @@ main( argc, argv )
                 {
                     ret = env_set( g_env, "newline_go", "1" );
                 }
-                else if (alias_add( g_alias, "\\go", sqsh_optarg ) <= 0)
+                else if (alias_add( g_alias, sqsh_optarg, "\\go" ) <= 0)
                 {
                     fprintf( stderr, "sqsh: -c: %s\n", sqsh_get_errstr() );
                     sqsh_exit(255);
