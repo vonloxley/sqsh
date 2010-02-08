@@ -1,4 +1,4 @@
-$Id: README,v 1.1 2004/11/24 13:21:42 mpeppler Exp $
+$Id: README,v 1.2 2006/04/16 09:45:34 mpeppler Exp $
 
 Building sqsh on Windows in the Cygwin environment
 
@@ -12,6 +12,8 @@ Building sqsh in the Cygwin environment requires a couple of
 non-standard operations both because the configure script
 hasn't been adapted for Cygwin, and because sqsh can't use the
 Sybase DLLs directly.
+
+For building sqsh using Sybase Open Client 15 see below.
 
 1. Generating the appropriate libXXX.a files
    The cygwin.sh script in this directory can be used to generate
@@ -75,4 +77,42 @@ several links were needed from -liconv.
 
 --Linn
 
+
+          Building sqsh for Cygwin using Sybase Open Client 15.
+
+1) As described in the procedure above for OCS-12_5, you need to generate
+   link libraries, using the script cygwin-syb15.sh. Make sure the location
+   of your Sybase install directory is correct.
+   The default is /cygdrive/c/Sybase.
+   Run the script in the cygwin directory and you will have three library files:
+   libsybblk.a, libsybcs.a and libsybct.a. Copy these files to /usr/local/lib or
+   any other location you want or keep them here in the cygwin directory.
+
+2) Check the Makefile-syb15 for the default Sybase OCS-15_0 location
+   SYBASE_OCOS (default location is /cygdrive/c/Sybase/OCS-15_0).
+   and the SYBASE_LIBS entry must point to the directory you copied
+   the libraries to in the previous step. Default is /usr/local/lib.
+   If you want X and Motif support, you must uncomment the appropriate
+   entries in the Makefile.
+
+3) Go to the sqsh root level and do a
+     export SYBASE=/cygdrive/c/Sybase
+     ./configure --with-readline   # optional --with-x --with-motif
+   If you run into errors you probably miss some Cygwin development packages.
+   Install missing packages and retry the ./configure.
+   Copy the Cygwin makefile to the src directory:
+     cp cygwin/Makefile-syb15 src/Makefile
+
+4) Now you can run
+     make
+     make install
+     make install.man
+
+5) Install a .sqshrc file in your $HOME directory. If you choose the
+   more-advanced.sqshrc file as template from the doc directory, you also have
+   to create a $HOME/.sqsh and $HOME/tmp directory.
+
+6) Make sure you have a valid sql.ini file in your %SYBASE%\ini directory.
+
+7) Now you should be able to run sqsh and connect to an ASE server.
 

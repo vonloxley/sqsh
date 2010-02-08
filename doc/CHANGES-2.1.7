@@ -330,6 +330,14 @@ d)  The batch related command \jobs now accepts an option -i to show additional
     not exist. The definition of the alias must be reversed, i.e. GO is an alias
     for the \go command, so when you enter GO, sqsh will execute \go.
 
+15- When using sqsh build for Motif and you run a query with "\go -x", sqsh
+    would create a X window with an unlimited size for the SQL batch section.
+    If you have a large batch, this could eat up all the windows space and no
+    space left to show the results.
+    The SQL batch window is now limited to 10 rows and you have to scroll the
+    window section to see the rest of the batch.
+
+
 
 		Changed files in sqsh-2.1.7 compared to sqsh-2.1.6
 (Note, the Fx refers to the implemented feature and Bx refers to the bug fix.)
@@ -429,7 +437,7 @@ dsp_vert.c
 	Fixes for B10.
 
 dsp_x.c
-	Solution to B3, B4 and B13 and implementation of F2.
+	Solution to B3, B4, B13 and B15 and implementation of F2.
 
 sqsh_buf.c
 	F10. Implementation of \buf-del range deletes.
