@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_x.c,v 1.4 2010/01/26 15:03:50 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_x.c,v 1.5 2010/02/04 15:21:34 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -312,9 +312,12 @@ static int dsp_x_init( fd, width, height )
 
 	/*
 	 * Calculate the number of lines in the SQL Text buffer.
+	 * sqsh-2.1.7 : Set a maximum of 10 lines for the SQL buffer,
+	 * otherwise it might eat up all the X window space in case of a
+	 * large SQL batch.
 	 */
 	nlines = 0;
-	for (cp = varbuf_getstr(g_sqlbuf); *cp != '\0'; ++cp)
+	for (cp = varbuf_getstr(g_sqlbuf); *cp != '\0' && nlines < 10; ++cp)
 	{
 		if (*cp == '\n')
 		{

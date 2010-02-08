@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.18 2010/02/01 13:16:03 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.19 2010/02/04 15:21:34 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -173,7 +173,7 @@ int cmd_connect( argc, argv )
     char      *query_timeout;
     CS_INT    SybTimeOut;
     CS_BOOL   NetAuthRequired;
-    varbuf_t  *exp_buf;
+    varbuf_t  *exp_buf = NULL;
 
 #if defined(CTLIB_SIGPOLL_BUG) && defined(F_SETOWN)
     int       ctlib_fd;
@@ -187,6 +187,16 @@ int cmd_connect( argc, argv )
 #endif
     CS_INT      con_status;
     CS_INT      retcode;
+
+
+    /*
+     * If we are already connected to the database, then don't
+     * bother to do anything.
+     */
+    if (g_connection != NULL)
+    {
+        return CMD_LEAVEBUF ;
+    }
 
     /*
      * First, we want to establish an environment "transaction". This
@@ -361,9 +371,10 @@ int cmd_connect( argc, argv )
     }
 
     /*
-     * Retrieve the values of the various environment variables that
-     * may be used to connect.  These may be overridden with flags
-     * to connect.
+     * Retrieve the memory addresses of the various environment variables that
+     * may be used to connect. These may be overridden with flags to connect.
+     * So basically our environment variables point to memory addresses. The
+     * contents can still be modified by the execution of the $session file.
      */
     env_get( g_env, "username", &username ) ;
     env_get( g_env, "DSQUERY",  &server ) ;
@@ -392,86 +403,48 @@ int cmd_connect( argc, argv )
     password = g_password;
 
     /*
-     * If we are already connected to the database, then don't
-     * bother to do anything.
-     */
-    if (g_connection != NULL)
+     * Allocate an expansion buffer for general use.
+    */
+    if ((exp_buf = varbuf_create( 512 )) == NULL)
     {
-        env_rollback( g_env );
-        return CMD_LEAVEBUF ;
+        fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+        sqsh_exit( 255 );
     }
 
     /*
      * If the $session variable is set and the path that it contains
      * is a valid path name, then we want to execute the contents of
-     * this file immediatly prior to connecting to the database.
+     * this file immediately, and prior to connecting to the database.
      */
     env_get( g_env, "session", &session );
     if ( session != NULL && *session != '\0' )
     {
-        if ((exp_buf = varbuf_create( 512 )) == NULL)
-        {
-            fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
-            sqsh_exit( 255 );
-        }
         if (sqsh_expand( session, exp_buf, 0 ) != False)
-            env_put( g_env, "session", varbuf_getstr( exp_buf ), ENV_F_TRAN );
-        else
-            fprintf( stderr, "sqsh: Error expanding $session: %s\n", sqsh_get_errstr() );
-        varbuf_destroy( exp_buf );
-        env_get( g_env, "session", &session);
-    }
-    DBG(sqsh_debug(DEBUG_ENV, "cmd_connect: session file is %s.\n", session);)
-
-    if (session != NULL && access( session, R_OK ) != -1) 
-    {
-        if ((jobset_run( g_jobset, "\\loop -n $session", &exit_status )) == -1 ||
-            exit_status == CMD_FAIL) 
         {
-            fprintf( stderr, "%s\n", sqsh_get_errstr() );
+            session = varbuf_getstr( exp_buf );
+            if (session != NULL && access( session, R_OK ) != -1) 
+            {
+                DBG(sqsh_debug(DEBUG_ENV, "cmd_connect: session file is %s.\n",
+                               session);)
+                cp = malloc (strlen(session) + 12) ;
+                sprintf (cp, "\\loop -n %s", session);
+                if ((jobset_run( g_jobset, cp, &exit_status )) == -1 ||
+                    exit_status == CMD_FAIL) 
+                {
+                    fprintf( stderr, "%s\n", sqsh_get_errstr() );
+                    free (cp);
+                    goto connect_fail;
+                }
+                free (cp);
+            }
+        }
+        else
+        {
+            fprintf( stderr, "sqsh: Error expanding $session: %s\n",
+                     sqsh_get_errstr() );
             goto connect_fail;
         }
     }
-
-    /*
-     * sqsh-2.1.6 -  If an interfaces file is specified, make sure environment
-     * variables get expanded correctly.
-    */
-    if ( interfaces != NULL && *interfaces != '\0' )
-    {
-        if ((exp_buf = varbuf_create( 512 )) == NULL)
-        {
-            fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
-            sqsh_exit( 255 );
-        }
-        if (sqsh_expand( interfaces, exp_buf, 0 ) != False)
-            env_put( g_env, "interfaces", varbuf_getstr( exp_buf ), ENV_F_TRAN );
-        else
-            fprintf( stderr, "sqsh: Error expanding $interfaces: %s\n", sqsh_get_errstr() );
-        varbuf_destroy( exp_buf );
-        env_get( g_env, "interfaces", &interfaces);
-    }
-    DBG(sqsh_debug(DEBUG_ENV, "cmd_connect: Interfaces file is %s.\n", interfaces);)
-
-    /*
-     * sqsh-2.1.6 - If a keytab_file is specified, make sure environment variables get
-     * expanded correctly.
-    */
-    if ( keytab_file != NULL && *keytab_file != '\0' )
-    {
-        if ((exp_buf = varbuf_create( 512 )) == NULL)
-        {
-            fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
-            sqsh_exit( 255 );
-        }
-        if (sqsh_expand( keytab_file, exp_buf, 0 ) != False)
-            env_put( g_env, "keytab_file", varbuf_getstr( exp_buf ), ENV_F_TRAN );
-        else
-            fprintf( stderr, "sqsh: Error expanding $keytab_file: %s\n", sqsh_get_errstr() );
-        varbuf_destroy( exp_buf );
-        env_get( g_env, "keytab_file", &keytab_file);
-    }
-    DBG(sqsh_debug(DEBUG_ENV, "cmd_connect: Keytab_file is %s.\n", keytab_file);)
 
     /*
      * sqsh-2.1.6 feature - Network Authentication
@@ -693,19 +666,34 @@ int cmd_connect( argc, argv )
         }
 
         /*
-         * If the user overrode the default interfaces file location, then
-         * configure the interfaces file as such.
-         */
-        if (interfaces != NULL && *interfaces != '\0') /* sqsh-2.1.6 sanity check */
+         * sqsh-2.1.6/2.1.7 - If an interfaces file is specified, make sure
+         * environment variables get expanded correctly.
+        */
+        if ( interfaces != NULL && *interfaces != '\0' )
         {
-            if (ct_config( g_context,                  /* Context */
-                                CS_SET,                     /* Action */
-                                CS_IFILE,                   /* Property */
-                                (CS_VOID*)interfaces,       /* Buffer */
-                                CS_NULLTERM,                /* Buffer Length */
-                                NULL                        /* Output Length */
-                         ) != CS_SUCCEED)
+            if (sqsh_expand( interfaces, exp_buf, 0 ) != False)
+            {
+                cp = varbuf_getstr( exp_buf );
+                DBG(sqsh_debug(DEBUG_ENV, "cmd_connect: Interfaces file is %s.\n", cp);)
+                /*
+                 * If the user overrode the default interfaces file location,
+                 * then configure the interfaces file as such.
+                 */
+                if (cp == NULL || ct_config( g_context,   /* Context */
+                                             CS_SET,      /* Action */
+                                             CS_IFILE,    /* Property */
+                                            (CS_VOID*)cp, /* Buffer */
+                                             CS_NULLTERM, /* Buffer Length */
+                                             NULL         /* Output Length */
+                             ) != CS_SUCCEED)
+                    goto connect_fail;
+            }
+            else
+            {
+                fprintf( stderr, "sqsh: Error expanding $interfaces: %s\n",
+                         sqsh_get_errstr() );
                 goto connect_fail;
+            }
         }
 
     } /* if (g_context == NULL) */
@@ -730,14 +718,35 @@ int cmd_connect( argc, argv )
             goto connect_fail;
     }
 
+    /*
+     * sqsh-2.1.6 - If a keytab_file is specified, make sure environment
+     * variables get expanded correctly.
+    */
+    if ( keytab_file != NULL && *keytab_file != '\0' )
+    {
+        if (sqsh_expand( keytab_file, exp_buf, 0 ) != False)
+        {
+            cp = varbuf_getstr( exp_buf );
+            DBG(sqsh_debug(DEBUG_ENV, "cmd_connect: Keytab_file is %s.\n", cp);)
+        }
+        else
+        {
+            fprintf( stderr, "sqsh: Error expanding $keytab_file: %s\n",
+                     sqsh_get_errstr() );
+	    cp = NULL;
+        }
+    }
+    else
+        cp = NULL;
+
     /*-- sqsh-2.1.6 feature - Use network authentication or set password --*/
     if (NetAuthRequired == CS_TRUE)
     {
-        if (SetNetAuth ( g_connection,            /* Connection */
-                         principal,               /* Server principal */
-                         keytab_file,             /* DCE keytab file */
-                         secmech,                 /* Security mechanism */
-                         secure_options           /* Security options */
+        if (SetNetAuth ( g_connection,    /* Connection */
+                         principal,       /* Server principal */
+                         cp,              /* Expanded DCE keytab file */
+                         secmech,         /* Security mechanism */
+                         secure_options   /* Security options */
                        ) != CS_SUCCEED)
             goto connect_fail;
     }
@@ -779,12 +788,12 @@ int cmd_connect( argc, argv )
         else if (strcmp(tds_version, "5.0") == 0)
             version = CS_TDS_50;
 #if !defined(CS_TDS_50)
-	else if (strcmp(tds_version, "7.0") == 0)
+        else if (strcmp(tds_version, "7.0") == 0)
             version = CS_TDS_70;
-	else if (strcmp(tds_version, "8.0") == 0)
+        else if (strcmp(tds_version, "8.0") == 0)
             version = CS_TDS_80;
 #endif
-	else version = CS_TDS_50; /* default version */
+        else version = CS_TDS_50; /* default version */
 
 
         if (ct_con_props(g_connection, CS_SET, CS_TDS_VERSION, 
@@ -1181,6 +1190,10 @@ connect_fail:
     return_code = CMD_FAIL;
 
 connect_leave:
+
+    if ( exp_buf != NULL)
+        varbuf_destroy( exp_buf );
+
     sg_login = False;
     return return_code;
 }
