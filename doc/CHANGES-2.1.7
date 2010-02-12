@@ -152,9 +152,12 @@
 
     select hostprocess from master..sysprocesses where spid=@@spid;
 
-8 - A new command \hist_save is introduced to save the complete history to the
+8 - A new command \hist-save is introduced to save the complete history to the
     current $history file, or save it to a new file specified in the
-    "\hist_save [filename]" command.
+    "\hist-save [filename]" command. Also a new command \hist-load will load
+    a history file and append it to the current list of history buffers:
+    "hist-load [filename]". If no filename is specified the file in variable
+    $history will be used to load from.
 
 9 - A new variable $hist_auto_save (int) is introduced. When the history is
     changed more often than the value of this variable, the history is
@@ -349,7 +352,7 @@ alias.h
 cmd.h
 	F6: Added definition of CMD_RESETBUF and assigned this to \reset
 	Existing CMD_CLEARBUF action now assigned to \clear
-	Commands \\clear and \\hist_save defined.
+	Commands \\clear and \\hist-save defined.
 
 cmd_bcp.c
 	Improved signaling by saving current signaling context when
@@ -392,7 +395,7 @@ cmd_go.c
 cmd_history.c
 	F4. Extended buffer info (date/usage count) and most recent x
 	buffers to show (\history -i -x options)
-	F8. Added implementation of the \hist_save command.
+	F8. Added implementation of the \hist-load and \hist-save commands.
 
 cmd_if.c
 	Signaling improvements.
