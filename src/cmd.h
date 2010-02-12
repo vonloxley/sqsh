@@ -61,6 +61,7 @@ int  cmd_clear      _ANSI_ARGS(( int, char** )) ;   /* sqsh-2.1.7 */
 int  cmd_reset      _ANSI_ARGS(( int, char** )) ;   /* Buffer commands */
 int  cmd_redraw     _ANSI_ARGS(( int, char** )) ;
 int  cmd_history    _ANSI_ARGS(( int, char** )) ;
+int  cmd_hist_load  _ANSI_ARGS(( int, char** )) ;   /* sqsh-2.1.7 */
 int  cmd_hist_save  _ANSI_ARGS(( int, char** )) ;   /* sqsh-2.1.7 */
 int  cmd_buf_edit   _ANSI_ARGS(( int, char** )) ;
 int  cmd_buf_copy   _ANSI_ARGS(( int, char** )) ;
@@ -142,7 +143,8 @@ static cmd_entry_t  sg_cmd_entry[] = {
 	{ "\\unalias",   NULL,          cmd_unalias      },
 	{ "\\redraw",    NULL,          cmd_redraw       },
 	{ "\\history",   NULL,          cmd_history      },
-	{ "\\hist_save", NULL,          cmd_hist_save    },  /* sqsh-2.1.7 */
+	{ "\\hist-load", NULL,          cmd_hist_load    },  /* sqsh-2.1.7 */
+	{ "\\hist-save", NULL,          cmd_hist_save    },  /* sqsh-2.1.7 */
 	{ "\\shell",     NULL,          cmd_shell        },
 	{ "\\do",        NULL,          cmd_do           },
 	{ "\\func",      NULL,          cmd_func         },

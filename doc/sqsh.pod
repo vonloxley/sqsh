@@ -1764,7 +1764,12 @@ special interest when using the B<$histunique> feature. The B<-x> option may
 specify the number of most recent history entries to display instead of the
 total list of history entries.
 
-=item \hist_save [filename]
+=item \hist-load [filename]
+
+Load a history file and append items to the current history list.
+Use B<$history> if no filename is specified as a parameter.
+
+=item \hist-save [filename]
 
 Will save the current history buffers to the B<$history> file or to the filename
 specified as a parameter.

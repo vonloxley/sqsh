@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_history.c,v 1.2 2010/01/12 13:26:38 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: cmd_history.c,v 1.3 2010/01/26 15:03:50 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -155,6 +155,76 @@ int cmd_history( argc, argv )
 
 
 /*
+ * cmd_hist_load:
+ *
+ * Load the history from a file.
+ *
+ */
+int cmd_hist_load( argc, argv )
+	int    argc ;
+	char  *argv[] ;
+{
+	char       str[16];
+	char      *history;
+	varbuf_t  *exp_buf;
+
+
+	/*
+	 * Only one argument allowed.
+	 */
+	if( argc > 2 ) {
+		fprintf( stderr, "\\hist_load: Too many arguments; Use: \\hist_load [filename]\n" ) ;
+		return CMD_FAIL ;
+	}
+
+	/*
+	 * Check if the history has been created.
+	 */
+	if (g_history != NULL)
+	{
+		if (argc == 2)
+			history = argv[1];
+		else
+			env_get( g_env, "history", &history );
+
+		if ( history != NULL )
+		{
+			exp_buf = varbuf_create( 512 );
+
+			if (exp_buf == NULL)
+			{
+				fprintf( stderr, "sqsh_exit: %s\n", sqsh_get_errstr() );
+			}
+			else
+			{
+				if (sqsh_expand( history, exp_buf, 0 ) == False)
+				{
+					fprintf( stderr, "sqsh_exit: Error expanding $history: %s\n",
+						sqsh_get_errstr() );
+				}
+				else
+				{
+					if (history_load( g_history, varbuf_getstr(exp_buf) ) == True)
+					{
+						fprintf( stdout, "History buffer loaded from %s\n",
+								varbuf_getstr(exp_buf) );
+						sprintf( str, "%d", history_get_nbr(g_history) );
+						env_set( g_env, "histnum", str );
+					}
+					else
+						fprintf( stdout, "Failed to load history from %s\n",
+								varbuf_getstr(exp_buf) );
+
+				}
+				varbuf_destroy( exp_buf );
+			}
+		}
+	}
+	return CMD_LEAVEBUF ;
+}
+
+
+/*
  * cmd_hist_save:
  *
  * Write the history out to a file.
@@ -177,7 +247,7 @@ int cmd_hist_save( argc, argv )
 	}
 
 	/*
-	 * If the history has been created, and it contains items, 
+	 * If the history has been created, and it contains items,
 	 * then we write the history out to a file.
 	 */
 	if (g_history != NULL)
@@ -187,8 +257,7 @@ int cmd_hist_save( argc, argv )
 		else
 			env_get( g_env, "history", &history );
 
-		if (sqsh_stdin_isatty() &&
-		    history != NULL && history_get_nitems( g_history ) > 0)
+		if (history != NULL && history_get_nitems( g_history ) > 0)
 		{
 			exp_buf = varbuf_create( 512 );
 
@@ -210,12 +279,9 @@ int cmd_hist_save( argc, argv )
 								varbuf_getstr(exp_buf) );
 
 				}
-
 				varbuf_destroy( exp_buf );
 			}
 		}
-
 	}
 	return CMD_LEAVEBUF ;
 }
-

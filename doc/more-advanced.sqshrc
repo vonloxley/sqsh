@@ -211,6 +211,31 @@
 \done
 
 #
+# \switch
+#
+# Reconnect to another server using the same username and password as the
+# current connection and take care of the history buffers of the old and new
+# server.
+#
+\func -x \switch
+  \if [ $# -ne 1 ]
+    \echo "Use: \switch server_name"
+    \return 1
+  \fi
+
+  \hist-save
+  \set history=""
+  \buf-del 1-$histnum
+  \echo "Switch connection to server ${1}"
+  \reconnect -S${1}
+  \if [ "${DSQUERY}" != "${1}" ]
+    \echo "Switch to server ${1} failed"
+  \fi
+  \set history='$HOME/.sqsh/sqshhist_$DSQUERY'
+  \hist-load
+\done
+
+#
 # \v
 #
 # Show the ASE version string.

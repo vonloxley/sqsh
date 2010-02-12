@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "sqsh 1"
-.TH sqsh 1 "2010-02-04" "2.1.7" "User Contributed Perl Documentation"
+.TH sqsh 1 "2010-02-12" "2.1.7" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -1791,8 +1791,12 @@ is used and the last time the buffer was used. This information may be of
 special interest when using the \fB\f(CB$histunique\fB\fR feature. The \fB\-x\fR option may
 specify the number of most recent history entries to display instead of the
 total list of history entries.
-.IP "\ehist_save [filename]" 4
-.IX Item "hist_save [filename]"
+.IP "\ehist\-load [filename]" 4
+.IX Item "hist-load [filename]"
+Load a history file and append items to the current history list.
+Use \fB\f(CB$history\fB\fR if no filename is specified as a parameter.
+.IP "\ehist\-save [filename]" 4
+.IX Item "hist-save [filename]"
 Will save the current history buffers to the \fB\f(CB$history\fB\fR file or to the filename
 specified as a parameter.
 .IP "\eredraw" 4
