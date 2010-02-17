@@ -44,7 +44,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_init.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_init.c,v 1.2 2010/01/26 15:03:50 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -256,7 +256,6 @@ void sqsh_exit( exit_status )
 	char      *history;
 	char      *histsave;
 	char      *term_title;
-	CS_INT     con_status;
 	varbuf_t  *exp_buf;
 
 	/*
@@ -302,6 +301,7 @@ void sqsh_exit( exit_status )
 		}
 
 		history_destroy( g_history );
+		g_history = NULL;
 	}
 
 	/*
@@ -312,35 +312,36 @@ void sqsh_exit( exit_status )
 
 	if( g_connection != NULL )
 	{
-		DBG(sqsh_debug(DEBUG_ERROR, "sqsh_exit: Getting connection status\n");)
-		if (ct_con_props( g_connection,           /* Connection */
-		                  CS_GET,                 /* Action */
-		                  CS_CON_STATUS,          /* Property */
-		                  (CS_VOID*)&con_status,  /* Buffer */
-		                  CS_UNUSED,              /* Buffer Length */
-		                  (CS_INT*)NULL ) != CS_SUCCEED)
-		{
-			DBG(sqsh_debug(DEBUG_ERROR, "sqsh_exit: Failed.\n");)
-			con_status = CS_CONSTAT_CONNECTED;
-		}
-
-		/*-- If connected, disconnect --*/
-		if (con_status == CS_CONSTAT_CONNECTED)
-		{  
-			DBG(sqsh_debug(DEBUG_ERROR, "sqsh_exit: Closing connection\n");)
-			ct_close( g_connection, CS_FORCE_CLOSE );
-		}
+		ct_close( g_connection, CS_FORCE_CLOSE );
 		ct_con_drop( g_connection );
+		g_connection = NULL;
 	}
 
 	if (g_context != NULL)
 	{
 		ct_exit( g_context, CS_FORCE_EXIT );
-		cs_ctx_drop( g_context );
+
+		/*
+		 * If sqsh is aborting, maybe because of losing a database connection
+		 * and the callback handler requests sqsh_exit(254), then do not drop
+		 * the g_context structure, as it will generate an error:
+		 * CS-Library error:
+		 *    severity(1) layer(2) origin(1) number(31)
+		 *    cs_ctx_drop: cslib user api layer: external error:
+		 *    The context structure cannot be dropped because the application
+		 *    has not exited from ct.
+		 * This is due to the fact that the callback handler did not return
+		 * to CS/CT-Library.
+		 */
+		if (exit_status != 254) 
+			cs_ctx_drop( g_context );
+		g_context = NULL;
 	}
 
-	if( g_buf != NULL )
+	if( g_buf != NULL ) {
 		env_destroy( g_buf ) ;
+		g_buf = NULL;
+	}
 
 	/*
 	 * sqsh-2.1.7 - Reset term_title.
@@ -352,23 +353,32 @@ void sqsh_exit( exit_status )
 		    fprintf (stdout, "%c]0;%c", '\033', '\007' );
 	}
 
-	if( g_env != NULL )
+	if( g_env != NULL ) {
 		env_destroy( g_env ) ;
+		g_env = NULL;
+	}
 
-	if( g_sqlbuf != NULL )
+	if( g_sqlbuf != NULL ) {
 		varbuf_destroy( g_sqlbuf ) ;
+		g_sqlbuf = NULL;
+	}
 
-	if( g_cmdset != NULL )
+	if( g_cmdset != NULL ) {
 		cmdset_destroy( g_cmdset ) ;
+		g_cmdset = NULL;
+	}
 
-	if( g_funcset != NULL )
+	if( g_funcset != NULL ) {
 		funcset_destroy( g_funcset ) ;
+		g_funcset = NULL;
+	}
 
-	if( g_jobset != NULL )
+	if( g_jobset != NULL ) {
 		jobset_destroy( g_jobset ) ;
+		g_jobset = NULL;
+	}
 
-
-	exit(exit_status) ;
+	exit (exit_status) ;
 }
 
 

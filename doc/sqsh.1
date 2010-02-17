@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "sqsh 1"
-.TH sqsh 1 "2010-02-12" "2.1.7" "User Contributed Perl Documentation"
+.TH sqsh 1 "2010-02-17" "2.1.7" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -162,21 +162,21 @@ sqsh \- Interactive database shell (version 2.1.7)
 \&            [ \-o filename ]
 \&            [ \-p ]
 \&            [ \-P [password] ]
-\&            [ \-Q value ]
+\&            [ \-Q query_timeout ]
 \&            [ \-r [sqshrc] ]
 \&            [ \-R server principal ]
 \&            [ \-s colsep ]
 \&            [ \-S server ]
 \&            [ \-t [filter] ]
-\&            [ \-T value ]
+\&            [ \-T login_timeout ]
 \&            [ \-U username ]
 \&            [ \-v ]
-\&            [ \-V [cimorq]]
+\&            [ \-V [bcdimoqru]]
 \&            [ \-w width ]
 \&            [ \-X ]
 \&            [ \-y directory ]
 \&            [ \-z language ]
-\&            [ \-Z secmech ]
+\&            [ \-Z [secmech|default|none] ]
 .Ve
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
@@ -350,15 +350,15 @@ long running query. Maps to the \fB\f(CB$query_timeout\fB\fR variable.
 For example:
 .Sp
 .Vb 9
-\&   sqsh \-SASE1502 \-Usa \-P \-Q30
-\&   ASE1502.sa.master.1> cd tix
-\&   ASE1502.sa.tix.1> select count(*) from E_TIX;
-\&   Open Client Message
-\&   Layer 1, Origin 2, Severity 2, Number 63
-\&   ct_results(): user api layer: internal Client Library error:
-\&                 Read from the server has timed out.
-\&   ASE1502: Query or command timeout detected, command/batch cancelled
-\&   ASE1502: The client connection has detected this 1 time(s).
+\&  sqsh \-SASE1502 \-Usa \-P \-Q30
+\&  ASE1502.sa.master.1> cd tix
+\&  ASE1502.sa.tix.1> select count(*) from E_TIX;
+\&  Open Client Message
+\&  Layer 1, Origin 2, Severity 2, Number 63
+\&  ct_results(): user api layer: internal Client Library error:
+\&                Read from the server has timed out.
+\&  ASE1502: Query or command timeout detected, command/batch cancelled
+\&  ASE1502: The client connection has detected this 1 time(s).
 .Ve
 .Sp
 See also the \fB\f(CB$max_timeout\fB\fR variable, which controls the number of times a
@@ -405,8 +405,8 @@ username of the user running \fIsqsh\fR. The \fIusername\fR may also be set via 
 .IP "\-v" 4
 .IX Item "-v"
 Displays the version number, \f(CW$version\fR, and exits.
-.IP "\-V [cimorq]" 4
-.IX Item "-V [cimorq]"
+.IP "\-V [bcdimoqru]" 4
+.IX Item "-V [bcdimoqru]"
 Kerberos support: Specify the security options to use.
 .Sp
 See the Kerberos Support section below for details.
@@ -430,8 +430,8 @@ to find the interfaces file.
 Specifies an alternate \fIlanguage\fR to display sqsh prompts and messages. Without
 the \fB\-z\fR flag, the server's default language will be used. This may also be
 set using the \f(CW$language\fR variable.
-.IP "\-Z [secmech]" 4
-.IX Item "-Z [secmech]"
+.IP "\-Z [secmech|default|none]" 4
+.IX Item "-Z [secmech|default|none]"
 Kerberos support: Specify the security mechanism to use.
 .Sp
 See the Kerberos Support section below for details.
@@ -1270,8 +1270,8 @@ value of \fB$?\fR will be the last error code returned during the processing of 
 \&\s-1SQL\s0 statement.
 .SS "Kerberos Support"
 .IX Subsection "Kerberos Support"
-Starting with version 2.1.6, sqsh provides the same command line options as isql
-to handle Kerberos network authentication.
+Starting with version 2.1.6, \fIsqsh\fR provides the same command line options as
+\&\fIisql\fR to handle Kerberos network authentication.
 .PP
 In version 2.1.5 experimental Kerberos support was added using the \-K and \-R
 options. \-K was merely a switch to set Kerberos on. In sqsh 2.1.6 a more
@@ -1279,79 +1279,89 @@ advanced implementation of network authentication is introduced, although still
 experimental.
 .PP
 By using the parameters \-K, \-R, \-V, \-Z you can make use of your defined network
-security settings. (libtcl.cfg). The named options are identical to the ones
-defined for isql.
+security settings (libtcl.cfg). The named options are identical to the ones
+defined for \fIisql\fR.
 .IP "\-K keytab_file" 4
 .IX Item "-K keytab_file"
-keytab_file name for \s-1DCE\s0.
+Keytab_file name for \s-1DCE\s0.
 .IP "\-R server_principal" 4
 .IX Item "-R server_principal"
-server principal name when Servername specified in interfaces differs from the
-real server name
-.IP "\-V" 4
-.IX Item "-V"
-Specify security options to use (cimorq)
-.IP "\-Z" 4
-.IX Item "-Z"
-Requested security mechanism name defined for Kerberos, \s-1DCE\s0 or \s-1PAM\s0 in your
-libtcl.cfg file.
+Server principal name when servername specified in interfaces differs from the
+real server name.
+.IP "\-V [bcdimoqru]" 4
+.IX Item "-V [bcdimoqru]"
+Specify security options to use with the security mechanism. Each character
+stands for a specific security service.
+.IP "\-Z [secmech|default|none]" 4
+.IX Item "-Z [secmech|default|none]"
+Request a security mechanism defined for Kerberos, \s-1DCE\s0 or \s-1PAM\s0 in your
+libtcl.cfg file. Use \fBsecmech\fR to specify the name of a \s-1SECURITY\s0 entry or
+\&\fBdefault\fR for the first available entry in libtcl.cfg. \fBNone\fR must be
+specified to disable network authentication or reset possible existing
+values in variables \fB\f(CB$secmech\fB\fR or \fB\f(CB$secure_options\fB\fR.
 .PP
-For example, connecting to a remote server using Kerberos (which happens to be
+For example, connecting to a server using Kerberos (which happens to be
 the default, i.e. first entry in libtcl.cfg [\s-1SECURITY\s0] tab in this example):
 .PP
-.Vb 5
-\&   ~> sqsh \-SLINUX1502 \-Uuser1 \-RFC6A1502 \-Z
-\&   LINUX1502.user1.master.1> select @@servername,@@authmech,show_sec_services();
-\&   \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-  \-\-\-\-\-\-\-\-\-\-\-  \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
-\&   FC6A1502          kerberos     unifiedlogin mutualauth integrity
-\&                                  confidentiality detectreplay detectseq
+.Vb 9
+\&  ~> sqsh \-SSYB1502 \-Uuser1 \-RFC6A1502 \-Z
+\&  \econnect: Network authenticated session expires at:
+\&            16 Feb 2010 15:28:39 (11764 secs)
+\&  SYB1502.user1.master.1> select @@servername,@@authmech,
+\&                                 show_sec_services();
+\&  \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-  \-\-\-\-\-\-\-\-\-\-\-  \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+\&  FC6A1502          kerberos     unifiedlogin delegation mutualauth
+\&                                 integrity confidentiality
+\&                                 detectreplay detectseq
 .Ve
 .PP
-See chapter 16 \*(L"External Authentication\*(R" from the Sybase System Administration
-Guide volume 1 for more information.
+Note that the real name of the server (@@servername) differs from the server
+name in the interfaces file, so we have to specify the principal name through
+the \fB\-R\fR parameter.
+When you do not specify the \fB\-V\fR parameter together with \fB\-Z\fR, all available
+security options will be enabled. When \fB\-V\fR is specified without any security
+service options, only option \fBu\fR for Network Authentication will be implicitly
+set and the default security mechanism will be used if \fB\-Z\fR is not specified.
 .PP
 .Vb 10
-\&   [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-Zcsfkrb5
-\&   Open Client Message
-\&   Layer 7, Origin 9, Severity 5, Number 1
-\&   ct_connect(): security service layer: internal security control layer error:
-\&                 Security service provider internal error \-1765328352 occurred.
-\&   [user1@user1\-fc6a ~]$ kinit
-\&   Password for user1@LOCALDOMAIN:
-\&   [user1@user1\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-Zcsfkrb5
-\&   FC6A1502.user1.master.1> select program_name from sysprocesses
-\&                            where spid=@@spid;
-\&   program_name
-\&   \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
-\&   sqsh\-2.1.6
-\&
-\&  (1 row affected)
+\&  [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-V
+\&  Open Client Message
+\&  Layer 7, Origin 9, Severity 5, Number 1
+\&  ct_connect(): security service layer: internal security control
+\&                layer error:
+\&                Security service provider internal error \-1765328352
+\&                occurred.
+\&  [user1@linux\-fc6a ~]$ kinit
+\&  Password for user1@LOCALDOMAIN:
+\&  [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-V
+\&  \econnect: Network authenticated session expires at:
+\&            16 Feb 2010 15:28:39 (10964 secs)
+\&  FC6A1502.user1.master.1>
 .Ve
 .PP
-Note that you can specify \-V and or \-Z without having to specify a value. Is the
-value empty for \-Z or contains the value 'default' then the default will be
-used, which is the first active security driver in the libtcl.cfg file.
+When the connection succeeds, \fIsqsh\fR will store the real name of the security
+mechanism in the variable \fB\f(CB$secmech\fB\fR. For example: \*(L"\eecho \f(CW$secmech\fR\*(R" may show
+\&\fIcsfkrb5\fR. The parameter \fB\-V\fR takes a list of characters from the possible
+values of \fIbcdimoqru\fR. The option \fBu\fR enables Network Authentication, is the
+default and will allways be set when using \fB\-V\fR or \fB\-Z\fR, specified or not.
 .PP
-When the connection succeeds, sqsh will store the real name of the security
-mechanism in the variable secmech. For example: \*(L"\eecho \f(CW$secmech\fR\*(R" may show
-csfkrb5. The option \-V takes a list of characters from the possible values of
-\&'cimorq'. If you do not want to set a security service protocol then you have to
-specify \-Vx for example. 'x' is not an existing option related to a security
-service and as a value is provided, sqsh will not fall back to the default of
-all options. When \-V is empty however, then all possibly supported security
-protocols for the selected secmech will be enabled. The key letters are:
-.PP
-.Vb 6
-\&   c \-   Enable data confidentiality service
-\&   i \-   Enable data integrity service
-\&   m \-   Enable mutual authentication for connection establishment
-\&   o \-   Enable data origin stamping service
-\&   r \-   Enable data replay detection
-\&   q \-   Enable out\-of\-sequence detection
+.Vb 10
+\&    b \- chanbinding     : Channel binding
+\&    c \- confidentiality : Data confidentiality service
+\&    d \- delegation      : Allow delegated credentials
+\&    i \- integrity       : Data integrity service
+\&    m \- mutualauth      : Mutual authentication for connection
+\&                          establishment
+\&    o \- dataorigin      : Data origin stamping service
+\&    q \- detectseq       : Out\-of\-sequence detection
+\&    r \- detectreplay    : Data replay detection
+\&    u \- unifiedlogin    : Network Authentication
 .Ve
 .PP
-If you specify \-V and/or \-Z, sqsh will assume network authentication is tried
-and no password is required.
+Please check master.dbo.syssecmechs for available services. Non-existing or not
+supported services supplied with \fB\-V\fR are silently ignored. If you specify
+\&\fB\-V\fR and/or \fB\-Z\fR, \fIsqsh\fR assumes network authentication is tried and no
+password is required.
 .PP
 If you have a network authenticated connection and want to \ereconnect using
 normal \s-1ASE\s0 authentication with username and password, you have to reset the
@@ -1360,22 +1370,34 @@ network authentication variables by specifying \-Znone
 For example:
 .PP
 .Vb 10
-\&   [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-Z
-\&   FC6A1502.user1.master.1> \eecho $secmech
-\&   csfkrb5
-\&   FC6A1502.user1.master.1> \ereconnect \-SASE1502 \-Usa \-Psybase
-\&   Open Client Message
-\&   Layer 7, Origin 9, Severity 5, Number 8
-\&   ct_connect(): security service layer: internal security control layer error:
-\&   Consistency checks performed on the credential failed (minor status 0).
-\&   FC6A1502.user1.master.1> \ereconnect \-SASE1502 \-Usa \-Psybase \-Znone
-\&   ASE1502.sa.master.1>
+\&  [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-V
+\&  \econnect: Network authenticated session expires at:
+\&            16 Feb 2010 15:28:39 (10764 secs)
+\&  FC6A1502.user1.master.1> \eecho $secmech csfkrb5
+\&  FC6A1502.user1.master.1> \ereconnect \-SASE1502 \-Usa \-Psybase
+\&  Open Client Message
+\&  Layer 7, Origin 9, Severity 5, Number 8
+\&  ct_connect(): security service layer: internal security control
+\&                layer error:
+\&  Consistency checks performed on the credential failed
+\&  (minor status 0).
+\&  FC6A1502.user1.master.1> \ereconnect \-SASE1502 \-Usa \-Psybase \-Znone
+\&  ASE1502.sa.master.1>
 .Ve
 .PP
 The first \ereconnect fails because sqsh still wants to try network
-authentication. However, no user principal for 'sa' exists or no ticket is set
-and the connection fails. The second \ereconnect succeeds as the \-Znone reset
-appropriate variables.
+authentication. However, no user principal for 'sa' exists and no ticket is set
+and thus the connection fails. The second \fB\ereconnect\fR succeeds as the \-Znone
+option reset appropriate variables.
+If the Kerberos ticket is renewed with \fBkinit\fR or any other client tool, the
+\&\fIsqsh\fR session must perform a \fB\ereconnect\fR to refresh the credentials and
+to prevent a premature session abort. With the command \fB\esnace\fR you can request
+for the session expiration interval. Depending on the security services that are
+set, the database connection may be closed without warning as soon as the ticket
+expires.
+.PP
+See chapter 16 \*(L"External Authentication\*(R" from the Sybase System Administration
+Guide volume 1 for more information on Kerberos network authenticationi, e.a.
 .SH "COMMANDS"
 .IX Header "COMMANDS"
 .SS "Read-Eval-Print"
@@ -1429,8 +1451,8 @@ Given the size and complexity of sqsh (just look at the length of this man
 page), it is amazing how few database manipulation commands that there actually
 are. The following are commands that affect or use the current database
 connection:
-.IP "\econnect [\-c] [\-D db] [\-S srv] [\-U user] [\-P pass] [\-I ifile] [\-K keytab] [\-R server_principal] [\-n] [\-N appname] [\-Q query_timeout] [\-T login_timeout] [\-V secure_options] [\-Z secmech]" 4
-.IX Item "connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V secure_options] [-Z secmech]"
+.IP "\econnect [\-c] [\-D db] [\-S srv] [\-U user] [\-P pass] [\-I ifile] [\-K keytab] [\-R server_principal] [\-n] [\-N appname] [\-Q query_timeout] [\-T login_timeout] [\-V [bcdimoqru]] [\-Z [secmech|default|none]]" 4
+.IX Item "connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-Z [secmech|default|none]]"
 This command is used primarily for internal use to establish a connection to a
 database. If a connection is already established it has no effect, however if a
 connection has not been established and \fB\f(CB$password\fB\fR has not been supplied, then
@@ -1488,18 +1510,18 @@ Set a query timeout period in seconds.
 .IP "\-T login_timeout" 4
 .IX Item "-T login_timeout"
 Specifies a maximum wait time for session setup.
-.IP "\-V secure_options" 4
-.IX Item "-V secure_options"
-Used for Kerberos support and other security mechanisms.
-.IP "\-Z secmech" 4
-.IX Item "-Z secmech"
+.IP "\-V [bcdimoqru]" 4
+.IX Item "-V [bcdimoqru]"
+Security services used for Kerberos support and other security mechanisms.
+.IP "\-Z [secmech|default|none]" 4
+.IX Item "-Z [secmech|default|none]"
 Specifies the security mechanism to use for user authentication. For example
 csfkrb5 for Kerberos support.
 .RE
 .RS 4
 .RE
-.IP "\ereconnect [\-c] [\-D db] [\-S srv] [\-U user] [\-P pass] [\-I ifile] [\-K keytab] [\-R server_principal] [\-n] [\-N appname] [\-Q query_timeout] [\-T login_timeout] [\-V secure_options] [\-Z secmech]" 4
-.IX Item "reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V secure_options] [-Z secmech]"
+.IP "\ereconnect [\-c] [\-D db] [\-S srv] [\-U user] [\-P pass] [\-I ifile] [\-K keytab] [\-R server_principal] [\-n] [\-N appname] [\-Q query_timeout] [\-T login_timeout] [\-V [bcdimoqru]] [\-Z [secmech|default|noe]]" 4
+.IX Item "reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-Z [secmech|default|noe]]"
 The \fB\ereconnect\fR command may be used to force a reconnection to the database
 using a new username, server name, or password (if desired). If this command
 fails, the current connection remains (if there is any), however if it succeeds
@@ -1509,6 +1531,10 @@ active one.
 All arguments that are accepted by \fB\econnect\fR are also accepted by
 \&\fB\ereconnect\fR (in fact \fB\ereconnect\fR uses \fB\econnect\fR to establish the new
 connection).
+.IP "\esnace" 4
+.IX Item "snace"
+Will show the session expiration interval for a network authenticated session,
+using Kerberos tickets, for example.
 .IP "\ego [options] [xacts]" 4
 .IX Item "go [options] [xacts]"
 Sends the contents of the \fBWork Buffer\fR to the database, establishing a new
@@ -2172,14 +2198,15 @@ The return value of the most recently executed sqsh function.
 .IX Item "$$? (int)"
 This variable may contain the result of the last executed \eif statement:
 .RS 4
-.IP "0" 4
+.IP "\- 0 \-" 4
+.IX Item "- 0 -"
 The test evaluated to False.
-.IP "1" 4
-.IX Item "1"
+.IP "\- 1 \-" 4
+.IX Item "- 1 -"
 The test evaluated to True.
-.IP "2" 4
-.IX Item "2"
-There was in error in the test specification.
+.IP "\- 2 \-" 4
+.IX Item "- 2 -"
+There was an error in the test specification.
 .RE
 .RS 4
 .RE
@@ -2206,7 +2233,7 @@ environment.
 Contains the name \fIsqsh\fR uses to identity itself to the server. Defaults to
 sqsh\-2.1.7. The application name can be retrieved from the sysprocesses table
 like: 
-    select program_name from master.dbo.sysprocesses where spid=@@pid;
+  select program_name from master.dbo.sysprocesses where spid=@@pid;
 .IP "autouse (string)" 4
 .IX Item "autouse (string)"
 Note: the meaning of this variable has been deprecated.
@@ -2986,18 +3013,19 @@ variable may be explicitly set using the \fB\eset\fR command, or implicitly usin
 .PP
 To recap, here is a list of error codes that may be returned by \fIsqsh\fR upon
 exit, and the reason that they could be returned:
-.IP "0" 4
+.IP "\- 0 \-" 4
+.IX Item "- 0 -"
 No error has been encountered.
-.IP "1...253" 4
-.IX Item "1...253"
+.IP "\- 1...253 \-" 4
+.IX Item "- 1...253 -"
 Between 1 and 253 batches have failed (if you run more than 253 batches, the
 exit status of sqsh is undetermined...I may fix this in the future).
-.IP "254" 4
-.IX Item "254"
+.IP "\- 254 \-" 4
+.IX Item "- 254 -"
 An explicit \fB\eabort\fR was called, or a \s-1SIGINT\s0 (^C) was issued during a
 non-interactive session.
-.IP "255" 4
-.IX Item "255"
+.IP "\- 255 \-" 4
+.IX Item "- 255 -"
 A general error condition has occurred, such as a bad command line argument to
 sqsh, memory allocation failure, file access error, etc.
 .PP

@@ -95,6 +95,7 @@ int  cmd_while      _ANSI_ARGS(( int, char** )) ;
 int  cmd_return     _ANSI_ARGS(( int, char** )) ;
 int  cmd_break      _ANSI_ARGS(( int, char** )) ;
 int  cmd_for        _ANSI_ARGS(( int, char** )) ;
+int  cmd_snace      _ANSI_ARGS(( int, char** )) ;
 
 #ifdef SQSH_INIT
 /*
@@ -143,8 +144,8 @@ static cmd_entry_t  sg_cmd_entry[] = {
 	{ "\\unalias",   NULL,          cmd_unalias      },
 	{ "\\redraw",    NULL,          cmd_redraw       },
 	{ "\\history",   NULL,          cmd_history      },
-	{ "\\hist-load", NULL,          cmd_hist_load    },  /* sqsh-2.1.7 */
-	{ "\\hist-save", NULL,          cmd_hist_save    },  /* sqsh-2.1.7 */
+	{ "\\hist-load", NULL,          cmd_hist_load    }, /* sqsh-2.1.7 */
+	{ "\\hist-save", NULL,          cmd_hist_save    }, /* sqsh-2.1.7 */
 	{ "\\shell",     NULL,          cmd_shell        },
 	{ "\\do",        NULL,          cmd_do           },
 	{ "\\func",      NULL,          cmd_func         },
@@ -162,6 +163,7 @@ static cmd_entry_t  sg_cmd_entry[] = {
 	{ "\\buf-show",  NULL,          cmd_buf_show     },
 	{ "\\buf-append",NULL,          cmd_buf_append   },
 	{ "\\buf-del",   NULL,          cmd_buf_del      }, /* sqsh-2.1.6 feature */
+	{ "\\snace",     NULL,          cmd_snace        }, /* sqsh-2.1.7 */
 	{ ":r",          NULL,          cmd_buf_load     },
 	{ "vi",          NULL,          cmd_buf_edit     },
 	{ "emacs",       NULL,          cmd_buf_edit     },

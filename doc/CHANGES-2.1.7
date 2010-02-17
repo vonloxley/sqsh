@@ -189,6 +189,12 @@
     used in client-server communication). The option -G can be useful to test
     client-server capabilities, especially when using freetds.
 
+13- Improved network authentication handling. Introduced a new command \snace
+    to report the session expiration interval for a network authenticated
+    session.
+    Support for CS_SEC_DELEGATION security service added.
+
+
 
 			Bug fixes in sqsh-2.1.7
 
@@ -340,6 +346,18 @@ d)  The batch related command \jobs now accepts an option -i to show additional
     The SQL batch window is now limited to 10 rows and you have to scroll the
     window section to see the rest of the batch.
 
+16- When a connection is killed or a server performs a shutdown, the connection
+    to the server is lost. This will eventually be detected by sqsh and a client
+    callback handler will call sqsh_exit. However, the callback handler did not
+    return a CS_FAIL or CS_SUCCEED, so CS/CT-lib thinks the callback handler
+    is still active and produces a warning message that the client did not
+    exited from CT-lib, when the context is dropped.
+    The callback handler will now return value 254 (abort) and sqsh_exit will
+    not try to drop the CS/CT-lib context in this case.
+    Also in very rare circumstances sqsh_exit could be called recursively,
+    resulting in a segment violation as pointers to destroyed memory structures
+    were not nullified.
+
 
 
 		Changed files in sqsh-2.1.7 compared to sqsh-2.1.6
@@ -353,6 +371,8 @@ cmd.h
 	F6: Added definition of CMD_RESETBUF and assigned this to \reset
 	Existing CMD_CLEARBUF action now assigned to \clear
 	Commands \\clear and \\hist-save defined.
+	F13: Command \\snace added to Show Network Authenticated Credential
+	Expiration interval when using Kerberos.
 
 cmd_bcp.c
 	Improved signaling by saving current signaling context when
@@ -372,6 +392,8 @@ cmd_connect.c
 	\set session=$HOME/.sqsh/.session_$DSQUERY
 	F12. Obtain effective tds_version setting when requesting for a specific
 	TDS version. Add version 7.0 and 8.0 of TDS when using freetds.
+	F13. Kerberos support improvements; \snace command implementation.
+	B16. Return 254 in case of a lost connection.
 
 cmd_do.c
 	CMD_CLEARBUF renamed to CMD_RESETBUF.
@@ -490,6 +512,16 @@ sqsh_init.c
 	F3. Reset windows title ($term_title) upon exit.
 	Use g_interactive to determine if history must be saved and readline
 	functions cleaned up.
+	B16: prevent segmentation violations with recursive calls to sqsh_exit
+	by nullifying pointers to destroyed memory structures. Always call
+	ct_close even if the connection is dead.
+	Do not call cs_ctx_drop to drop the context when a connection was lost
+	due to a server shutdown, a killed session or network issues. This
+	prevents message:
+	  CS-Library error: severity(1) layer(2) origin(1) number(31)
+	  cs_ctx_drop: cslib user api layer: external error:
+	  The context structure cannot be dropped because the application has
+	  not exited from ct. 
 
 sqsh_job.c
 	Logical fix in memory cleanup.
@@ -510,6 +542,8 @@ sqsh_main.c
 	interactive mode.
 	F5. Ignore SIGQUIT signals in interactive mode.
 	B14. Fix handling of -c cmdend aliases for the \go command.
+	F13. Default value of 'u' assigned to $secure_options if -V did not
+	specify any options. Also improved help info.
 
 sqsh_sigcld.c
 	B11. Improved SIGCHLD signaling of background jobs.

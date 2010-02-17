@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.15 2010/01/26 15:02:04 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.16 2010/02/04 15:21:34 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -101,9 +101,9 @@ static sqsh_flag_t sg_flags[] = {
     { "-J", "charset",        "Client character set"               },
     { "-k", "keywords",       "Specify alternate keywords file"    },
     { "-K", "keytab",         "Network security keytab file (DCE)" },
-    { "-l", "level",          "Set debugging level"                },
+    { "-l", "level|flags",    "Set debugging level"                },
     { "-L", "var=value",      "Set the value of a given variable"  },
-    { "-m", "mode",           "Set display mode (normal)"          },
+    { "-m", "style",          "Set display mode"                   },
     { "-n", "{on|off}",       "Set chained transaction mode"       },
     { "-N", "appname",        "Set Application Name (sqsh)"        },
     { "-o", "filename",       "Direct all output to file"          },
@@ -118,12 +118,12 @@ static sqsh_flag_t sg_flags[] = {
     { "-T", "login_timeout",  "Login timeout period in seconds"    },
     { "-U", "username",       "Name of Sybase user"                },
     { "-v", "",               "Display current version and exit"   },
-    { "-V", "[cimorq]",       "Requested network security options" },
+    { "-V", "[bcdimoqru]",    "Request network security services"  },
     { "-w", "width",          "Adjust result display width"        },
     { "-X", "",               "Enable client password encryption"  },
-    { "-y", "dir",            "Override value of $SYBASE"          },
+    { "-y", "directory",      "Override value of $SYBASE"          },
     { "-z", "language",       "Alternate display language"         },
-    { "-Z", "secmech",        "Network security mechanism"         },
+    { "-Z", "[secmech]",      "Network security mechanism"         },
 };
 
 int
@@ -480,7 +480,7 @@ main( argc, argv )
                 break;
             case 'V' : /* sqsh-2.1.6 */
                 if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
-                    ret = env_set( g_env, "secure_options", "cimoqr" );
+                    ret = env_set( g_env, "secure_options", "u" );
                 else
                     ret = env_set( g_env, "secure_options", sqsh_optarg );
                 break;

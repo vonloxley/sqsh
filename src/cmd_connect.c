@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.19 2010/02/04 15:21:34 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.20 2010/02/08 13:25:48 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -94,6 +94,14 @@ static int check_opt_capability _ANSI_ARGS(( CS_CONNECTION * ));
 /* sqsh-2.1.6 - New function SetNetAuth */
 static CS_RETCODE SetNetAuth _ANSI_ARGS(( CS_CONNECTION *,
                CS_CHAR *, CS_CHAR *, CS_CHAR *, CS_CHAR *))
+#if defined(_CYGWIN32_)
+    __attribute__ ((stdcall))
+#endif /* _CYGWIN32_ */
+    ;
+
+/* sqsh-2.1.7 - New function ShowNetAuthCredExp */
+static CS_RETCODE ShowNetAuthCredExp _ANSI_ARGS((CS_CONNECTION *,
+               CS_CHAR *))
 #if defined(_CYGWIN32_)
     __attribute__ ((stdcall))
 #endif /* _CYGWIN32_ */
@@ -320,7 +328,7 @@ int cmd_connect( argc, argv )
 	    break ;
 	  case 'V' : /* sqsh-2.1.6 */
             if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
-	      return_code = env_put( g_env, "secure_options", "cimoqr", ENV_F_TRAN);
+	      return_code = env_put( g_env, "secure_options", "u", ENV_F_TRAN);
             else
 	      return_code = env_put( g_env, "secure_options", sqsh_optarg, ENV_F_TRAN);
 
@@ -363,7 +371,7 @@ int cmd_connect( argc, argv )
             "Use: \\connect [-c] [-I interfaces] [-U username] [-P pwd] [-S server]\n"
             "               [-D database ] [-N appname] [-n {on|off}] [-Q query_timeout]\n"
             "               [-T login_timeout] [-K keytab_file] [-R principal]\n"
-            "               [-V secure_options] [-Z mechanism]\n"
+            "               [-V [bcdimoqru]] [-Z [secmech|default|none]]\n"
         ) ;
     
         env_rollback( g_env );
@@ -788,6 +796,7 @@ int cmd_connect( argc, argv )
         else if (strcmp(tds_version, "5.0") == 0)
             version = CS_TDS_50;
 #if !defined(CS_TDS_50)
+	/* Then we use freetds */
         else if (strcmp(tds_version, "7.0") == 0)
             version = CS_TDS_70;
         else if (strcmp(tds_version, "8.0") == 0)
@@ -1057,6 +1066,15 @@ int cmd_connect( argc, argv )
 
     }
 
+    /*
+     * If we use network authentication, then determine the credential timeout value
+     * and issue a notification message.
+     */
+    if (NetAuthRequired == CS_TRUE)
+    {
+        ShowNetAuthCredExp( g_connection, argv[0] );
+    }
+
     /*-- If autouse has been set, use it --*/
     if (autouse != NULL && *autouse != '\0') 
     {
@@ -1196,6 +1214,28 @@ connect_leave:
 
     sg_login = False;
     return return_code;
+}
+
+/*
+ * Function: cmd_snace()
+ *
+ * Show network authenticated credential expiration.
+*/
+int cmd_snace( argc, argv )
+    int    argc ;
+    char  *argv[] ;
+{
+    /*
+    * No arguments allowed.
+    */
+    if( argc != 1 ) {
+        fprintf( stderr, "\\snace: Too many arguments; Use: \\snace\n" ) ;
+        return CMD_FAIL ;
+    }
+
+    ShowNetAuthCredExp ( g_connection, argv[0] );
+
+    return CMD_LEAVEBUF ;
 }
 
 static int check_opt_capability( g_connection )
@@ -1478,6 +1518,13 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
 
 
     /*
+     * sqsh-2.1.7 - Ignore a "security context has already expired" message
+     * when this is caused by a ct_close.
+     */
+    if ( ERROR_SNOL(msg->msgnumber, 5, 2, 9, 7 ) )
+        return CS_SUCCEED;
+
+    /*
      * Let the CS-Lib handler print the message out.
      */
     (void) syb_cs_cb( ctx, msg );
@@ -1494,7 +1541,7 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
             con == NULL)
         {
             fprintf (stderr, "%s: Aborting on severity %d\n", server, CS_SEVERITY(msg->msgnumber) );
-            sqsh_exit(255) ;
+            sqsh_exit(254);
         }
     }
 
@@ -1512,7 +1559,7 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
 	            fprintf (stderr, "%s: Query or command timeout detected, session aborted\n", server);
 	            fprintf (stderr, "%s: The client connection has detected this %d time(s).\n", server, timeouts);
 	            fprintf (stderr, "%s: Aborting on max_timeout limit %s\n", server, max_timeout );
-	            sqsh_exit(255) ;
+                    sqsh_exit(254);
 	        }
 
         if (ct_con_props (con, CS_GET, CS_LOGIN_STATUS, (CS_VOID *)&status, CS_UNUSED, NULL) != CS_SUCCEED)
@@ -1569,15 +1616,16 @@ SetNetAuth (conn, principal, keytab_file, secmech, req_options)
     NET_SEC_SERVICE nss[] = {
       /* 
        * CS_SEC_NETWORKAUTH must be the first entry
-     */
+      */
     { CS_SEC_NETWORKAUTH,    'u', "Network user authentication (unified login)" },
+    { CS_SEC_CHANBIND,       'b', "Channel binding" },
     { CS_SEC_CONFIDENTIALITY,'c', "Data confidentiality" },
+    { CS_SEC_DELEGATION,     'd', "Credentials delegation" },
     { CS_SEC_INTEGRITY,      'i', "Data integrity" },
     { CS_SEC_MUTUALAUTH,     'm', "Mutual client/server authentication" },
     { CS_SEC_DATAORIGIN,     'o', "Data origin stamping" },
     { CS_SEC_DETECTSEQ,      'q', "Data out-of-sequence detection" },
     { CS_SEC_DETECTREPLAY,   'r', "Data replay detection" },
-    { CS_SEC_CHANBIND,       'b', "Channel binding" },
     { CS_UNUSED,             ' ', "" }
     };
 
@@ -1719,9 +1767,90 @@ SetNetAuth (conn, principal, keytab_file, secmech, req_options)
     }
     return CS_SUCCEED;
 #else
-    fprintf (stderr, "SQSH Error: Network authentication not supported by the Open Client version at the time sqsh\n");
-    fprintf (stderr, "            was build. Upgrade your Open Client and rebuild sqsh to enable unified login.\n");
+    fprintf (stderr, "sqsh: ERROR: Network Authentication not supported\n");
     return CS_FAIL;
+#endif
+}
+
+/*
+ * Function: ShowNetAuthCredExp()
+ *
+ * Show the credential expiration timeout period of a network authenticated session.
+ */
+static CS_RETCODE
+ShowNetAuthCredExp (conn, cmdname)
+    CS_CONNECTION *conn;
+    CS_CHAR       *cmdname;
+{
+#if defined(CS_SEC_NETWORKAUTH)
+    CS_INT     CredTimeOut;
+    CS_BOOL    NETWORKAUTH;
+    char      *datetime;
+    char       dttm[32];
+    time_t     exp_time;
+
+    /*
+     * Check if current session is Network Authenticated.
+    */
+    if (ct_con_props( g_connection,       /* Connection */
+                  CS_GET,                 /* Action */
+                  CS_SEC_NETWORKAUTH,     /* Property */
+                  (CS_VOID*)&NETWORKAUTH, /* Buffer */
+                  CS_UNUSED,              /* Buffer Length */
+                  (CS_INT*)NULL ) != CS_SUCCEED)
+    {
+        fprintf (stderr, "%s: ERROR: Unable to determine status of CS_SEC_NETWORKAUTH\n",
+                 cmdname );
+        return CS_FAIL;
+    }
+
+    if (NETWORKAUTH == CS_TRUE)
+    {
+        /*
+         * If we use network authentication, then determine the credential timeout period.
+        */
+        if (ct_con_props( g_connection,       /* Connection */
+                      CS_GET,                 /* Action */
+                      CS_SEC_CREDTIMEOUT,     /* Property */
+                      (CS_VOID*)&CredTimeOut, /* Buffer */
+                      CS_UNUSED,              /* Buffer Length */
+                      (CS_INT*)NULL ) != CS_SUCCEED)
+        {
+            fprintf (stderr, "%s: ERROR: Unable to determine value of CS_SEC_CREDTIMEOUT\n",
+                     cmdname );
+            return CS_FAIL;
+        }
+
+	switch (CredTimeOut)
+	{
+            case CS_NO_LIMIT:
+                fprintf (stdout, "%s: Network Authenticated session does not expire\n", cmdname);
+                break;
+
+            case CS_UNEXPIRED:
+                fprintf (stdout, "%s: Network Authenticated session is not expired\n", cmdname);
+                break;
+
+            case 0:
+                fprintf (stdout, "%s: Network Authenticated session is already expired\n", cmdname);
+                break;
+
+            default:
+                env_get( g_env, "datetime", &datetime ) ;
+                if (datetime == NULL || datetime[0] == '\0' || strcmp(datetime,"default") == 0)
+                    datetime = "%Y%m%d %H:%M:%S";
+                exp_time = time (NULL) + CredTimeOut;
+                cftime( dttm, datetime, &exp_time ) ;
+                fprintf (stdout, "%s: Network Authenticated session expires at: %s (%d secs)\n",
+                             cmdname, dttm, CredTimeOut );
+        }
+    }
+    else
+        fprintf (stdout, "%s: No Network Authenticated session active\n", cmdname );
+    return CS_SUCCEED;
+#else
+    fprintf (stdout, "%s: Network Authentication not supported\n", cmdname);
+    return CS_SUCCEED;
 #endif
 }
 

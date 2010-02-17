@@ -161,21 +161,21 @@
             [ -o filename ]
             [ -p ]
             [ -P [password] ]
-            [ -Q value ]
+            [ -Q query_timeout ]
             [ -r [sqshrc] ]
             [ -R server principal ]
             [ -s colsep ]
             [ -S server ]
             [ -t [filter] ]
-            [ -T value ]
+            [ -T login_timeout ]
             [ -U username ]
             [ -v ]
-            [ -V [cimorq]]
+            [ -V [bcdimoqru]]
             [ -w width ]
             [ -X ]
             [ -y directory ]
             [ -z language ]
-            [ -Z secmech ]</pre>
+            [ -Z [secmech|default|none] ]</pre>
 <p>
 </p>
 <hr />
@@ -401,15 +401,15 @@ readable by anyone other than yourself. (chmod 600 .sqshrc)</p>
 long running query. Maps to the <strong>$query_timeout</strong> variable.</p>
 <p>For example:</p>
 <pre>
-   sqsh -SASE1502 -Usa -P -Q30
-   ASE1502.sa.master.1&gt; cd tix
-   ASE1502.sa.tix.1&gt; select count(*) from E_TIX;
-   Open Client Message
-   Layer 1, Origin 2, Severity 2, Number 63
-   ct_results(): user api layer: internal Client Library error:
-                 Read from the server has timed out.
-   ASE1502: Query or command timeout detected, command/batch cancelled
-   ASE1502: The client connection has detected this 1 time(s).</pre>
+  sqsh -SASE1502 -Usa -P -Q30
+  ASE1502.sa.master.1&gt; cd tix
+  ASE1502.sa.tix.1&gt; select count(*) from E_TIX;
+  Open Client Message
+  Layer 1, Origin 2, Severity 2, Number 63
+  ct_results(): user api layer: internal Client Library error:
+                Read from the server has timed out.
+  ASE1502: Query or command timeout detected, command/batch cancelled
+  ASE1502: The client connection has detected this 1 time(s).</pre>
 <p>See also the <strong>$max_timeout</strong> variable, which controls the number of times a
 timeout may occur on the current connection before the session is aborted.</p>
 </dd>
@@ -470,7 +470,7 @@ $username variable.</p>
 <dd>
 <p>Displays the version number, $version, and exits.</p>
 </dd>
-<dt><strong><a name="v_cimorq" class="item">-V [cimorq]</a></strong></dt>
+<dt><strong><a name="v_bcdimoqru" class="item">-V [bcdimoqru]</a></strong></dt>
 
 <dd>
 <p>Kerberos support: Specify the security options to use.</p>
@@ -504,7 +504,7 @@ to find the interfaces file.</p>
 the <strong>-z</strong> flag, the server's default language will be used. This may also be
 set using the $language variable.</p>
 </dd>
-<dt><strong><a name="z_secmech" class="item">-Z [secmech]</a></strong></dt>
+<dt><strong><a name="z_secmech_default_none" class="item">-Z [secmech|default|none]</a></strong></dt>
 
 <dd>
 <p>Kerberos support: Specify the security mechanism to use.</p>
@@ -1254,104 +1254,126 @@ SQL statement.</p>
 <p>
 </p>
 <h2><a name="kerberos_support">Kerberos Support</a></h2>
-<p>Starting with version 2.1.6, sqsh provides the same command line options as isql
-to handle Kerberos network authentication.</p>
+<p>Starting with version 2.1.6, <em>sqsh</em> provides the same command line options as
+<em>isql</em> to handle Kerberos network authentication.</p>
 <p>In version 2.1.5 experimental Kerberos support was added using the -K and -R
 options. -K was merely a switch to set Kerberos on. In sqsh 2.1.6 a more
 advanced implementation of network authentication is introduced, although still
 experimental.</p>
 <p>By using the parameters -K, -R, -V, -Z you can make use of your defined network
-security settings. (libtcl.cfg). The named options are identical to the ones
-defined for isql.</p>
+security settings (libtcl.cfg). The named options are identical to the ones
+defined for <em>isql</em>.</p>
 <dl>
 <dt><strong><a name="k_keytab_file" class="item">-K keytab_file</a></strong></dt>
 
 <dd>
-<p>keytab_file name for DCE.</p>
+<p>Keytab_file name for DCE.</p>
 </dd>
 <dt><strong><a name="r_server_principal2" class="item">-R server_principal</a></strong></dt>
 
 <dd>
-<p>server principal name when Servername specified in interfaces differs from the
-real server name</p>
+<p>Server principal name when servername specified in interfaces differs from the
+real server name.</p>
 </dd>
-<dt><strong><a name="v" class="item">-V</a></strong></dt>
+<dt><strong><a name="v_bcdimoqru2" class="item">-V [bcdimoqru]</a></strong></dt>
 
 <dd>
-<p>Specify security options to use (cimorq)</p>
+<p>Specify security options to use with the security mechanism. Each character
+stands for a specific security service.</p>
 </dd>
-<dt><strong><a name="z" class="item">-Z</a></strong></dt>
+<dt><strong><a name="z_secmech_default_none2" class="item">-Z [secmech|default|none]</a></strong></dt>
 
 <dd>
-<p>Requested security mechanism name defined for Kerberos, DCE or PAM in your
-libtcl.cfg file.</p>
+<p>Request a security mechanism defined for Kerberos, DCE or PAM in your
+libtcl.cfg file. Use <strong>secmech</strong> to specify the name of a SECURITY entry or
+<strong>default</strong> for the first available entry in libtcl.cfg. <strong>None</strong> must be
+specified to disable network authentication or reset possible existing
+values in variables <strong>$secmech</strong> or <strong>$secure_options</strong>.</p>
 </dd>
 </dl>
-<p>For example, connecting to a remote server using Kerberos (which happens to be
+<p>For example, connecting to a server using Kerberos (which happens to be
 the default, i.e. first entry in libtcl.cfg [SECURITY] tab in this example):</p>
 <pre>
-   ~&gt; sqsh -SLINUX1502 -Uuser1 -RFC6A1502 -Z
-   LINUX1502.user1.master.1&gt; select @@servername,@@authmech,show_sec_services();
-   ----------------  -----------  ----------------------------------------------
-   FC6A1502          kerberos     unifiedlogin mutualauth integrity
-                                  confidentiality detectreplay detectseq</pre>
-<p>See chapter 16 &quot;External Authentication&quot; from the Sybase System Administration
-Guide volume 1 for more information.</p>
+  ~&gt; sqsh -SSYB1502 -Uuser1 -RFC6A1502 -Z
+  \connect: Network authenticated session expires at:
+            16 Feb 2010 15:28:39 (11764 secs)
+  SYB1502.user1.master.1&gt; select @@servername,@@authmech,
+                                 show_sec_services();
+  ----------------  -----------  ----------------------------------
+  FC6A1502          kerberos     unifiedlogin delegation mutualauth
+                                 integrity confidentiality
+                                 detectreplay detectseq</pre>
+<p>Note that the real name of the server (@@servername) differs from the server
+name in the interfaces file, so we have to specify the principal name through
+the <strong>-R</strong> parameter.
+When you do not specify the <strong>-V</strong> parameter together with <strong>-Z</strong>, all available
+security options will be enabled. When <strong>-V</strong> is specified without any security
+service options, only option <strong>u</strong> for Network Authentication will be implicitly
+set and the default security mechanism will be used if <strong>-Z</strong> is not specified.</p>
 <pre>
-   [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -Zcsfkrb5
-   Open Client Message
-   Layer 7, Origin 9, Severity 5, Number 1
-   ct_connect(): security service layer: internal security control layer error:
-                 Security service provider internal error -1765328352 occurred.
-   [user1@user1-fc6a ~]$ kinit
-   Password for user1@LOCALDOMAIN:
-   [user1@user1-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -Zcsfkrb5
-   FC6A1502.user1.master.1&gt; select program_name from sysprocesses
-                            where spid=@@spid;
-   program_name
-   ------------------------------
-   sqsh-2.1.6</pre>
+  [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -V
+  Open Client Message
+  Layer 7, Origin 9, Severity 5, Number 1
+  ct_connect(): security service layer: internal security control
+                layer error:
+                Security service provider internal error -1765328352
+                occurred.
+  [user1@linux-fc6a ~]$ kinit
+  Password for user1@LOCALDOMAIN:
+  [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -V
+  \connect: Network authenticated session expires at:
+            16 Feb 2010 15:28:39 (10964 secs)
+  FC6A1502.user1.master.1&gt;</pre>
+<p>When the connection succeeds, <em>sqsh</em> will store the real name of the security
+mechanism in the variable <strong>$secmech</strong>. For example: &quot;\echo $secmech&quot; may show
+<em>csfkrb5</em>. The parameter <strong>-V</strong> takes a list of characters from the possible
+values of <em>bcdimoqru</em>. The option <strong>u</strong> enables Network Authentication, is the
+default and will allways be set when using <strong>-V</strong> or <strong>-Z</strong>, specified or not.</p>
 <pre>
-  (1 row affected)</pre>
-<p>Note that you can specify -V and or -Z without having to specify a value. Is the
-value empty for -Z or contains the value 'default' then the default will be
-used, which is the first active security driver in the libtcl.cfg file.</p>
-<p>When the connection succeeds, sqsh will store the real name of the security
-mechanism in the variable secmech. For example: &quot;\echo $secmech&quot; may show
-csfkrb5. The option -V takes a list of characters from the possible values of
-'cimorq'. If you do not want to set a security service protocol then you have to
-specify -Vx for example. 'x' is not an existing option related to a security
-service and as a value is provided, sqsh will not fall back to the default of
-all options. When -V is empty however, then all possibly supported security
-protocols for the selected secmech will be enabled. The key letters are:</p>
-<pre>
-   c -   Enable data confidentiality service
-   i -   Enable data integrity service
-   m -   Enable mutual authentication for connection establishment
-   o -   Enable data origin stamping service
-   r -   Enable data replay detection
-   q -   Enable out-of-sequence detection</pre>
-<p>If you specify -V and/or -Z, sqsh will assume network authentication is tried
-and no password is required.</p>
+    b - chanbinding     : Channel binding
+    c - confidentiality : Data confidentiality service
+    d - delegation      : Allow delegated credentials
+    i - integrity       : Data integrity service
+    m - mutualauth      : Mutual authentication for connection
+                          establishment
+    o - dataorigin      : Data origin stamping service
+    q - detectseq       : Out-of-sequence detection
+    r - detectreplay    : Data replay detection
+    u - unifiedlogin    : Network Authentication</pre>
+<p>Please check master.dbo.syssecmechs for available services. Non-existing or not
+supported services supplied with <strong>-V</strong> are silently ignored. If you specify
+<strong>-V</strong> and/or <strong>-Z</strong>, <em>sqsh</em> assumes network authentication is tried and no
+password is required.</p>
 <p>If you have a network authenticated connection and want to \reconnect using
 normal ASE authentication with username and password, you have to reset the
 network authentication variables by specifying -Znone</p>
 <p>For example:</p>
 <pre>
-   [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -Z
-   FC6A1502.user1.master.1&gt; \echo $secmech
-   csfkrb5
-   FC6A1502.user1.master.1&gt; \reconnect -SASE1502 -Usa -Psybase
-   Open Client Message
-   Layer 7, Origin 9, Severity 5, Number 8
-   ct_connect(): security service layer: internal security control layer error:
-   Consistency checks performed on the credential failed (minor status 0).
-   FC6A1502.user1.master.1&gt; \reconnect -SASE1502 -Usa -Psybase -Znone
-   ASE1502.sa.master.1&gt;</pre>
+  [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -V
+  \connect: Network authenticated session expires at:
+            16 Feb 2010 15:28:39 (10764 secs)
+  FC6A1502.user1.master.1&gt; \echo $secmech csfkrb5
+  FC6A1502.user1.master.1&gt; \reconnect -SASE1502 -Usa -Psybase
+  Open Client Message
+  Layer 7, Origin 9, Severity 5, Number 8
+  ct_connect(): security service layer: internal security control
+                layer error:
+  Consistency checks performed on the credential failed
+  (minor status 0).
+  FC6A1502.user1.master.1&gt; \reconnect -SASE1502 -Usa -Psybase -Znone
+  ASE1502.sa.master.1&gt;</pre>
 <p>The first \reconnect fails because sqsh still wants to try network
-authentication. However, no user principal for 'sa' exists or no ticket is set
-and the connection fails. The second \reconnect succeeds as the -Znone reset
-appropriate variables.</p>
+authentication. However, no user principal for 'sa' exists and no ticket is set
+and thus the connection fails. The second <strong>\reconnect</strong> succeeds as the -Znone
+option reset appropriate variables.
+If the Kerberos ticket is renewed with <strong>kinit</strong> or any other client tool, the
+<em>sqsh</em> session must perform a <strong>\reconnect</strong> to refresh the credentials and
+to prevent a premature session abort. With the command <strong>\snace</strong> you can request
+for the session expiration interval. Depending on the security services that are
+set, the database connection may be closed without warning as soon as the ticket
+expires.</p>
+<p>See chapter 16 &quot;External Authentication&quot; from the Sybase System Administration
+Guide volume 1 for more information on Kerberos network authenticationi, e.a.</p>
 <p>
 </p>
 <hr />
@@ -1417,7 +1439,7 @@ page), it is amazing how few database manipulation commands that there actually
 are. The following are commands that affect or use the current database
 connection:</p>
 <dl>
-<dt><strong><a name="connect_c_d_db_s_srv_u_user_p_pass_i_ifile_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_secure_options_z_secmech" class="item">\connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V secure_options] [-Z secmech]</a></strong></dt>
+<dt><strong><a name="connect_c_d_db_s_srv_u_user_p_pass_i_ifile_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_bcdimoqru_z_secmech_default_none" class="item">\connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-Z [secmech|default|none]]</a></strong></dt>
 
 <dd>
 <p>This command is used primarily for internal use to establish a connection to a
@@ -1499,12 +1521,12 @@ sysprocesses table.</p>
 <dd>
 <p>Specifies a maximum wait time for session setup.</p>
 </dd>
-<dt><strong><a name="v_secure_options" class="item">-V secure_options</a></strong></dt>
+<dt><strong><a name="v_bcdimoqru3" class="item">-V [bcdimoqru]</a></strong></dt>
 
 <dd>
-<p>Used for Kerberos support and other security mechanisms.</p>
+<p>Security services used for Kerberos support and other security mechanisms.</p>
 </dd>
-<dt><strong><a name="z_secmech2" class="item">-Z secmech</a></strong></dt>
+<dt><strong><a name="z_secmech_default_none3" class="item">-Z [secmech|default|none]</a></strong></dt>
 
 <dd>
 <p>Specifies the security mechanism to use for user authentication. For example
@@ -1512,7 +1534,7 @@ csfkrb5 for Kerberos support.</p>
 </dd>
 </dl>
 </dd>
-<dt><strong><a name="reconnect_c_d_db_s_srv_u_user_p_pass_i_ifile_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_secure_options_z_secmech" class="item">\reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V secure_options] [-Z secmech]</a></strong></dt>
+<dt><strong><a name="reconnect_c_d_db_s_srv_u_user_p_pass_i_ifile_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_bcdimoqru_z_secmech_default_noe" class="item">\reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-Z [secmech|default|noe]]</a></strong></dt>
 
 <dd>
 <p>The <strong>\reconnect</strong> command may be used to force a reconnection to the database
@@ -1523,6 +1545,12 @@ active one.</p>
 <p>All arguments that are accepted by <strong>\connect</strong> are also accepted by
 <strong>\reconnect</strong> (in fact <strong>\reconnect</strong> uses <strong>\connect</strong> to establish the new
 connection).</p>
+</dd>
+<dt><strong><a name="snace" class="item">\snace</a></strong></dt>
+
+<dd>
+<p>Will show the session expiration interval for a network authenticated session,
+using Kerberos tickets, for example.</p>
 </dd>
 <dt><strong><a name="go_options_xacts" class="item">\go [options] [xacts]</a></strong></dt>
 
@@ -2344,17 +2372,23 @@ these variables alter the behavior of the shell.</p>
 
 <dd>
 <p>This variable may contain the result of the last executed \if statement:</p>
-<ol>
-<li>
+<dl>
+<dt><strong><a name="__0__" class="item">- 0 -</a></strong></dt>
+
+<dd>
 <p>The test evaluated to False.</p>
-</li>
-<li>
+</dd>
+<dt><strong><a name="1" class="item">- 1 -</a></strong></dt>
+
+<dd>
 <p>The test evaluated to True.</p>
-</li>
-<li>
-<p>There was in error in the test specification.</p>
-</li>
-</ol>
+</dd>
+<dt><strong><a name="2" class="item">- 2 -</a></strong></dt>
+
+<dd>
+<p>There was an error in the test specification.</p>
+</dd>
+</dl>
 </dd>
 <dt><strong>$# (int)</strong></dt>
 
@@ -2391,7 +2425,7 @@ environment.</p>
 <p>Contains the name <em>sqsh</em> uses to identity itself to the server. Defaults to
 sqsh-2.1.7. The application name can be retrieved from the sysprocesses table
 like: 
-    select program_name from master.dbo.sysprocesses where spid=@@pid;</p>
+  select program_name from master.dbo.sysprocesses where spid=@@pid;</p>
 </dd>
 <dt><strong><a name="autouse" class="item">autouse (string)</a></strong></dt>
 
@@ -3346,24 +3380,31 @@ variable may be explicitly set using the <strong>\set</strong> command, or impli
 </dl>
 <p>To recap, here is a list of error codes that may be returned by <em>sqsh</em> upon
 exit, and the reason that they could be returned:</p>
-<ol>
-<li>
-<p>No error has been encountered.</p>
-</li>
-<li><strong><a name="253" class="item">..253</a></strong>
+<dl>
+<dt><strong><a name="__0__2" class="item">- 0 -</a></strong></dt>
 
+<dd>
+<p>No error has been encountered.</p>
+</dd>
+<dt><strong><a name="1_253" class="item">- 1...253 -</a></strong></dt>
+
+<dd>
 <p>Between 1 and 253 batches have failed (if you run more than 253 batches, the
 exit status of sqsh is undetermined...I may fix this in the future).</p>
-</li>
-<li>
+</dd>
+<dt><strong><a name="254" class="item">- 254 -</a></strong></dt>
+
+<dd>
 <p>An explicit <strong>\abort</strong> was called, or a SIGINT (^C) was issued during a
 non-interactive session.</p>
-</li>
-<li>
+</dd>
+<dt><strong><a name="255" class="item">- 255 -</a></strong></dt>
+
+<dd>
 <p>A general error condition has occurred, such as a bad command line argument to
 sqsh, memory allocation failure, file access error, etc.</p>
-</li>
-</ol>
+</dd>
+</dl>
 <p>The following sections provide detailed examples of combinations of variable
 settings and the results produced upon exit with certain failure conditions. It
 is assumed the <strong>$exit_value</strong> variable contains 0 in the next examples.</p>
