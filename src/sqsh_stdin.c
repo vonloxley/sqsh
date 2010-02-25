@@ -172,9 +172,16 @@ char* sqsh_stdin_fgets( buf, len )
 
     sin = &(sg_stdin_stack[sg_stdin_cur-1]);
 
-    while (sin->stdin_type == STDIN_FILE)
+    if (sin->stdin_type == STDIN_FILE)
     {
-        str = fgets( buf, len, sin->stdin_file );
+        if (sin->stdin_isatty) {
+            while (1) {
+                str = fgets( buf, len, sin->stdin_file );
+                if (str != NULL || errno != EINTR) break;
+            }
+        }
+        else
+            str = fgets( buf, len, sin->stdin_file );
 
         if (str == NULL)
         {
@@ -184,9 +191,6 @@ char* sqsh_stdin_fgets( buf, len )
             }
             else
             {
-		if (errno == EINTR) {
-		    continue;
-		}
                 sqsh_set_error( SQSH_E_RANGE, "%s", strerror(errno) );
             }
         }
@@ -248,3 +252,4 @@ char* sqsh_stdin_fgets( buf, len )
 
     return(buf);
 }
+

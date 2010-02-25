@@ -38,8 +38,8 @@
 #define SQSH_E_BADVAR    -5     /* Bad variable definition */
 #define SQSH_E_BADQUOTE  -6     /* Unbound quote */
 #define SQSH_E_SYNTAX    -7     /* Syntax error */
-#define SQSH_E_RANGE     -9     /* Attempt to access item out of range */
-#define SQSH_E_BADSTATE -10     /* Invalid state for operation */
+#define SQSH_E_RANGE     -8     /* Attempt to access item out of range */
+#define SQSH_E_BADSTATE  -9     /* Invalid state for operation */
 
 /*-- Prototypes --*/
 void  sqsh_set_error  _ANSI_ARGS(( int, char*, ... )) ;

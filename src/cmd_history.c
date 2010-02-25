@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_history.c,v 1.3 2010/01/26 15:03:50 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: cmd_history.c,v 1.4 2010/02/12 15:40:46 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -88,7 +88,10 @@ int cmd_history( argc, argv )
 
 			case 'x' :
 				if ((shownum = atoi(sqsh_optarg)) <= 0)
+				{
+					fprintf( stderr, "\\history: Invalid value for option -x (%s)\n", sqsh_optarg );
 					have_error = True;
+				}
 			break;
 
 			default :

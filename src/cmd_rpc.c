@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_rpc.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: cmd_rpc.c,v 1.2 2010/01/26 15:03:50 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -255,6 +255,23 @@ int cmd_rpc( argc, argv )
 		}
 	}
 
+	/*
+	 * If the output is going to be presented in a X Window, then store
+	 * the RPC command in the g_sqlbuf, so it is available to be displayed
+	 * in the Motif window SQL frame.
+	 * As a consequence, the current buffer is overwritten and will also be
+	 * cleared by the read-eval-print loop (cmd_input).
+	 */
+	if ((dsp_flags & DSP_F_X) == DSP_F_X)
+	{
+		varbuf_strcpy( g_sqlbuf, argv[sqsh_optind] );
+		for (i = sqsh_optind + 1; i < argc; i++)
+		{
+			varbuf_charcat( g_sqlbuf, ' ' );
+			varbuf_strcat( g_sqlbuf, argv[i] );
+		}
+		varbuf_charcat( g_sqlbuf, '\n' );
+	}
 
 	/*
 	 * Set up the rpc call.
@@ -416,7 +433,7 @@ cmd_rpc_interrupt:
 	if (!sqsh_stdin_isatty())
 		return_code = CMD_ABORT;
 	else
-		return_code = CMD_RESETBUF;
+		return_code = CMD_CLEARBUF;
 
 	goto cmd_rpc_leave;
 
@@ -431,7 +448,7 @@ cmd_rpc_fail:
 	goto cmd_rpc_leave;
 
 cmd_rpc_succeed:
-	return_code = CMD_RESETBUF;
+	return_code = CMD_CLEARBUF;
 
 cmd_rpc_leave:
 	if (dsp_old != -1)

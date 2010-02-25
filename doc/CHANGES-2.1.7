@@ -30,7 +30,7 @@
 
     \set xwin_title='$DSQUERY result set $histnum'
 
-    Tip: You can set this as a default name in your .sqshrc file.
+    Note, You can set this as a default name in your .sqshrc file.
     There is also a new option -T to the \go and \rpc commands to temporarily
     assign another name string to $xwin_title. For example:
 
@@ -44,6 +44,10 @@
     you do not set the $xwin_title variable in your sqsh session and do not use
     the -T option along with the -x option, then the name of the created result
     set window will default to "main".
+
+2b- When using the -x option with the \rpc command and Motif is used, the rpc
+    command is now shown in the SQL pane. As a consequence the SQL buffer is
+    now cleared and not saved in the history when a \rpc command is issued.
 
 3 - A new variable $term_title (string) is introduced. When set, sqsh will
     alter the name of the xterm window when started up. For example:
@@ -192,8 +196,16 @@
 13- Improved network authentication handling. Introduced a new command \snace
     to report the session expiration interval for a network authenticated
     session.
-    Support for CS_SEC_DELEGATION security service added.
+    Support for delegation (CS_SEC_DELEGATION) security service added.
 
+14- The \go command now accepts comments on the command line in C-Style
+    notation /* */ and the ANSI SQL comment syntax: --
+    The comment tokens must be enclosed in white space: /*This will not work*/
+    /* This is OK */
+    The -- comments will ignore everything up to End of Line.
+    With this new feature it is now possible to run Sybase installation scripts
+    that use constructions like: go	/* } */
+    or: go	-- }
 
 
 			Bug fixes in sqsh-2.1.7
@@ -358,6 +370,8 @@ d)  The batch related command \jobs now accepts an option -i to show additional
     resulting in a segment violation as pointers to destroyed memory structures
     were not nullified.
 
+17- Implemented fix 1289922 by John Griffin to prevent unexpected sqsh shutdown
+    on Solaris when child process terminates.
 
 
 		Changed files in sqsh-2.1.7 compared to sqsh-2.1.6
@@ -413,6 +427,7 @@ cmd_go.c
 	F2. Implemented option -T to specify an $xwin_title string.
 	B9. Added description of -p (statistics option) in help info.
 	CMD_CLEARBUF renamed to CMD_RESETBUF.
+	F14. Filter out comment arguments from the command line.
 
 cmd_history.c
 	F4. Extended buffer info (date/usage count) and most recent x
@@ -441,8 +456,13 @@ cmd_reset.c
 
 cmd_rpc.c
 	F2. Implementation of -T option to specify an XWin title to the \rpc
-	command. Changed some of the error messages. (Changed \go to \rpc)
-	CMD_CLEARBUF renamed to CMD_RESETBUF.
+	command. Changed some of the error messages. (Changed \go to \rpc).
+	When a Motif X-Windows result set is generated, the rpc command is
+	also shown in the SQL pane. The cmd_rpc function returns CMD_CLEARBUF
+	to clear and disgard the current SQL buffer. The previous versions
+	returned CMD_RESETBUF to add the SQL buffer to the history. However,
+	sqsh now 'abuses' the SQL buffer to pass on the \rpc command to the
+	Motif window.
 
 cmd_show.c
 	B11. Improved parameter verification to the \show command.
@@ -469,6 +489,12 @@ sqsh_buf.c
 
 sqsh_config.h
 	Renumbered version from sqsh-2.1.6 to sqsh-2.1.7
+
+sqsh_error.h
+	Fixed a coding error with values of SQSH_E_RANGE and SQSH_E_BADSTATE.
+	Values were out of sync with corresponding message numbers in
+	error message table sg_sqsh_errtable. Fortunately due to the way
+	the messages were used, would probably never lead to a real problem.
 
 sqsh_expand.c
 	B12. Fix for expanding variable $* in sqsh functions or interactively
@@ -548,6 +574,11 @@ sqsh_main.c
 sqsh_sigcld.c
 	B11. Improved SIGCHLD signaling of background jobs.
 
+sqsh_stdin.c
+	B17. Fix possible unexpected shutdown of sqsh when a child process
+	signals SIGCLD and sqsh is built without readline support. Only
+	reported a problem on Solaris (Solaris 2.8 SPARC platform ?).
+
 var.h
 	Variable $appname changed from sqsh-2.1.6 to sqsh-2.1.7
 	B7. $histunique and $ignoreeof initialized to 0 instead of 'Off'.
@@ -610,7 +641,7 @@ feature will not work.
 
 4) Build and run tests:
 - Sqsh-2.1.7 successfully built and tested on Windows-XP with Cygwin 1.7.1-1
-  and Sybase OpenClient 15.0 EBF17012 ESD #19.
+  and Sybase OpenClient 15.0 EBF17012 ESD #19. (32bit)
 - On the same platform sqsh-2.1.7 also successfully builds and runs using
   freetds-0.82 instead of Sybase OpenClient.
   Note, do not use \bcp operations with freetds as unexpected results
@@ -620,11 +651,17 @@ feature will not work.
 - Fedora Core 6, using Sybase OpenClient 15.0 EBF15821 ESD #13.
 - Fedora Core 6, using freetds-0.82.
 - Ubuntu 8.04 LTS, using Sybase OpenClient 15.0 EBF16297 ESD #16.
+- Ubuntu 8.04 LTS, using Sybase OpenClient: Sybase CTISQL Utility/15.5/P/
+  DRV.15.5.0/Linux Intel/Linux 2.6.9-55.ELsmp x86_64/BUILD1550-003/OPT
+- Solaris 10 x86 64bit, using 32 and 64 bit compiled sqsh versions with Sybase
+  OpenClient 12.5.1/P-EBF13168 ESD #12
+- Solaris 10 x86 64 bit, using 64 bit compiled sqsh with Sybase OC
+  Sybase CTISQL Utility/15.5/P/DRV.15.5.0/i386/Solaris 10/BUILD1550-003/OPT/
 
 
-5) sqsh-2.1.7 was successfully tested connecting to Sybase ASE 15.0.x, IQ 12.7,
-IQ 15.1, RepServer 15.2 all on Windows XP and Linux, 32 bits. The freetds
-version also successfully connects to Microsoft SQL server 2005.
+5) sqsh-2.1.7 was successfully tested connecting to Sybase ASE 15.5, 15.0.x,
+IQ 12.7, IQ 15.1, RepServer 15.2 all on Windows XP and Linux, 32 bits.
+The freetds version also successfully connects to Microsoft SQL server 2005.
 The sqsh -X option or $encryption=On variable setting will not work with Sybase
 IQ.
 
@@ -640,31 +677,7 @@ are aware that conditional statements do not set variable "?" as a normal shell
 would.
 
 
-7) As one of my tests I used sqsh to reinstall the installmaster script of a
-newly created ASE 15.0.3 ESD#2 server. You have to set variable expansion
-of in sqsh, otherwise creation of the MDA monitoring tables will fail.
-( sqsh -S.. -U.. -P.. -i installmaster -o installmaster.log -Lexpand=0 )
-The install succeeds, however with 4 warnings from sqsh related to the usage
-of the 'go' command. When looking at the installmaster script there are 4
-locations where the 'go' command is appended with a comment like 'go\t-- }' or
-'go\t/* } */'. (The \t stands for the tab-character).
-Sqsh does not like the comments and complains about it. Eventually, the
-procedure that was about to be installed gets installed by the next go
-statement. For example, the procedure sp_showtext_output should be installed
-by 'go -- }'. Sqsh complains about it but continues reading the input file.
-The next statement is:
-
-if (@@error != 0) select syb_quit()
-go
-
-This statement was meant to check the results of the creation of the procedure,
-but now this statement will create the proc and be part of the procedure.
-So if the proc runs into an error and @@error is set when sp_showtext_output
-exits, you will get thrown out of the server. So be aware of running scripts
-with sqsh that were meant to be run by isql.
-
-
-8) Be aware that freetds does not support all datatypes Sybase ASE supports,
+7) Be aware that freetds does not support all datatypes Sybase ASE supports,
 like the DATE and TIME datatypes (4 byte size). When you have a table with a
 DATE or TIME column and query the table using freetds, the data will be
 presented as a datetime datatype (8 bytes). So consider the next example:
@@ -727,7 +740,7 @@ MSSQL 2005 only supports DATETIME and SMALLDATETIME datatypes. When using these
 datatypes there should be no problem in using \bcp.
 
 
-9) Job runtime issues of background jobs. When you run a job in the background
+8) Job runtime issues of background jobs. When you run a job in the background
 its starttime is stored in the job memory structure. Besides a list of job
 structures, sqsh maintains a list of running child pids. When you execute \jobs
 to see which jobs exists, the job runtime is calculated from the current

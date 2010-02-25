@@ -41,9 +41,13 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_go.c,v 1.2 2010/01/12 13:26:38 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_go.c,v 1.3 2010/01/26 15:03:50 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
+
+/* sqsh-2.1.7 - New functions IgnoreCommentArgs and argv_shift */
+static int IgnoreCommentArgs _ANSI_ARGS(( int, char ** )) ;
+static void argv_shift _ANSI_ARGS(( int, char **, int )) ;
 
 /*
  * The following macro is used to convert a start time and end
@@ -107,7 +111,17 @@ int cmd_go( argc, argv )
 	 */
 	env_tran( g_env );
 
-	while ((ch = sqsh_getopt( argc, argv, "nfhps:m:x;w:d:t;T:" )) != EOF) 
+	/*
+	 * sqsh-2.1.7 - Allow C style or ANSI SQL comments in \go command line.
+	 * Logically or physically move the commentary arguments to the end of
+	 * the argv list. Re-assign the effective number of arguments to argc.
+	 */
+	if ((argc = IgnoreCommentArgs ( argc, argv )) == -1)
+	{
+		fprintf( stderr, "\\go: Unbalanced comment tokens encountered\n" );
+		have_error = True;
+	}
+	else while ((ch = sqsh_getopt( argc, argv, "nfhps:m:x;w:d:t;T:" )) != EOF) 
 	{
 		switch (ch) 
 		{
@@ -231,7 +245,7 @@ int cmd_go( argc, argv )
 	 */
 	if( argc != sqsh_optind ) 
 	{
-		iterations = atoi(argv[sqsh_optind]);
+		iterations = atoi(argv[argc-1]);
 
 		if( iterations < 1 ) 
 		{
@@ -617,3 +631,89 @@ cmd_go_leave:
 
 	return return_code;
 }
+
+/*
+ * sqsh-2.1.7 - Function: IgnoreCommentArgs
+ *
+ * If the '\go' command line contains comments, then move the arguments that
+ * belong to a comment to the end of the argument list. The actual parameters
+ * are at the beginning of the list.
+ *
+ * Return the number of real arguments, that is the adjusted argc value.
+ * In case of error, return -1.
+ */
+int IgnoreCommentArgs (argc, argv)
+    int   argc;
+    char *argv[];
+{
+    int i = 1;  /* Skip command name argument argv[0] and start with argv[1] */
+
+    while ( i < argc )
+    {
+        if ( strcmp( argv[i], "--" ) == 0 )
+        {
+            /*
+             * Logically delete all remaining parameters.
+            */
+            return (i);
+        }
+        else if ( strcmp( argv[i], "/*" ) == 0 )
+        {
+            /*
+             * Move all the parameters in the C-style commentary block
+             * to the end of the argument list and decrement the
+             * count of valuable arguments. We do not have to increment 'i',
+             * because the argv_shift function shifts in the next argument to
+             * the current location.
+             * Note, because we decrement argc, the comment entries will
+             * eventually be stored in reverse order, but that's OK here.
+            */
+            do {
+                argv_shift ( argc--, argv, i );
+            } while ( i < argc && strcmp( argv[i], "*/" ) != 0 );
+
+            if ( i < argc && strcmp( argv[i], "*/" ) == 0 )
+                argv_shift ( argc--, argv, i );
+            else
+                return (-1); /* Missing end of comment token */
+        }
+        else if ( strcmp( argv[i], "*/" ) == 0 )
+            return (-1); /* Missing beginning of comment token */
+        else
+            i++;
+    }
+
+    return (argc);
+}
+
+/*
+ * sqsh-2.1.7 - Function: argv_shift
+ *
+ * Helper function to move an argument in an argv array to
+ * the end of the list and shift the rest of the arguments
+ * up to the named location.
+*/
+static void argv_shift( argc, argv, idx )
+    int   argc;
+    char  *argv[];
+    int   idx;
+{
+    char *cptr;
+    int   i;
+
+    /*-- Save pointer to argument --*/
+    cptr = argv[idx] ;
+
+    /*
+     * First, we need to shift the rest of the arguments down,
+     * removing this argument.
+    */
+    for( i = idx; i < argc - 1; i++ )
+        argv[i] = argv[i+1] ;
+
+    /*
+     * Now, put this argument to the end of the argv array.
+    */
+    argv[argc - 1] = cptr ;
+}
+
