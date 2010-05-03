@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.4 2005/04/05 16:17:42 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.5 2008/04/06 10:03:08 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -532,6 +532,10 @@ CS_INT dsp_desc_fetch( cmd, d )
 #endif
 #if defined(CS_TIME_TYPE)
 		    case CS_TIME_TYPE:
+#endif
+#if defined(CS_BIGDATETIME)
+		    case CS_BIGDATETIME_TYPE:
+		    case CS_BIGTIME_TYPE:
 #endif
                 if (dsp_datetime_conv( g_context,              /* Context */
                                        &d->d_cols[i].c_format, /* Data format */
