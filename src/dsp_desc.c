@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.5 2008/04/06 10:03:08 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.6 2010/05/03 19:52:09 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -48,6 +48,8 @@ static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
  * it is OK for CT-Lib to do the work.  This macro allows us to test
  * a given type as to whether or not we are going to let CT-Lib
  * do the dirty work.
+ * sqsh-2.1.7.1: Add CS_BINARY_TYPE and CS_IMAGE_TYPE to the list.
+ *               Fix bugreport 3079678.
  */
 #define LET_CTLIB_CONV(t) \
     (((t) == CS_CHAR_TYPE)      || \
@@ -62,6 +64,8 @@ static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
      ((t) == CS_LONGCHAR_TYPE)  || \
      ((t) == CS_LONGBINARY_TYPE)|| \
      ((t) == CS_VARBINARY_TYPE) || \
+     ((t) == CS_BINARY_TYPE)    || \
+     ((t) == CS_IMAGE_TYPE)     || \
      ((t) == CS_UNICHAR_TYPE))
 
 /*
@@ -271,16 +275,16 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
 
             DBG(sqsh_debug(DEBUG_DISPLAY,
                 "dsp_desc_bind: ct_bind(\n"
-                "    cmd  = 0x%p,\n"
+                "    cmd  = %p,\n"
                 "    item = %d,\n"
                 "    fmt  = [datatype  = CS_CHAR_TYPE,\n"
                 "            format    = CS_FMT_NULLTERM,\n"
                 "            maxlength = %d,\n"
                 "            count     = 1,\n"
                 "            locale    = NULL],\n"
-                "    buf  = 0x%p,\n"
+                "    buf  = %p,\n"
                 "    bytes= NULL,\n"
-                "    ind  = 0x%p)\n",
+                "    ind  = %p)\n",
                 (void*)cmd, 
                 i + 1, 
                 (int)str_fmt.maxlength, 
@@ -336,7 +340,7 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
 
             DBG(sqsh_debug(DEBUG_DISPLAY,
                 "dsp_desc_bind: ct_bind(\n"
-                "    cmd  = 0x%p,\n"
+                "    cmd  = %p,\n"
                 "    item = %d,\n"
                 "    fmt  = [datatype  = %d,\n"
                 "            format    = %d,\n"
@@ -344,10 +348,10 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
                 "            scale     = %d,\n"
                 "            precision = %d,\n"
                 "            count     = %d,\n"
-                "            locale    = 0x%p],\n"
-                "    buf  = 0x%p,\n"
-                "    bytes= 0x%p,\n"
-                "    ind  = 0x%p)\n",
+                "            locale    = %p],\n"
+                "    buf  = %p,\n"
+                "    bytes= %p,\n"
+                "    ind  = %p)\n",
                 (void*)cmd, 
                 i + 1, 
                 (int)d->d_cols[i].c_format.datatype,
@@ -429,6 +433,7 @@ CS_INT dsp_desc_fetch( cmd, d )
     CS_RETCODE  r;
     CS_INT      nrows;
     CS_INT      i;
+    CS_INT      p;
     CS_DATAFMT  str_fmt;
 
     if ((r = ct_fetch( cmd,              /* Command */
@@ -480,37 +485,32 @@ CS_INT dsp_desc_fetch( cmd, d )
          * If the is_native flag is FALSE then the data was already
          * converted into a string for us by CT-Lib, so there is
          * nothing left to be done.
+         * sqsh-2.1.7.1: Except when the source datatype was binary, then
+         * we have to prepend the result string with characters '0x'.
          */
         if (d->d_cols[i].c_is_native == CS_FALSE)
         {
+            if (d->d_cols[i].c_format.datatype == CS_BINARY_TYPE     ||
+                d->d_cols[i].c_format.datatype == CS_LONGBINARY_TYPE ||
+                d->d_cols[i].c_format.datatype == CS_VARBINARY_TYPE  ||
+                d->d_cols[i].c_format.datatype == CS_IMAGE_TYPE)
+            {
+                for (p = strlen (d->d_cols[i].c_data); p >= 0;
+                                 d->d_cols[i].c_data[p+2] = d->d_cols[i].c_data[p--]);
+                d->d_cols[i].c_data[0] = '0';
+                d->d_cols[i].c_data[1] = 'x';
+            }
+
             continue;
         }
 
+        /*
+         * The datatype is declared native, so we have to convert it to displayable
+         * character data here.
+        */
         str_fmt.maxlength = d->d_cols[i].c_maxlength + 1;
-
         switch (d->d_cols[i].c_format.datatype)
         {
-            case CS_BINARY_TYPE:
-            case CS_IMAGE_TYPE:
-                strcpy( d->d_cols[i].c_data, "0x" );
-                d->d_cols[i].c_format.maxlength = d->d_cols[i].c_native_len;
-
-                if (cs_convert( g_context,                     /* Context */
-                                &d->d_cols[i].c_format,        /* Source Format */
-                                d->d_cols[i].c_native,         /* Source Data */
-                                &str_fmt,                      /* Dest Format */
-                                (CS_VOID*)(d->d_cols[i].c_data+2),/* Dest Data */
-                                (CS_INT*)NULL ) == CS_FAIL)
-                {
-                    fprintf( stderr, 
-                        "dsp_desc_fetch: cs_convert(BIN->CHAR) column %d failed\n",
-                        (int)i+1 );
-                    dsp_display_fmt( "src_fmt", &d->d_cols[i].c_format );
-                    dsp_display_fmt( "dst_fmt", &str_fmt );
-                    return CS_FAIL;
-                }
-                break;
-
             case CS_REAL_TYPE:
                 sprintf( (char*)d->d_cols[i].c_data, "%*.*f", 
                          g_dsp_props.p_real_prec + 2,
@@ -639,7 +639,7 @@ static void dsp_display_fmt( nm, f )
              (char*)nm, (int)f->count );
     fprintf( stderr, "%s->usertype  = %d\n",
              (char*)nm, (int)f->usertype );
-    fprintf( stderr, "%s->locale    = 0x%p\n",
+    fprintf( stderr, "%s->locale    = %p\n",
              (char*)nm, (void*)f->locale );
 }
 
@@ -665,7 +665,6 @@ static CS_INT dsp_just( type )
         case CS_DECIMAL_TYPE:
         case CS_DATETIME_TYPE:
         case CS_DATETIME4_TYPE:
-        case CS_BINARY_TYPE:
             return DSP_JUST_RIGHT;
         default:
             break;
@@ -696,7 +695,7 @@ static CS_INT dsp_dlen( fmt )
         case CS_LONGBINARY_TYPE:
         case CS_VARBINARY_TYPE:
         case CS_UNICHAR_TYPE:
-            return (2 * fmt->maxlength) + 4;
+            return (2 * fmt->maxlength) + 2; /* sqsh-2.1.7.1 fix  */
         case CS_BIT_TYPE:
             return 1;
         case CS_TINYINT_TYPE:
