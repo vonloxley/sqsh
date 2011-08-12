@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.16 2010/02/04 15:21:34 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.17 2010/02/17 11:35:06 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -1039,9 +1039,9 @@ static void hide_password (argc, argv)
   for (i = 1; i < argc; ++i) {
     if (*(argv[i]) == '-' && *(argv[i] + 1) == 'P') {
       if (*(argv[i]+2)) {
-        pwd = (argv[i]+2); /* Password passed on as: "sqsh -SSYBASE -Usa -Pxxxxxx" */
-      } else if (i + 1 < argc && *(argv[i + 1]) != '-') {
-        pwd = argv[i + 1]; /* Password passed on as: "sqsh -SSYBASE -Usa -P xxxxxx" */
+        pwd = (argv[i]+2); /* Password passed on as: "sqsh -SSYBASE -Usa -Pxxxxxx"  , or as -P-  */
+      } else if ((i+1 < argc) && (*(argv[i+1]) != '-' || (*(argv[i+1]) == '-' && *(argv[i+1]+1) == '\0'))) {
+        pwd = argv[i + 1]; /* Password passed on as: "sqsh -SSYBASE -Usa -P xxxxxx" , or as -P - */
         /* Reshuffle the argv list to remove the password string */
         for (j = i + 1; j < argc - 1; j++)
           argv[j] = argv[j + 1];
