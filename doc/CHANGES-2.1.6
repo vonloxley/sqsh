@@ -1,0 +1,277 @@
+What is new in version sqsh 2.1.6. :
+
+1) Color support for prompt and text, using color specification
+   in the definition of the prompt and prompt2 variables.
+
+   Color codes are presented in a string such as: {1;2;3}. If sqsh encounters a {
+   in the prompt string it will assume a colorcode is supplied and will act
+   as such. No checks will be performed on the validity of the colorcode
+   definition itself. The color definition consists of three values separated by
+   a semicolon.
+   The first code defines the Color Attribute Code with possible values:
+     00=none 01=bold
+   The second value defines the Text Color Code:
+     30=black 31=red 32=green 33=yellow 34=blue 35=magenta 36=cyan 37=white
+   The third value defines the Background Color Code:
+     40=black 41=red 42=green 43=yellow 44=blue 45=magenta 46=cyan 47=white
+   The last colorcode for the background may be ommitted.
+
+   Not all color and attribute combinations will present good results, depending
+   on your terminal type and color scheme. But the following values work right
+   for me on a xterm with a creamy white background color in Linux as well as
+   rxvt in Cygwin with a black background window:
+   Prompt: Blue text in white background "{0;34;47}"
+   Command text: Yellow text             "{0;33}"
+
+   sqsh will translate the colorcodes to an actual colorcode string that
+   is presented to readline: for example "\001\033[0;36;47m\002"
+   Note that if you want to use curly brackets in your prompt, you have to
+   escape colorization by specifying a double brace, like {{...}}. For example:
+
+   \set prompt_color='{0;34;47}'
+   \set text_color='{0;33}'
+   \set prompt='$prompt_color{{$DSQUERY.$username.$database.$lineno}}>$text_color '
+
+   Note, colorsupport is only available if sqsh is compiled and linked with readline
+   support enabled (./configure --with-readline).
+
+2) History unique support using the histunique boolean variable. Can be set in
+   the sqshrc file or on the fly with the \set command. When turned on, sqsh
+   maintains a MRU-LRU order of executed buffers and does not store duplicate
+   command buffers. For example, observe the following situation:
+
+   LINUX1502.user1.master.1> \h
+   (1) sp_who
+   (2) grant role mon_role to sa_role
+   (3) select * from monProcessActivity
+   (4) select @@authmech,show_sec_services()
+   (5) select @@servername,@@authmech,show_sec_services()
+   LINUX1502.user1.master.1> sp_who
+   LINUX1502.user1.master.2> go
+   ... output ommitted
+   LINUX1502.user1.master.1> \h
+   (1) grant role mon_role to sa_role
+   (2) select * from monProcessActivity
+   (3) select @@authmech,show_sec_services()
+   (4) select @@servername,@@authmech,show_sec_services()
+   (5) sp_who
+
+   sp_who is the last executed command and the buffer - originally the last in the list -
+   is now on top of the list.
+
+   Equalness of buffers is determined by means of a checksum calculated on the contents
+   of the buffer. If you change only one byte (add or remove a blank for example), the
+   new buffer compared to the old buffer will be considered different.
+
+3) Addition of \buf-del command to remove history buffers from the
+   history list, because you do not want them to be stored on disk
+   when you exit sqsh, or if the buffers are taking up unnessecary
+   space when you are developing and constantly changing some SQL
+   statement. For example:
+
+   ASE1502.sa.master.1> \history
+   (1) exec sp_password myPforSA,NewPforU, user1
+   (2) sp_displaylogin user1
+   (3) ....
+
+   If you want buffer 1 removed, you can type:
+
+   ASE1502.sa.master.1> \buf-del 1
+   Buffer 1 destroyed and list renumbered
+
+4) Variable ignoreeof determines what happens when ^d is typed on an empty line
+   when readline support is enabled. By default, sqsh is terminated. When the
+   option is turned on (using the sqshrc file), a message is shown when you type
+   CTRL-D: Use "exit" or "quit" to leave the sqsh shell.
+   This is quite similar to setting "set -o ignoreeof" in the bash shell.
+
+5) Login and query timeout values can be specified using the variables login_timeout
+   and query_timeout versus the command line parameters -T and -Q. These are equivalent
+   to the isql options -l for login timeout and -t for query timeout. By default the
+   variables are defined NULL, meaning the old behaviour of sqsh. But you can specify
+   a default value for login timeout of 60 seconds in sqshrc to get identical behaviour
+   as isql provides: \set login_timeout=60
+
+   For example trying to connect to a server that is not started:
+
+   sqsh -SSYBIQ -UDBA -PSQL -T5
+   Open Client Message
+   Layer 1, Origin 2, Severity 2, Number 63
+   ct_connect(): user api layer: internal Client Library error: Read from the server has timed out.
+   SYBIQ: Login timeout detected, aborting connection attempt
+
+   Running a query that results in a table scan and does not return
+   within 30 seconds:
+
+   sqsh -SASE1502 -Usa -P -Q30
+   ASE1502.sa.master.1> cd tix
+   ASE1502.sa.tix.1> select count(*) from E_TIX;
+   Open Client Message
+   Layer 1, Origin 2, Severity 2, Number 63
+   ct_results(): user api layer: internal Client Library error: Read from the server has timed out.
+   ASE1502: Query or command timeout detected, command/batch cancelled
+   ASE1502: The client connection has detected this 1 time(s).
+
+
+   You can also set an integer variable "max_timeout". When the number of timeouts exceeds the threshold
+   specified by max_timeout, then sqsh will be aborted:
+
+   ASE1502.sa.tix.1> \set max_timeout=2
+   ASE1502.sa.tix.1> !!
+   ASE1502.sa.tix.1> select count(*) from E_TIX
+   ASE1502.sa.tix.2> go
+   Open Client Message
+   Layer 1, Origin 2, Severity 2, Number 63
+   ct_results(): user api layer: internal Client Library error: Read from the server has timed out.
+   ASE1502: Query or command timeout detected, session aborted
+   ASE1502: The client connection has detected this 2 time(s).
+   ASE1502: Aborting on max_timeout limit 2
+   Open Client Message
+   Layer 2, Origin 1, Severity 1, Number 31
+   cs_ctx_drop: cslib user api layer: external error: The context structure cannot be dropped
+                because the application has not exited from ct.
+
+
+6) A couple of sqsh variables specifying a filename or directory are now properly expanded so you can
+   use environment variables in their definition in the sqshrc file.
+   The variables are: keyword_file, readline_history, tmp_dir and interfaces
+   For example, when in your sqshrc file the following lines occur:
+   \set readline_histsize=150
+   \set readline_history='$HOME/.sqsh/sqshread_$DSQUERY'
+   then sqsh will create a new readline history file for each server you connect to using "sqsh -S..."
+   and will reuse that file the next time you start sqsh and you can still retrieve lines entered
+   from a previous session, or search backwards using the readline ^R feature (in emacs mode), etc.
+
+7) Advanced Network authentication support
+   In version 2.1.5 experimental Kerberos support was added using the -K and -R options. -K was merely a switch
+   to set Kerberos on. In sqsh 2.1.6 a more advanced implementation of network authentication is introduced,
+   although still experimental.
+   By using the parameters -K, -R, -V, -Z you can make use of your defined network security settings. (libtcl.cfg).
+   The named options are identical to the ones defined for isql.
+   -K keytab_file name for DCE
+   -R server principal name when Servername specified in interfaces differs from the real servername
+   -V specify security options to use (cimorq)
+   -Z requested security mechanism name defined for Kerberos, DCE or PAM in your libtcl.cfg file. 
+   (So, the original -K option in 2.1.5 now specifies a keytab file for DCE in 2.1.6)
+   For example, connecting to a remote server using Kerberos (which happens to be the default, i.e. first entry
+   in libtcl.cfg [SECURITY] tab in this example):
+
+   ~> sqsh -SLINUX1502 -Uuser1 -RFC6A1502 -Z
+   LINUX1502.user1.master.1> select @@servername,@@authmech,show_sec_services();
+   ----------------  -----------  ------------------------------------------------------------------------
+   FC6A1502          kerberos     unifiedlogin mutualauth integrity confidentiality detectreplay detectseq
+
+   See chapter 16 "External Authentication" from the Sybase System Administration Guide volume 1 for more
+   information.
+
+   [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -Zcsfkrb5
+   Open Client Message
+   Layer 7, Origin 9, Severity 5, Number 1
+   ct_connect(): security service layer: internal security control layer error:
+                 Security service provider internal error -1765328352 occurred.
+   [user1@user1-fc6a ~]$ kinit
+   Password for user1@LOCALDOMAIN:
+   [user1@user1-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -Zcsfkrb5
+   FC6A1502.user1.master.1> select program_name from sysprocesses where spid=@@spid;
+   program_name
+   ------------------------------
+   sqsh-2.1.6
+
+  (1 row affected)
+
+   Note that you can specify -V and or -Z without having to specify a value. Is the value empty for -Z
+   or contains the value 'default' then the default will be used, which is the first active security driver
+   in the libtcl.cfg file.
+   When the connection succeeds, sqsh will store the real name of the security mechanism in the variable
+   secmech. For example: "\echo $secmech" may show csfkrb5. The option -V takes a list of characters from the
+   possible values of 'cimorq'. If you do not want to set a security service protocol then you have to specify
+   -Vx for example. 'x' is not an existing option related to a security service and as a value is provided,
+   sqsh will not fall back to the default of all options. When -V is empty however, then all possibly supported
+   security protocols for the selected secmech will be enabled. The key letters are:
+
+   c -   Enable data confidentiality service
+   i -   Enable data integrity service
+   m -   Enable mutual authentication for connection establishment
+   o -   Enable data origin stamping service
+   q -   Enable out-of-sequence detection
+   r -   Enable data replay detection
+
+   If you specify -V and/or -Z, sqsh will assume network authentication is tried and no password is required.
+   If you have a network authenticated connection and want to \reconnect using normal ASE authentication with
+   username and password, you have to reset the network authentication variables by specifying -Znone
+
+   For example:
+   [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -Z
+   FC6A1502.user1.master.1> \echo $secmech
+   csfkrb5
+   FC6A1502.user1.master.1> \reconnect -SASE1502 -Usa -P
+   Open Client Message
+   Layer 7, Origin 9, Severity 5, Number 8
+   ct_connect(): security service layer: internal security control layer error:
+   Consistency checks performed on the credential failed (minor status 0).
+   FC6A1502.user1.master.1> \reconnect -SASE1502 -Usa -P -Znone
+   ASE1502.sa.master.1> 
+ 
+   The first \reconnect fails because sqsh still wants to try network authentication. However, no user principal
+   for 'sa' exists or no ticket is set and the connection fails. The second \reconnect succeeds as the -Znone
+   reset appropriate variables.
+
+
+
+Variables and the sqshrc file:
+
+There are a couple of new environment variables defined, which can be set in the sqshrc file or on
+the fly on the command line using the \set command, although changing a value will actually take effect during
+a reconnect. Only histunique and ignoreeof can be activated or deactivated immediately.
+
+Variable name    Default value  Command line equivalent
+-------------    -------------  -----------------------
+appname          sqsh-2.1.6     -N (introduced in 2.1.5)
+histunique       Off
+ignoreeof        Off
+login_timeout    NULL           -T
+query_timeout    NULL           -Q
+max_timeout      NULL
+keytab_file      NULL           -K
+principal        NULL           -R
+secmech          NULL           -Z
+secure_options   NULL           -V
+
+The default value for appname is set to sqsh-2.1.6 so you can distinguish from users using an older version
+of sqsh. (See also one of the previous examples where we selected the program_name from sysprocesses.
+In previous version of sqsh you could set the TDS version using the -V parameter. This parameter is now being
+used for Network Authentication. You can now use parameter -G to set the TDS version.
+
+
+Use: sqsh [-a count] [-A packet_size] [-b] [-B] [-c [cmdend]] [-C sql]
+          [-d severity] [-D database] [-e] [-E editor] [-f severity]
+          [-G TDS version] [-h] [-H hostname] [-i filename] [-I interfaces]
+          [-J charset] [-k keywords] [-K keytab] [-l level] [-L var=value]
+          [-m mode] [-n {on|off}] [-N appname] [-o filename] [-p]
+          [-P [password]] [-Q query_timeout] [-r [sqshrc]] [-R principal]
+          [-s colsep] [-S server] [-t [filter]] [-T login_timeout]
+          [-U username] [-v] [-V [cimorq]] [-w width] [-X] [-y dir]
+          [-z language] [-Z secmech]
+
+ -a  Max. # of errors before abort       -m  Set display mode (normal)
+ -A  Adjust TDS packet size              -n  Set chained transaction mode
+ -b  Suppress banner message on startup  -N  Set Application Name (sqsh)
+ -B  Turn off file buffering on startup  -o  Direct all output to file
+ -c  Alias for the 'go' command          -p  Display performance stats
+ -C  Send sql statement to server        -P  Sybase password (NULL)
+ -d  Min. severity level to display      -Q  Query timeout period in seconds
+ -D  Change database context on startup  -r  Specify name of .sqshrc
+ -e  Echo batch prior to executing       -R  Network security server principal
+ -E  Replace default editor (vi)         -s  Alternate column separator (\t)
+ -f  Min. severity level for failure     -S  Name of Sybase server ($DSQUERY)
+ -G  TDS version to use                  -t  Filter batches through program
+ -h  Disable headers and footers         -T  Login timeout period in seconds
+ -H  Set the client hostname             -U  Name of Sybase user
+ -i  Read input from file                -v  Display current version and exit
+ -I  Alternate interfaces file           -V  Requested network security options
+ -J  Client character set                -w  Adjust result display width
+ -k  Specify alternate keywords file     -X  Enable client password encryption
+ -K  Network security keytab file (DCE)  -y  Override value of $SYBASE
+ -l  Set debugging level                 -z  Alternate display language
+ -L  Set the value of a given variable   -Z  Network security mechanism
+
