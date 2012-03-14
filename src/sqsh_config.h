@@ -128,6 +128,19 @@
 #define SQSH_MAXFD         256
 #endif
 
+#if defined(USE_READLINE)
+/*
+ * sqsh-2.1.8 - Define the default query that will be executed in
+ * case keyword_dynamic is enabled and an interactive connection is setup
+ * to a Sybase ASE or Microsoft MSSQL database server, or the database
+ * context is changed due to a "use" command.
+ *
+ */
+#  ifndef SQSH_KEYQUERY
+#  define SQSH_KEYQUERY    "select name from sysobjects order by name"
+#  endif
+#endif
+
 /*
  * End user configuration section
  */
@@ -135,7 +148,7 @@
 /*
  * Current version number.
  */
-#define SQSH_VERSION     "sqsh-2.1.7"
+#define SQSH_VERSION     "sqsh-2.1.8"
 
 #if !defined(__ansi__)
 #  if defined(__STDC__) || defined(STDC_HEADERS) || defined(PROTOTYPES)

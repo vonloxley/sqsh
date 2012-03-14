@@ -52,7 +52,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_input.c,v 1.4 2010/01/26 15:03:50 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_input.c,v 1.5 2010/01/28 15:30:37 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -60,6 +60,9 @@ USE(RCS_Id)
 static void    input_sigint_jmp  _ANSI_ARGS(( int, void* ));
 static char*   input_strchr      _ANSI_ARGS(( varbuf_t*, char*, int ));
 static int     input_read        _ANSI_ARGS(( varbuf_t*, int ));
+#if defined(USE_READLINE)
+static int     DynKeywordLoad    _ANSI_ARGS(( void )); /* sqsh-2.1.8 - Feature dynamic keyword load */
+#endif
 
 /*
  * The following macro is used to determine if a line of input is
@@ -110,6 +113,10 @@ int cmd_input()
     char        *newline_go ;         /* Value of $newline_go */
     char        *history_shorthand ;  /* Value of $history_shorthand */
     char        *lineno ;             /* Value of $lineno */
+#if defined(USE_READLINE)
+    char        *keyword_dynamic ;    /* Value of $keyword_dynamic */
+    char        *keyword_refresh ;    /* Value of $keyword_refresh */
+#endif
 
     /*-- Misc --*/
     int          exit_status ;        /* Exit status of sub-command */
@@ -229,6 +236,24 @@ int cmd_input()
      */
     for (;;)
     {
+#if defined(USE_READLINE)
+        /*
+         * sqsh-2.1.8 - Feature dynamic keyword load
+         * If we are in interactive mode and we have keyword_dynamic enabled
+         * then we want to do a refresh of the keyword list when the database
+         * context is changed, i.e. a "use <database>" command was executed.
+         */
+        env_get( g_env,          "keyword_dynamic", &keyword_dynamic );
+        env_get( g_internal_env, "keyword_refresh", &keyword_refresh );
+        if (interactive &&  
+            keyword_refresh != NULL && *keyword_refresh != '0' &&
+            keyword_dynamic != NULL && *keyword_dynamic != '0')
+        {
+            (void) DynKeywordLoad();
+            env_set( g_internal_env, "keyword_refresh", "0" );
+        }
+#endif
+
         no_hist = False;        /* Save history for this buffer */
 
         /*
@@ -1003,3 +1028,128 @@ static void input_sigint_jmp( sig, user_data )
 {
     LONGJMP( sg_jmp_buf, 1 );
 }
+
+#if defined(USE_READLINE)
+/*
+ * Function: DynKeywordLoad()
+ *
+ * sqsh-2.1.8 - Dynamically execute a query provided by the variable keyword_query
+ * and load the result set into the readline autocompletion list.
+ * By default the query is "select name from sysobjects order by name"
+ * But of course you can change this to anything you like as long as the result set
+ * contains a first column with character data. The variable keyword_query can be
+ * defined in your .sqshrc file for example or in a sqsh_session file.
+ *
+ */
+static int DynKeywordLoad ()
+{
+    CS_COMMAND *cmd;
+    CS_CHAR    *keyword_query;
+    CS_DATAFMT  columns[1];
+    CS_RETCODE  ret;
+    CS_RETCODE  results_ret;
+    CS_INT      result_type;
+    CS_INT      count;
+    CS_INT      idx;
+    CS_INT      datalength[1];
+    CS_SMALLINT indicator [1];
+    CS_CHAR     name   [256];
+
+
+    env_get( g_env, "keyword_query", &keyword_query );
+    if ( keyword_query == NULL || *keyword_query == '\0' ) {
+        DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: Variable keyword_query is empty.\n"));
+        return (CS_FAIL);
+    }
+    if ( g_connection == NULL )
+    {
+        DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: g_connection is not initialized.\n"));
+        return (CS_FAIL);
+    }
+    if (ct_cmd_alloc( g_connection, &cmd ) != CS_SUCCEED)
+    {
+        DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: Call to ct_cmd_alloc failed.\n"));
+        return (CS_FAIL);
+    }
+    if (ct_command( cmd,                /* Command Structure */
+                    CS_LANG_CMD,        /* Command Type      */
+                    keyword_query,      /* Buffer            */
+                    CS_NULLTERM,        /* Buffer Length     */
+                    CS_UNUSED           /* Options           */
+                  ) != CS_SUCCEED) 
+    {
+        ct_cmd_drop( cmd );
+        DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: Call to ct_command failed.\n"));
+        return (CS_FAIL);
+    }
+    if (ct_send( cmd ) != CS_SUCCEED) 
+    {
+        ct_cmd_drop( cmd );
+        DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: Call to ct_send failed.\n"));
+        return (CS_FAIL);
+    }
+
+    while ((results_ret = ct_results(cmd, &result_type)) == CS_SUCCEED)
+    {
+        switch ((int) result_type)
+        {
+            case CS_ROW_RESULT:
+                columns[0].datatype  = CS_CHAR_TYPE;
+                columns[0].format    = CS_FMT_NULLTERM;
+                columns[0].maxlength = 255;
+                columns[0].count     = 1;
+                columns[0].locale    = NULL;
+                ct_bind(cmd, 1, &columns[0], name, &datalength[0], &indicator[0]);
+
+                sqsh_readline_clear();
+
+                while ( ct_fetch (cmd, CS_UNUSED, CS_UNUSED, CS_UNUSED, &count) == CS_SUCCEED )
+                {
+                    /* Remove trailing blanks, tabs and newlines, just in case */
+                    for ( idx = strlen(name) - 1;
+                          idx >= 0 && (name[idx] == ' ' || name[idx] == '\t' || name[idx] == '\n');
+                          name[idx--] = '\0');
+                    sqsh_readline_add (name);    /* Add name to readline linked list of keywords */
+                }
+                break;
+
+            case CS_CMD_SUCCEED:
+                DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: No rows returned from query.\n"));
+                ret = CS_FAIL;
+                break;
+
+            case CS_CMD_FAIL:
+                DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: Error encountered during query processing.\n"));
+                ret = CS_FAIL;
+                break;
+
+            case CS_CMD_DONE:
+                break;
+
+            default:
+                DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: Unexpected error encountered. (1)\n"));
+                ret = CS_FAIL;
+                break;
+        }
+    }
+
+    switch ((int) results_ret)
+    {
+        case CS_END_RESULTS:
+            ret = CS_SUCCEED;
+            break;
+
+        case CS_FAIL:
+            DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: Unexpected error encountered. (2)\n"));
+            ret = CS_FAIL;
+            break;
+
+        default:
+            DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: Unexpected error encountered. (3)\n"));
+            ret = CS_FAIL;
+            break;
+    }
+    ct_cmd_drop( cmd );
+    return ( ret );
+}
+#endif

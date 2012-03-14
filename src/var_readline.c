@@ -27,17 +27,12 @@
 #include "sqsh_config.h"
 #include "sqsh_env.h"
 #include "sqsh_error.h"
+#include "sqsh_readline.h"
 #include "var.h"
-
-#if defined(USE_READLINE)
-#include <readline/readline.h>
-extern void stifle_history();
-extern void unstifle_history();
-#endif
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_readline.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: var_readline.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 

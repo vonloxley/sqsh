@@ -25,6 +25,21 @@
 #ifndef sqsh_readline_h_included
 #define sqsh_readline_h_included
 
+#if defined(USE_READLINE)
+#include <readline/readline.h>
+
+/*
+ * Readline history functions - for some reason not all
+ * readline installs have history.h available, so we do
+ * this.
+ */
+extern void stifle_history   ();
+extern void unstifle_history ();
+extern int  read_history     ();
+extern int  write_history    ();
+extern void add_history      ();
+#endif
+
 /*-- Prototypes --*/
 int   sqsh_readline_init  _ANSI_ARGS(( void ));
 int   sqsh_readline_exit  _ANSI_ARGS(( void ));

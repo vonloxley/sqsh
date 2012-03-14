@@ -29,17 +29,13 @@
 #include "sqsh_error.h"
 #include "sqsh_stdin.h"
 #include "sqsh_buf.h"
+#include "sqsh_readline.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_buf.c,v 1.2 2009/04/14 09:21:12 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_buf.c,v 1.3 2010/01/26 15:03:50 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
-
-#if defined(USE_READLINE)
-#include <readline/readline.h>
-extern void add_history();
-#endif /* USE_READLINE */
 
 /*
  * Note: This whole module is quite a bit different from all other

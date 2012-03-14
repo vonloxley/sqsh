@@ -39,10 +39,11 @@
 #include "sqsh_getopt.h"
 #include "sqsh_sig.h"
 #include "sqsh_job.h"
+#include "sqsh_readline.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_job.c,v 1.3 2010/01/26 15:03:50 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_job.c,v 1.4 2010/01/28 15:30:37 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -234,6 +235,9 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 	int          old_flags = (int)-1;
 #endif /* USE_AIX_FIX */
 	varbuf_t    *while_buf;
+#if defined(USE_READLINE)
+        char        *expand_tilde;         /* sqsh-2.1.8 - Tilde expansion */
+#endif
 
 	/*-- Check the arguments --*/
 	if( js == NULL || cmd_line == NULL ) {
@@ -317,6 +321,20 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 								 sqsh_get_errstr() );
 			return -1;
 		}
+
+#if defined(USE_READLINE)
+		/*
+		 * sqsh-2.1.8 - Finally perform a tilde expansion on the command string.
+		 *              Use the readline function tilde_expand for this.
+		 */
+		if (strchr (varbuf_getstr (sg_cmd_buf), '~') != NULL )
+		{
+			expand_tilde = tilde_expand ( varbuf_getstr (sg_cmd_buf) );
+			varbuf_strcpy ( sg_cmd_buf, expand_tilde );
+			DBG(sqsh_debug( DEBUG_EXPAND, "expand_tilde: %s\n", expand_tilde ));
+			free ( expand_tilde );
+		}
+#endif
 
 		/*
 		 * The "actual" command line is the version that we just expanded

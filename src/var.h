@@ -168,7 +168,7 @@ static var_entry_t  sg_var_entry[] = {
     { "date",             "%d-%b-%y",    var_set_notempty,    var_get_date    },
     { "time",             "%H:%M:%S",    var_set_notempty,    var_get_time    },
     /* sqsh-2.1.6 - New variables */
-    { "appname",          "sqsh-2.1.7",  var_set_nullstr,     NULL            },
+    { "appname",          SQSH_VERSION,  var_set_nullstr,     NULL            },
     { "histunique",       "0",           var_set_bool,        NULL            },
     { "ignoreeof",        "0",           var_set_bool,        NULL            },
     { "login_timeout",    NULL,          var_set_nullint,     NULL            },
@@ -183,6 +183,11 @@ static var_entry_t  sg_var_entry[] = {
     { "hist_auto_save",   "0",           var_set_int,         NULL            },
     { "xwin_title",       NULL,          var_set_nullstr,     NULL            },
     { "term_title",       NULL,          var_set_nullstr,     NULL            },
+#if defined(USE_READLINE)
+    /* sqsh-2.1.8 - New variables */
+    { "keyword_dynamic",  "0",           var_set_bool,        NULL            },
+    { "keyword_query",    SQSH_KEYQUERY, var_set_nullstr,     NULL            },
+#endif
 } ;
 
 #endif /* SQSH_INIT */

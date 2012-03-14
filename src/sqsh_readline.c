@@ -32,24 +32,9 @@
 #include "sqsh_readline.h"
 #include "sqsh_expand.h"   /* sqsh-2.1.6 */
 
-#if defined(USE_READLINE)
-#include <readline/readline.h>
-
-/*
- * Readline history functions - for some reason not all
- * readline installs have history.h available, so we do
- * this.
- */
-extern void stifle_history();
-extern int read_history();
-extern int write_history();
-extern void add_history();
-
-#endif /* USE_READLINE */
-
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.2 2004/11/05 15:53:45 mpeppler Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.3 2009/04/14 10:41:33 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -64,6 +49,13 @@ static char*   sqsh_generator      _ANSI_ARGS(( char*, int )) ;
 #endif
 
 /*
+ * sqsh-2.1.8 - Function prototypes for new feature column name completion.
+ */
+static int sqsh_readline_addcol   _ANSI_ARGS(( char* )) ;
+static int sqsh_readline_clearcol _ANSI_ARGS(( void  )) ;
+static int DynColnameLoad         _ANSI_ARGS(( char* )) ;
+
+/*
  * If GNU Readline support is compiled in, this data structure is
  * used to contain the active list of keywords.
  */
@@ -75,6 +67,8 @@ typedef struct keyword_st {
 /*-- Linked list of keywords --*/
 static keyword_t     *sg_keyword_start = NULL ;
 static keyword_t     *sg_keyword_end   = NULL ;
+static keyword_t     *sg_colname_start = NULL ;
+static keyword_t     *sg_colname_end   = NULL ;
 
 #endif /* USE_READLINE */
 
@@ -145,6 +139,16 @@ int sqsh_readline_init()
     rl_readline_name                 = "sqsh" ;
     rl_completion_entry_function     = (rl_compentry_func_t*)sqsh_completion ;
     rl_attempted_completion_function = (CPPFunction*)sqsh_completion ;
+
+    /*
+     * sqsh-2.1.8 - Remove '@' and '$' from the readline default list of word break
+     * characters by assigning a new list of word break characters to the variable
+     * rl_completer_word_break_characters. The @ and $ characters may be part
+     * of object/column names and would otherwise lead to problems with TAB completion
+     * when keyword_dynamic is enabled.
+     */
+    rl_completer_word_break_characters = " \t\n\"\\'`><=;|&{(";
+
 #endif /* USE_READLINE */
 
     return True ;
@@ -433,245 +437,303 @@ int sqsh_readline_clear()
  * relatively useless for completion.  Also, there are several
  * undocumented key words in here that aren't very useful to most
  * humans.
+ * sqsh-2.1.8 - Added all missing reserved words of ASE 15.7.
  */
 static char *sqsh_statements[] = {
     "abs",
     "acos",
-   "add",
-   "all",
-   "alter",
-   "and",
-   "any",
-   "arith_overflow",
-   "as",
-   "asc",
+    "add",
+    "all",
+    "alter",
+    "and",
+    "any",
+    "arith_overflow",
+    "as",
+    "asc",
     "ascii",
     "asin",
-   "at",
+    "at",
     "atan",
     "atn2",
-   "authorization",
-   "avg",
-   "begin",
-   "between",
-   "break",
-   "browse",
-   "bulk",
-   "by",
-   "cascade",
+    "authorization",
+    "avg",
+    "begin",
+    "between",
+    "break",
+    "browse",
+    "bulk",
+    "by",
+    "cascade",
+    "case",
     "ceiling",
     "char",
-   "char_convert",
+    "char_convert",
     "char_length",
     "charindex",
-   "check",
-   "checkpoint",
-   "close",
-   "clustered",
+    "check",
+    "checkpoint",
+    "close",
+    "clustered",
+    "coalesce",
     "col_length",
     "col_name",
-   "commit",
-   "compute",
-   "confirm",
-   "constraint",
-   "continue",
-   "controlrow",
-   "convert",
+    "commit",
+    "compressed",
+    "compute",
+    "confirm",
+    "connect",
+    "constraint",
+    "continue",
+    "controlrow",
+    "convert",
     "cos",
     "cot",
-   "count",
-   "create",
-   "current",
-   "cursor",
+    "count",
+    "count_big",
+    "create",
+    "current",
+    "cursor",
     "curunreservedpgs",
     "data_pgs",
-   "database",
+    "database",
     "dateadd",
     "datediff",
     "datename",
     "datepart",
     "db_id",
     "db_name",
-   "dbcc",
-   "deallocate",
-   "declare",
-   "default",
-   "define",
+    "dbcc",
+    "deallocate",
+    "declare",
+    "decrypt",
+    "decrypt_default",
+    "default",
+    "define",
     "degrees",
-   "delete",
-   "desc",
+    "delete",
+    "desc",
+    "deterministic",
     "difference",
-   "disk",
-   "distinct",
-   "double",
-   "drop",
-   "dummy",
-   "dump",
-   "else",
-   "end",
-   "endtran",
-   "errlvl",
-   "errordata",
-   "errorexit",
-   "escape",
-   "except",
-   "execute",
-   "exists",
-   "exit",
+    "disk",
+    "distinct",
+    "double",
+    "drop",
+    "dual_control",
+    "dummy",
+    "dump",
+    "else",
+    "encrypt",
+    "end",
+    "endtran",
+    "errlvl",
+    "errordata",
+    "errorexit",
+    "escape",
+    "except",
+    "exclusive",
+    "exec",
+    "execute",
+    "exists",
+    "exit",
     "exp",
-   "fetch",
-   "fillfactor",
+    "exp_row_size",
+    "external",
+    "fetch",
+    "fillfactor",
     "floor",
-   "for",
-   "foreign",
-   "from",
+    "for",
+    "foreign",
+    "from",
     "getdate",
-   "goto",
-   "grant",
-   "group",
-   "having",
+    "goto",
+    "grant",
+    "group",
+    "having",
     "hextoint",
-   "holdlock",
+    "holdlock",
     "host_name",
-   "identity",
-   "identity_insert",
-   "if",
-   "in",
-   "index",
+    "identity",
+    "identity_gap",
+    "identity_insert",
+    "identity_start",
+    "if",
+    "in",
+    "index",
     "index_col",
-   "insert",
-   "intersect",
-   "into",
+    "inout",
+    "insensitive",
+    "insert",
+    "install",
+    "intersect",
+    "into",
     "inttohex",
-   "is",
+    "is",
     "isnull",
-   "isolation",
-   "key",
-   "kill",
+    "isolation",
+    "jar",
+    "join",
+    "key",
+    "kill",
     "lct_admin",
-   "level",
-   "like",
-   "lineno",
-   "load",
-   "log",
+    "level",
+    "like",
+    "lineno",
+    "load",
+    "lob_compression",
+    "lock",
+    "log",
     "log10",
     "lower",
     "ltrim",
-   "max",
-   "min",
-   "mirror",
-   "mirrorexit",
-   "national",
-   "noholdlock",
-   "nonclustered",
-   "not",
-   "null",
-   "numeric_truncation",
+    "materialized",
+    "max",
+    "max_rows_per_page",
+    "min",
+    "mirror",
+    "mirrorexit",
+    "modify",
+    "national",
+    "noholdlock",
+    "nonclustered",
+    "not",
+    "null",
+    "nullif",
+    "numeric_truncation",
     "object_id",
     "object_name",
-   "of",
-   "off",
-   "offsets",
-   "on",
-   "once",
-   "only",
-   "open",
-   "option",
-   "or",
-   "order",
-   "over",
-   "param",
+    "of",
+    "off",
+    "offsets",
+    "on",
+    "once",
+    "online",
+    "only",
+    "open",
+    "option",
+    "or",
+    "order",
+    "out",
+    "output",
+    "over",
+    "param",
+    "partition",
     "patindex",
-   "permanent",
+    "perm",
+    "permanent",
     "pi",
-   "plan",
+    "plan",
     "power",
-   "precision",
-   "prepare",
-   "primary",
-   "print",
-   "privileges",
+    "precision",
+    "prepare",
+    "primary",
+    "print",
+    "privileges",
+    "proc",
     "proc_role",
-   "procedure",
-   "processexit",
-   "public",
+    "procedure",
+    "processexit",
+    "proxy_table",
+    "public",
+    "quiesce",
     "radians",
-   "raiserror",
+    "raiserror",
     "rand",
-   "read",
-   "readtext",
-   "reconfigure",
-   "references",
-   "replace",
+    "read",
+    "readpast",
+    "readtext",
+    "reconfigure",
+    "references",
+    "release_locks_on_close",
+    "remove",
+    "reorg",
+    "replace",
     "replicate",
+    "replication",
     "reserved_pgs",
-   "restree",
-   "return",
+    "reservepagegap",
+    "restree",
+    "return",
+    "returns",
     "reverse",
-   "revoke",
+    "revoke",
     "right",
-   "role",
-   "rollback",
+    "role",
+    "rollback",
     "round",
     "rowcnt",
-   "rowcount",
-   "rows",
+    "rowcount",
+    "rows",
     "rtrim",
-   "rule",
-   "save",
-   "schema",
-   "select",
-   "set",
-   "setuser",
-   "shared",
+    "rule",
+    "save",
+    "schema",
+    "scroll",
+    "select",
+    "semi_sensitive",
+    "set",
+    "setuser",
+    "shared",
     "show_role",
-   "shutdown",
+    "shutdown",
     "sign",
     "sin",
+    "some",
     "soundex",
     "space",
     "sqrt",
-   "statement",
-   "statistics",
+    "statement",
+    "statistics",
     "str",
-   "stripe",
+    "stringsize",
+    "stripe",
     "stuff",
     "substring",
-   "sum",
+    "sum",
     "suser_id",
     "suser_name",
-   "syb_identity",
-   "table",
+    "syb_identity",
+    "syb_restree",
+    "syb_terminate",
+    "table",
     "tan",
-   "temporary",
-   "terminate",
-   "textsize",
-   "to",
-   "transaction",
-   "trigger",
-   "truncate",
-   "tsequal",
-   "union",
-   "unique",
-   "update",
+    "temp",
+    "temporary",
+    "terminate",
+    "textsize",
+    "to",
+    "tracefile",
+    "tran",
+    "transaction",
+    "trigger",
+    "truncate",
+    "tsequal",
+    "union",
+    "unique",
+    "unpartition",
+    "update",
     "upper",
-   "use",
+    "use",
     "used_pgs",
-   "user",
+    "user",
     "user_id",
     "user_name",
-   "user_option",
-   "using",
+    "user_option",
+    "using",
     "valid_name",
-   "values",
-   "varying",
-   "view",
-   "waitfor",
-   "where",
-   "while",
-   "with",
-   "work",
-   "writetext"
+    "values",
+    "varying",
+    "view",
+    "waitfor",
+    "when",
+    "where",
+    "while",
+    "with",
+    "work",
+    "writetext",
+    "xmlextract",
+    "xmlparse",
+    "xmltable",
+    "xmltest"
 } ;
 
 /*
@@ -695,6 +757,8 @@ static char* sqsh_generator( text, state )
     char        *str;
     char        *cptr;
     char        *word;
+    char        *keyword_dynamic;
+    char        objname[256];
 
     len    = strlen(text);
     nitems = sizeof(sqsh_statements) / sizeof(char*);
@@ -713,10 +777,35 @@ static char* sqsh_generator( text, state )
             return NULL;
 
         /*
+         * sqsh-2.1.8: In case keyword_dynamic is enabled, check if the user
+         * wants to autocomplete a column/parameter name.
+         */
+        env_get( g_env, "keyword_dynamic", &keyword_dynamic );
+        if (keyword_dynamic != NULL && *keyword_dynamic != '0')
+        {
+            /*
+             * sqsh-2.1.8: If the text string contains a dot, then assume the
+             * first part is an object name and the second part is the column
+             * name we want to autocomplete. Obtain the objname from the text
+             * and query all the column/parameter names for this object and
+             * store them in a linked list.
+             */
+            for ( idx = 0; text[idx] != '\0' && text[idx] != '.'; idx++ );
+            if ( text[idx] == '.' )
+            {
+                strncpy ( objname, text, idx );
+                objname[idx] = '\0';
+                (void) DynColnameLoad ( objname );
+            }
+            else if (sg_colname_start != NULL)
+                sqsh_readline_clearcol ();
+        }
+
+        /*
          * If the user has supplied their own keyword completion list
          * then we want to ignore the built-in one.
          */
-        if (sg_keyword_start != NULL) 
+        if ((sg_keyword_start != NULL) || (sg_colname_start != NULL)) 
         {
             DBG(sqsh_debug(DEBUG_READLINE, "sqsh_generator: Using user list\n" );)
 
@@ -724,7 +813,7 @@ static char* sqsh_generator( text, state )
              * How's this for efficiency? A nice O(n) search of our list
              * of keywords.  Ok, so it ain't so elegant.  Sue me.
              */
-            cur = sg_keyword_start;
+            cur = sg_colname_start != NULL ? sg_colname_start : sg_keyword_start;
             if (*keyword_completion == '4') /* Exact */
             {
                 for (; cur != NULL && strncmp( cur->k_word, text, len ) != 0;
@@ -742,7 +831,11 @@ static char* sqsh_generator( text, state )
              * have not found a match.
              */
             if (cur == NULL)
+            {
+                if (sg_colname_start != NULL)
+                    sqsh_readline_clearcol();
                 return NULL;
+            }
             
             /*
              * Otherwise, save a pointer to the word that matched
@@ -804,29 +897,46 @@ static char* sqsh_generator( text, state )
          * we want to traverse to the next item in the list and see
          * if it matches the partial text that was passed in.
          */
-        if (sg_keyword_start != NULL)
+        if ((sg_keyword_start != NULL) || (sg_colname_start != NULL))
         {
             /*
              * If we are already at the end of the list then don't
              * bother to return anything.
              */
             if (cur == NULL)
+            {
+                if (sg_colname_start != NULL)
+                    sqsh_readline_clearcol();
                 return NULL;
+            }
 
             /*
              * Traverse on through the list until we find another 
              * match or reach the end of the list.
              */
-            for (cur = cur->k_nxt;
-                  cur != NULL && strncasecmp( cur->k_word, text, len ) != 0;
-                 cur = cur->k_nxt );
+            if (*keyword_completion == '4') /* Exact */
+            {
+                for (cur = cur->k_nxt;
+                     cur != NULL && strncmp( cur->k_word, text, len ) != 0;
+                     cur = cur->k_nxt );
+            }
+            else
+            {
+                for (cur = cur->k_nxt;
+                     cur != NULL && strncasecmp( cur->k_word, text, len ) != 0;
+                     cur = cur->k_nxt );
+            }
             
             /*
              * If we hit the end, then we let the caller know that
              * we are all done.
              */
             if (cur == NULL)
+            {
+                if (sg_colname_start != NULL)
+                    sqsh_readline_clearcol();
                 return NULL;
+            }
 
             word = cur->k_word;
 
@@ -855,6 +965,8 @@ static char* sqsh_generator( text, state )
 
     if (str == NULL)
     {
+        if (sg_colname_start != NULL)
+            sqsh_readline_clearcol();
         return NULL;
     }
 
@@ -908,6 +1020,200 @@ static char** sqsh_completion( text, start, end )
     int   end ;
 {
     return (char **)rl_completion_matches( text, (rl_compentry_func_t*)sqsh_generator ) ;
+}
+
+
+/*
+ * sqsh-2.1.8 - New feature: dynamic column name completion.
+ *
+ * The next local functions implement the dynamic column name completion feature.
+ * To keep it simple, I just used my own copies of some of the above functions to
+ * distinguish them from the existing functions that are being used by the keyword
+ * completion function, instead of adapting these functions for generic use.
+ */
+
+
+/*
+ * sqsh_readline_addcol()
+ *
+ * sqsh-2.1.8: Add a new column name to the readline keyword completion list.
+ */
+static int sqsh_readline_addcol( keyword )
+    char *keyword ;
+{
+    keyword_t *k ;
+
+    /*-- Allocate a new structure --*/
+    if( (k = (keyword_t*)malloc(sizeof(keyword_t))) == NULL ) {
+        sqsh_set_error( SQSH_E_NOMEM, NULL ) ;
+        return False ;
+    }
+
+    /*-- Create the keyword --*/
+    if( (k->k_word = sqsh_strdup( keyword )) == NULL ) {
+        free( k ) ;
+        sqsh_set_error( SQSH_E_NOMEM, NULL ) ;
+        return False ;
+    }
+    k->k_nxt = NULL ;
+
+    DBG(sqsh_debug( DEBUG_READLINE, "sqsh_readline_add: Adding '%s'\n", 
+                    k->k_word ) ;)
+
+    if( sg_colname_end == NULL )
+        sg_colname_start = sg_colname_end = k ;
+    else {
+        sg_colname_end->k_nxt = k ;
+        sg_colname_end        = k ;
+    }
+
+    return True ;
+}
+
+
+/*
+ * sqsh_readline_clearcol():
+ *
+ * sqsh-2.1.8: Clears the contents of the object specific column name linked list.
+ */
+static int sqsh_readline_clearcol()
+{
+    keyword_t  *k, *n ;
+
+    k = sg_colname_start ;
+    while( k != NULL ) {
+        n = k->k_nxt ;
+        free( k->k_word ) ;
+        free( k ) ;
+        k = n ;
+    }
+
+    sg_colname_start = sg_colname_end = NULL ;
+    return True ;
+}
+
+
+/*
+ * Function: DynColnameLoad()
+ *
+ * sqsh-2.1.8 - Dynamically execute a query to obtain the column names of
+ * an existing table, view or stored procedure.
+ *
+ */
+static int DynColnameLoad (objname)
+    char *objname;
+{
+    CS_COMMAND *cmd;
+    CS_DATAFMT  columns[1];
+    CS_RETCODE  ret;
+    CS_RETCODE  results_ret;
+    CS_INT      result_type;
+    CS_INT      count;
+    CS_INT      idx;
+    CS_INT      datalength[1];
+    CS_SMALLINT indicator [1];
+    CS_CHAR     name   [256];
+    CS_CHAR     query  [768];
+
+
+    if (sg_colname_start != NULL)
+    {
+        sqsh_readline_clearcol();
+    }
+    if ( g_connection == NULL )
+    {
+        DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: g_connection is not initialized.\n"));
+        return (CS_FAIL);
+    }
+    if (ct_cmd_alloc( g_connection, &cmd ) != CS_SUCCEED)
+    {
+        DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: Call to ct_cmd_alloc failed.\n"));
+        return (CS_FAIL);
+    }
+    sprintf (query, "select \'%s.\' + name from syscolumns where id=object_id(\'%s\') order by name"
+                  ,objname, objname);
+    if (ct_command( cmd,                /* Command Structure */
+                    CS_LANG_CMD,        /* Command Type      */
+                    query,              /* Query Buffer      */
+                    CS_NULLTERM,        /* Buffer Length     */
+                    CS_UNUSED           /* Options           */
+                  ) != CS_SUCCEED) 
+    {
+        ct_cmd_drop( cmd );
+        DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: Call to ct_command failed.\n"));
+        return (CS_FAIL);
+    }
+    if (ct_send( cmd ) != CS_SUCCEED) 
+    {
+        ct_cmd_drop( cmd );
+        DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: Call to ct_send failed.\n"));
+        return (CS_FAIL);
+    }
+
+    while ((results_ret = ct_results(cmd, &result_type)) == CS_SUCCEED)
+    {
+        switch ((int) result_type)
+        {
+            case CS_ROW_RESULT:
+                columns[0].datatype  = CS_CHAR_TYPE;
+                columns[0].format    = CS_FMT_NULLTERM;
+                columns[0].maxlength = 255;
+                columns[0].count     = 1;
+                columns[0].locale    = NULL;
+                ct_bind(cmd, 1, &columns[0], name, &datalength[0], &indicator[0]);
+
+                while (ct_fetch(cmd, CS_UNUSED, CS_UNUSED, CS_UNUSED, &count) == CS_SUCCEED)
+                {
+                    /* Remove trailing blanks, tabs and newlines, just in case */
+                    for ( idx = strlen(name) - 1;
+                          idx >= 0 && (name[idx] == ' ' || name[idx] == '\t' || name[idx] == '\n');
+                          name[idx--] = '\0');
+
+                    sqsh_readline_addcol ( name );    /* Add name to linked list of colnames */
+                }
+                break;
+
+            case CS_CMD_SUCCEED:
+                DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: No rows returned from query.\n"));
+                ret = CS_FAIL;
+                break;
+
+            case CS_CMD_FAIL:
+                DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: Error encountered during query processing.\n"));
+                ret = CS_FAIL;
+                break;
+
+            case CS_CMD_DONE:
+                break;
+
+            default:
+                DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: Unexpected error encountered. (1)\n"));
+                ret = CS_FAIL;
+                break;
+        }
+    }
+
+    switch ((int) results_ret)
+    {
+        case CS_END_RESULTS:
+            ret = CS_SUCCEED;
+            break;
+
+        case CS_FAIL:
+            DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: Unexpected error encountered. (2)\n"));
+            ret = CS_FAIL;
+            break;
+
+        default:
+            DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: Unexpected error encountered. (3)\n"));
+            ret = CS_FAIL;
+            break;
+    }
+    ct_cmd_drop( cmd );
+    if (ret == CS_FAIL)
+        sqsh_readline_clearcol();
+
+    return ( ret );
 }
 
 #endif  /* USE_READLINE */

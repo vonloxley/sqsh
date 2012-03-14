@@ -30,7 +30,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_exit.c,v 1.2 2010/01/12 13:26:38 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: cmd_exit.c,v 1.3 2010/01/26 15:03:50 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -43,6 +43,8 @@ int cmd_exit( argc, argv )
 	int    argc ;
 	char  *argv[] ;
 {
+	int i;
+
 	/*
 	 * sqsh-2.1.7 - Feature to provide for an exit code.
 	 *
@@ -61,6 +63,17 @@ int cmd_exit( argc, argv )
 		if (env_set (g_env, "exit_value", argv[1]) != True)
 		{
 			fprintf( stderr, "\\exit [n]: Invalid argument (%s)\n", argv[1] ) ;
+			return CMD_FAIL ;
+		}
+	}
+
+	/*
+	 * sqsh-2.1.8 - Check if jobs are running that would otherwise be killed.
+	 *              If that is the case, show a message and continue the shell.
+	*/
+	for( i = 0; i < g_jobset->js_hsize; i++ ) {
+		if (g_jobset->js_jobs[i] != NULL) {
+			fprintf( stderr, "You have running jobs or pending job output\n" ) ;
 			return CMD_FAIL ;
 		}
 	}

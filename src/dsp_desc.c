@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.6 2010/05/03 19:52:09 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.7 2010/10/23 19:49:42 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -48,7 +48,7 @@ static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
  * it is OK for CT-Lib to do the work.  This macro allows us to test
  * a given type as to whether or not we are going to let CT-Lib
  * do the dirty work.
- * sqsh-2.1.7.1: Add CS_BINARY_TYPE and CS_IMAGE_TYPE to the list.
+ * sqsh-2.1.8: Add CS_BINARY_TYPE and CS_IMAGE_TYPE to the list.
  *               Fix bugreport 3079678.
  */
 #define LET_CTLIB_CONV(t) \
@@ -433,6 +433,7 @@ CS_INT dsp_desc_fetch( cmd, d )
     CS_RETCODE  r;
     CS_INT      nrows;
     CS_INT      i;
+    CS_INT      j;
     CS_INT      p;
     CS_DATAFMT  str_fmt;
 
@@ -485,8 +486,9 @@ CS_INT dsp_desc_fetch( cmd, d )
          * If the is_native flag is FALSE then the data was already
          * converted into a string for us by CT-Lib, so there is
          * nothing left to be done.
-         * sqsh-2.1.7.1: Except when the source datatype was binary, then
+         * sqsh-2.1.8: Except when the source datatype was binary, then
          * we have to prepend the result string with characters '0x'.
+	 * 20110107: Prepend 0x0 in case of odd number of chars in string.
          */
         if (d->d_cols[i].c_is_native == CS_FALSE)
         {
@@ -495,10 +497,11 @@ CS_INT dsp_desc_fetch( cmd, d )
                 d->d_cols[i].c_format.datatype == CS_VARBINARY_TYPE  ||
                 d->d_cols[i].c_format.datatype == CS_IMAGE_TYPE)
             {
-                for (p = strlen (d->d_cols[i].c_data); p >= 0;
-                                 d->d_cols[i].c_data[p+2] = d->d_cols[i].c_data[p--]);
+                for (p = strlen (d->d_cols[i].c_data), j = p%2==0?2:3; p >= 0;
+                                 d->d_cols[i].c_data[p+j] = d->d_cols[i].c_data[p--]);
                 d->d_cols[i].c_data[0] = '0';
                 d->d_cols[i].c_data[1] = 'x';
+                if (j==3) d->d_cols[i].c_data[2] = '0';
             }
 
             continue;
@@ -695,7 +698,7 @@ static CS_INT dsp_dlen( fmt )
         case CS_LONGBINARY_TYPE:
         case CS_VARBINARY_TYPE:
         case CS_UNICHAR_TYPE:
-            return (2 * fmt->maxlength) + 2; /* sqsh-2.1.7.1 fix  */
+            return (2 * fmt->maxlength) + 2; /* sqsh-2.1.8 fix  */
         case CS_BIT_TYPE:
             return 1;
         case CS_TINYINT_TYPE:

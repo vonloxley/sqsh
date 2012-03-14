@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.21 2010/02/17 11:35:06 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.22 2010/03/28 11:46:05 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -1348,8 +1348,8 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
      * appropriate variable.
      */
     if( msg->msgnumber == 5701 ||    /* database context change */
-         msg->msgnumber == 5703 ||    /* language changed */
-         msg->msgnumber == 5704 )     /* charset changed */
+        msg->msgnumber == 5703 ||    /* language changed */
+        msg->msgnumber == 5704 )     /* charset changed */
     {
 
         if (msg->text != NULL && (c = strchr( msg->text, '\'' )) != NULL) 
@@ -1370,6 +1370,10 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
                 {
                     case 5701 : 
                         env_set( g_env, "database", var_value );
+#if defined(USE_READLINE)
+                        /* sqsh-2.1.8 - Feature dynamic keyword load */
+                        env_set( g_internal_env, "keyword_refresh", "1" );
+#endif
                         break;
                     case 5703 :
                         env_set( g_env, "language", var_value );
@@ -1386,9 +1390,14 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
     }
 
     /*
-     * If we got a login failed message, then record it as such as return.
+     * If we got a login failed message, then record it as such and return.
+     * sqsh-2.1.8 : Fix password_retry for Sybase RepServer and Microsoft MSSQL connections.
+     * We also need to check for sg_login == True, i.e. we are in the middle of a login attempt.
      */
-    if (msg->msgnumber == 4002)
+    if (sg_login == True && (msg->msgnumber == 1017  || /* DCO/ECDA Oracle   */
+                             msg->msgnumber == 4002  || /* Sybase ASE/ASA/IQ */
+                             msg->msgnumber == 14021 || /* Sybase RepServer  */
+                             msg->msgnumber == 18456))  /* Microsoft MSSQL   */
     {
         wrap_print( stderr, msg->text );
         sg_login_failed = True;
@@ -1777,6 +1786,7 @@ SetNetAuth (conn, principal, keytab_file, secmech, req_options)
     return CS_FAIL;
 #endif
 }
+
 
 /*
  * Function: ShowNetAuthCredExp()
