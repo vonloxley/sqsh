@@ -124,13 +124,13 @@
 .\" ========================================================================
 .\"
 .IX Title "sqsh 1"
-.TH sqsh 1 "2010-02-17" "2.1.7" "User Contributed Perl Documentation"
+.TH sqsh 1 "2012-03-15" "2.1.8" "sqsh-2.1.8"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
 .nh
 .SH "NAME"
-sqsh \- Interactive database shell (version 2.1.7)
+sqsh \- Interactive database shell (version 2.1.8)
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 .Vb 10
@@ -550,9 +550,26 @@ prints out
 After a line of input has been read, \fIsqsh\fR attempts to expand the line of any
 aliases (see \fBAliasing\fR, below), following that it attempts to determine if the
 line begins with a command keyword. Once a line has been determined to contain a
-command name it has two types of expansion performed up it: \fIvariable
-substitution\fR, followed by \fIcommand substitution\fR respectively. Following this
-expansion the command line is separated into words and the command is executed.
+command name it has three types of expansion performed to it: \fIvariable
+substitution\fR, followed by \fIcommand substitution\fR respectively. Finally, if a
+tilde was provided on the command line, then \fItilde expansion\fR will be performed
+and the \fB~\fR will be substituted with the corresponding \fB\s-1HOME\s0\fR directory name.
+.PP
+.Vb 1
+\&    1> \eecho ~sybase/err.log
+.Ve
+.PP
+may result in \fI/home/sybase/err.log\fR for example.
+.PP
+.Vb 2
+\&    1> exec sp_helpdb
+\&    2> go > ~/db.log
+.Ve
+.PP
+may result in a file \fI/export/home/dba/db.log\fR for example, depending on the
+Unix login and the exact \s-1OS\s0 you are using.
+Following this expansion the command line is separated into words and the
+command is executed.
 .SS "Variable Substitution"
 .IX Subsection "Variable Substitution"
 The character $ is used to indicate variable substitution or expansion within a
@@ -778,6 +795,9 @@ terminated and will not show up in the current list of running jobs. However if
 the complete job has pending output, it will continue to be displayed as a
 running job (with the \fB\ejobs\fR command) until a \fB\eshow\fR is used to display the
 output of the job.
+When you exit your parent sqsh session and there are background jobs active then
+a message is shown: \fBYou have running jobs or pending job output\fR.
+You have to process all the jobs first before being able to exit sqsh.
 .PP
 There is a known bug with job backgrounding when used in conjunction with pipes,
 please refer to the \fB\s-1BUGS\s0\fR section at the end of the manual.
@@ -2641,12 +2661,53 @@ or 2 forces completion to be performed in upper case, \fIsmart\fR, or 3, bases t
 decision on case upon the first character of the partial keyword, and \fIexact\fR
 completes the keyword in exactly the same case as defined in the \fI.sqsh_words\fR
 (for the built-in \s-1TSQL\s0 keywords, this will be lower case).
+.IP "keyword_dynamic (boolean)" 4
+.IX Item "keyword_dynamic (boolean)"
+This variable controls the dynamic loading of keywords in the completion list
+when initially logging in to the server or when the database context is changed
+using the \fIuse database\fR command. When this variable is set to 'On' 
+(default is 'Off'), then the query that is provided through the
+\&\fB\f(CB$keyword_query\fB\fR variable is executed and the query result set is loaded into
+the Readline completion list. This will only work for Sybase \s-1ASE\s0 and Microsoft
+MS-SQL servers.
+This variable also controls dynamic loading of a column list to be auto\-
+completed by Readline. When an object name is followed by a dot and \s-1TAB\s0
+completion is requested, \fIsqsh\fR dynamically creates a list of columns that
+belongs to the object (table, view, procedure) and allows for Readline \s-1TAB\s0
+completion of the column or parameter names. This feature is only available if
+\&\s-1GNU\s0 Readline support has been compiled into \fIsqsh\fR and \fB\f(CB$keyword_completion\fB\fR
+is set to a value greater than zero.
 .IP "keyword_file (string)" 4
 .IX Item "keyword_file (string)"
-If readline support has been compiled into \fIsqsh\fR, and \fIsqsh\fR is being run in
+If Readline support has been compiled into \fIsqsh\fR, and \fIsqsh\fR is being run in
 interactive mode, the contents of this file are used for keyword tab completion
-by readline rather than the default set of \s-1TSQL\s0 syntactical keywords. The
-default is \fI\f(CI$HOME\fI/.sqsh_words\fR.
+by Readline rather than the default set of \s-1TSQL\s0 syntactical keywords. The
+default is \fI\f(CI$HOME\fI/.sqsh_words\fR. When \fB\f(CB$keyword_dynamic\fB\fR is enabled this
+takes precedence and overrules the list loaded from \fB\f(CB$keyword_file\fB\fR.
+.IP "keyword_query (string)" 4
+.IX Item "keyword_query (string)"
+This variable contains the query that will be executed when a change of database
+is detected or during initial login (Msg 5701). The default query is:
+.Sp
+.Vb 1
+\&    select name from sysobjects order by name
+.Ve
+.Sp
+But you can supply a different query that suits your needs even better. E.g.
+.Sp
+.Vb 7
+\&    \eset keyword_query="\e\e
+\&      select name from sysobjects \e\e
+\&      where type in (\*(AqU\*(Aq,\*(AqV\*(Aq,\*(AqP\*(Aq,\*(AqS\*(Aq) \e\e
+\&      union \e\e
+\&      select name from sybsystemprocs..sysobjects \e\e
+\&      where type=\*(AqP\*(Aq \e\e
+\&      order by name"
+.Ve
+.Sp
+This feature is controlled by the variables \fB\f(CB$keyword_completion\fB\fR and
+\&\fB\f(CB$keyword_dynamic\fB\fR and is only available if \s-1GNU\s0 Readline support has been
+compiled into \fIsqsh\fR.
 .IP "language (string)" 4
 .IX Item "language (string)"
 The \fB\f(CB$language\fB\fR variable is used while establishing a connection to the server

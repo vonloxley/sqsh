@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pod2man --name sqsh --release 2.1.7 --section 1 sqsh.pod sqsh.1
+pod2man --center sqsh-2.1.8 --name sqsh --release 2.1.8 --section 1 sqsh.pod sqsh.1
 
 #pod2man sqsh.pod > sqsh.1
 

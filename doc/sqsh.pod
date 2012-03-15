@@ -1,7 +1,7 @@
 
 =head1 NAME
 
-sqsh - Interactive database shell (version 2.1.7)
+sqsh - Interactive database shell (version 2.1.8)
 
 =head1 SYNOPSIS
 
@@ -459,9 +459,22 @@ prints out
 After a line of input has been read, I<sqsh> attempts to expand the line of any
 aliases (see B<Aliasing>, below), following that it attempts to determine if the
 line begins with a command keyword. Once a line has been determined to contain a
-command name it has two types of expansion performed up it: I<variable
-substitution>, followed by I<command substitution> respectively. Following this
-expansion the command line is separated into words and the command is executed.
+command name it has three types of expansion performed to it: I<variable
+substitution>, followed by I<command substitution> respectively. Finally, if a
+tilde was provided on the command line, then I<tilde expansion> will be performed
+and the B<~> will be substituted with the corresponding B<HOME> directory name.
+
+    1> \echo ~sybase/err.log
+
+may result in I</home/sybase/err.log> for example.
+
+    1> exec sp_helpdb
+    2> go > ~/db.log
+
+may result in a file I</export/home/dba/db.log> for example, depending on the
+Unix login and the exact OS you are using.
+Following this expansion the command line is separated into words and the
+command is executed.
 
 =head2 Variable Substitution
 
@@ -684,6 +697,9 @@ terminated and will not show up in the current list of running jobs. However if
 the complete job has pending output, it will continue to be displayed as a
 running job (with the B<\jobs> command) until a B<\show> is used to display the
 output of the job.
+When you exit your parent sqsh session and there are background jobs active then
+a message is shown: B<You have running jobs or pending job output>.
+You have to process all the jobs first before being able to exit sqsh.
 
 There is a known bug with job backgrounding when used in conjunction with pipes,
 please refer to the B<BUGS> section at the end of the manual.
@@ -2732,12 +2748,51 @@ decision on case upon the first character of the partial keyword, and I<exact>
 completes the keyword in exactly the same case as defined in the I<.sqsh_words>
 (for the built-in TSQL keywords, this will be lower case).
 
+=item keyword_dynamic (boolean)
+
+This variable controls the dynamic loading of keywords in the completion list
+when initially logging in to the server or when the database context is changed
+using the I<use database> command. When this variable is set to 'On' 
+(default is 'Off'), then the query that is provided through the
+B<$keyword_query> variable is executed and the query result set is loaded into
+the Readline completion list. This will only work for Sybase ASE and Microsoft
+MS-SQL servers.
+This variable also controls dynamic loading of a column list to be auto-
+completed by Readline. When an object name is followed by a dot and TAB
+completion is requested, I<sqsh> dynamically creates a list of columns that
+belongs to the object (table, view, procedure) and allows for Readline TAB
+completion of the column or parameter names. This feature is only available if
+GNU Readline support has been compiled into I<sqsh> and B<$keyword_completion>
+is set to a value greater than zero.
+
 =item keyword_file (string)
 
-If readline support has been compiled into I<sqsh>, and I<sqsh> is being run in
+If Readline support has been compiled into I<sqsh>, and I<sqsh> is being run in
 interactive mode, the contents of this file are used for keyword tab completion
-by readline rather than the default set of TSQL syntactical keywords. The
-default is I<$HOME/.sqsh_words>.
+by Readline rather than the default set of TSQL syntactical keywords. The
+default is I<$HOME/.sqsh_words>. When B<$keyword_dynamic> is enabled this
+takes precedence and overrules the list loaded from B<$keyword_file>. 
+
+=item keyword_query (string)
+
+This variable contains the query that will be executed when a change of database
+is detected or during initial login (Msg 5701). The default query is:
+
+    select name from sysobjects order by name
+
+But you can supply a different query that suits your needs even better. E.g.
+
+    \set keyword_query="\\
+      select name from sysobjects \\
+      where type in ('U','V','P','S') \\
+      union \\
+      select name from sybsystemprocs..sysobjects \\
+      where type='P' \\
+      order by name"
+
+This feature is controlled by the variables B<$keyword_completion> and
+B<$keyword_dynamic> and is only available if GNU Readline support has been
+compiled into I<sqsh>.
 
 =item language (string)
 

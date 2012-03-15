@@ -1,0 +1,229 @@
+                     What is new or fixed in version sqsh-2.1.8
+
+
+                       New features, enhancements, bug fixes:
+
+1 - Feature     - Dynamic load of keyword list for Readline keyword completion.
+	Until now you were only able to use a fixed list of keywords that were
+	provided in a file through the "$keyword_file" variable.
+	Now you can enable the variable "$keyword_dynamic" and provide a query
+	using the variable "$keyword_query" that will be executed each time you
+	log in to a server or change database context using the "use <dbname>"
+	command. This feature will only work in Sybase ASE and MSSQL servers.
+
+	The default query provided with "$keyword_query" is:
+
+		"select name from sysobjects order by name"
+
+	But you can provide your own query, as long as the first column in
+	the result set returns a character datatype string. For example:
+
+          \set keyword_query="\\
+            select name from sysobjects \\
+            where type in ('U','V','P','S') \\
+            union \\
+            select name from sybsystemprocs..sysobjects \\
+            where type='P' \\
+            order by name"
+
+	I have used this feature in an environment with more than 5000 objects
+	loaded in the completion list each time the database context was
+	changed, and I did not notice any performance degradation while
+	switching from database to database or while using the Readline TAB
+	completion feature.
+
+	The second part of this feature automatically completes column names
+	when you type an object name followed by a dot and then use Readline
+	TAB completion. For example, if you type
+	1> ....
+	2> where syslogins.<TAB>
+	then sqsh will show all columns of syslogins that you can auto-complete
+	even further by the Readline module. Of course this will only work for
+	objects in the current database. Furthermore, the object does not have
+	to exist in the keyword completion list itself. These two feature
+	parts work independently of each other, as long as keyword_dynamic and
+	keyword_completion are enabled.
+
+	Note 1: Readline auto-completion uses a TAB, or TAB TAB, or sometimes
+	ESC ESC. It works in sqsh the same way as you use auto-completion of
+	filenames in your shell. Settings are controlled in ~/.inputrc or global
+	/etc inputrc settings. See the GNU Readline library documentation for
+	more info on auto-completion.
+
+	Note 2: In sqsh-2.1.8/doc a file sqshrc-2.1.8 is provided that contains
+	appropriate settings for the newest features in sqsh. Note that the
+	color prompt settings in this file are optimized for a (xterm) window
+	with white background color. Copy this file to ~/.sqshrc and make sure
+	you have a directory ~/.sqsh and you are completely ready to use sqsh
+	in its full glory.
+
+
+2 - Enhancement - Check on running background jobs or pending job output before
+	exiting sqsh. If you have running jobs in the background that were
+	started with "go &", in sqsh-2.1.7 an exit or quit of the parent process
+	would also kill the child processes. Now a check is performed to see if
+	there are running jobs or finished jobs with pending output. If this is
+	the case then a message is displayed:
+
+		"You have running jobs or pending job output"
+
+	In order to exit sqsh anyway, you have to kill your jobs (\kill)
+	manually and process pending output (\show) first.
+
+
+3 - Enhancement - Tilde expansion on command line.
+	If you are used to use a ~ in shell commands that will be expanded to
+	your HOME directory name, then you can now use them in sqsh as well.
+	The tilde will only be expanded in sqsh commands (and their aliases)
+	like the "\go" command, not in the SQL buffer.
+	For example:
+
+	...
+	3> go -m bcp > ~/bcp_format.dat
+
+	Note that this will only work if GNU Readline is compiled into sqsh.
+
+
+4 - Enhancement - Password retry loop for MSSQL, DCO/ECDA and Sybase Repserver
+	connections added.
+	If you tried to logon to any other server than Sybase ASE, IQ or ASA
+	and you provided the wrong password, then sqsh terminated immediately
+	with an error message. Now you get the chance to retype the password
+	again and again until you are successfully logged in, provided that
+	$password_retry is enabled (and the server does not lock you out after
+	an x number of login attempts).
+
+
+5 - Bug fix     - Improved processing in displaying binary or image data and
+	fixed a bug when querying column sysprocesses.sid in MSSQL, which
+	resulted in a buffer overflow error.
+	Bug report ID: 3079678
+
+
+6 - Bug fix     - Unable to use "-P -" to provide a password on stdin.
+	Bug report ID: 3388213
+
+
+
+This version of sqsh has been successfully built and tested on Cygwin 32 bits,
+Solaris x86_64, Linux Ubuntu 32bits, Linux CentOS 5.2 64 bits, AIX 5.3L 64 bits.
+Also various versions of Readline, Sybase OpenClient (15.5, 15.0) and freetds
+(0.83, 0.91) have been used to build and test sqsh-2.1.8.
+I hope you enjoy and love this new version of sqsh as much as I do.
+
+
+
+
+
+                Changed files in sqsh-2.1.8 compared to sqsh-2.1.7
+
+sqsh-2.1.8/src/cmd_connect.c
+	Implements feature 1), by setting an internal variable $keyword_refresh
+	to 1 in case a Msg 5701 is determined, meaning that a change of
+	database occurred or an initial login. The variables denotes that the
+	keyword list should be refreshed in the cmd_input loop.
+
+	Also implements enhancement 4), by repeatedly asking for a password in
+	case a wrong password was supplied for connections to MSSQL, Sybase
+	ECDA/DCO and or Sybase RepServer. Originally this only worked for
+	connections to Sybase ASE, IQ and ASA.
+
+sqsh-2.1.8/src/cmd_exit.c
+	Implements enhancement 2), by checking if child jobs are running or if
+	pending job output is waiting for retrieval. If this is the case then a
+	message is presented: "You have running jobs or pending job output".
+	This is to prevent unintentionally killing child processes if you exit
+	the parent sqsh session. If you still want to exit your parent session
+	you have to kill all your child jobs first.
+
+	Query running/finished jobs: \jobs [-i]
+	Kill running jobs:           \kill <jobnr>
+	Show output:                 \show <jobnr> > /dev/null
+	Wait for jobs to finish:     \wait ...
+
+sqsh-2.1.8/src/cmd_input.c
+	Implements feature 1), by executing a query to refresh the Readline
+	auto-completion keyword list when a change of database occurred. This
+	is triggered by a variable "$keyword_refresh" that will be set in
+	cmd_connect.c by the callback handler in case a "use <database>"
+	statement was executed.
+	The query that will be run is provided in the variable $keyword_query.
+	The default query is: "select name from sysobjects order by name". But
+	you can change that in the .sqshrc file for your own convenience to:
+
+	  \set keyword_query="\\
+	    select name from sysobjects \\
+	    where type in ('U','V','P','S') \\
+	    union \\
+	    select name from sybsystemprocs..sysobjects \\
+	    where type='P' \\
+	    order by name"
+
+	for example. If you type a TAB while entering text, Readline will
+	search the keyword list for possible completions and presents them or
+	just completes the word you were typing if there is only one possibility
+	left.
+	This feature is enabled or disabled by the variable "$keyword_dynamic".
+	The default is "Off", so you have to explicitly set the variable to "On"
+	if you want to take advantage of this new feature. Also the variable
+	"$keyword_completion" needs to be set with a value greater than zero.
+
+sqsh-2.1.8/src/dsp_desc.c
+	Bugfix 5): Improved handling of binary and image datatypes.
+	Fix bugreport 3079678.
+
+sqsh-2.1.8/src/sqsh_buf.c
+	Some preprocessing code is moved to sqsh_readline.h for better include
+	file handling.
+
+sqsh-2.1.8/src/sqsh_config.h
+	Defines a default value that will be assigned to $keyword_query.
+	  "select name from sysobjects order by name"
+	Also sets SQSH_VERSION to the string "sqsh-2.1.8".
+
+sqsh-2.1.8/src/sqsh_job.c
+	Implements enhancement 3), tilde expansion on the command line. If you
+	type:
+
+	1> select name from syslogins
+	2> go | grep sa_ > ~/tmp/sa_logins.out
+
+	for example, the tilde will be replaced with your home directory. You
+	can use any valid ~name that can be expanded to the corresponding home
+	directory of the specified login name, for example ~sybase. Note that
+	other expansions like ~+ for $PWD or ~- for $OLDPWD will not work in
+	sqsh, as it does in the Bash shell. You will need Readline compiled in
+	to use this feature (./configure --with-readline ...)
+
+sqsh-2.1.8/src/sqsh_main.c
+	Implemented a fix for passing on passwords through stdin with -P -
+	Fix for bug 6).
+
+sqsh-2.1.8/src/sqsh_readline.c
+	Implements feature 1), dynamic column name expansions when you type
+	a TAB (or double TAB) after an object name followed by a dot.
+	For example type: select sysprocesses.<TAB> ...then sqsh will show you
+	all the available column names of the sysprocesses table, provided that
+	you are in the master database of course. So the object must exist in
+	the current database. This feature will only work if variables
+	"$keyword_dynamic" and $keyword_completion are enabled.
+	Also all the reserved keywords in ASE 15.7 that were not already on the
+	list, are added to the default keyword completion list. This list will
+	be used if you do not provide your own list through the "$keyword_file"
+	variable and "$keyword_dynamic" is disabled. Again, you will have to
+	compile GNU Readline in sqsh to be able to use this feature.
+
+sqsh-2.1.8/src/sqsh_readline.h
+	Moved some of the prototypes and include file definitions from some C
+	source files to this local include file.
+
+sqsh-2.1.8/src/var.h
+	Replaced the hardcoded sqsh appname by the preprocessor variable
+	SQSH_VERSION. This variable is defined in sqsh_config.h and set to
+	the string sqsh-2.1.8.
+
+sqsh-2.1.8/src/var_readline.c
+	Removed some of the prototypes and the inclusion of
+	<readline/readline.h> here and replaced them with an include of
+	"sqsh_readline.h".
+

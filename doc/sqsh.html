@@ -127,7 +127,7 @@
 <p>
 </p>
 <h1><a name="name">NAME</a></h1>
-<p>sqsh - Interactive database shell (version 2.1.7)</p>
+<p>sqsh - Interactive database shell (version 2.1.8)</p>
 <p>
 </p>
 <hr />
@@ -608,9 +608,20 @@ quote may be contained within double quotes by escaping it.</p>
 <p>After a line of input has been read, <em>sqsh</em> attempts to expand the line of any
 aliases (see <strong>Aliasing</strong>, below), following that it attempts to determine if the
 line begins with a command keyword. Once a line has been determined to contain a
-command name it has two types of expansion performed up it: <em>variable
-substitution</em>, followed by <em>command substitution</em> respectively. Following this
-expansion the command line is separated into words and the command is executed.</p>
+command name it has three types of expansion performed to it: <em>variable
+substitution</em>, followed by <em>command substitution</em> respectively. Finally, if a
+tilde was provided on the command line, then <em>tilde expansion</em> will be performed
+and the <strong>~</strong> will be substituted with the corresponding <strong>HOME</strong> directory name.</p>
+<pre>
+    1&gt; \echo ~sybase/err.log</pre>
+<p>may result in <em>/home/sybase/err.log</em> for example.</p>
+<pre>
+    1&gt; exec sp_helpdb
+    2&gt; go &gt; ~/db.log</pre>
+<p>may result in a file <em>/export/home/dba/db.log</em> for example, depending on the
+Unix login and the exact OS you are using.
+Following this expansion the command line is separated into words and the
+command is executed.</p>
 <p>
 </p>
 <h2><a name="variable_substitution">Variable Substitution</a></h2>
@@ -812,7 +823,10 @@ such as:</p>
 terminated and will not show up in the current list of running jobs. However if
 the complete job has pending output, it will continue to be displayed as a
 running job (with the <strong>\jobs</strong> command) until a <strong>\show</strong> is used to display the
-output of the job.</p>
+output of the job.
+When you exit your parent sqsh session and there are background jobs active then
+a message is shown: <strong>You have running jobs or pending job output</strong>.
+You have to process all the jobs first before being able to exit sqsh.</p>
 <p>There is a known bug with job backgrounding when used in conjunction with pipes,
 please refer to the <strong>BUGS</strong> section at the end of the manual.</p>
 <p>
@@ -2935,13 +2949,52 @@ decision on case upon the first character of the partial keyword, and <em>exact<
 completes the keyword in exactly the same case as defined in the <em>.sqsh_words</em>
 (for the built-in TSQL keywords, this will be lower case).</p>
 </dd>
+<dt><strong><a name="keyword_dynamic" class="item">keyword_dynamic (boolean)</a></strong></dt>
+
+<dd>
+<p>This variable controls the dynamic loading of keywords in the completion list
+when initially logging in to the server or when the database context is changed
+using the <em>use database</em> command. When this variable is set to 'On' 
+(default is 'Off'), then the query that is provided through the
+<strong>$keyword_query</strong> variable is executed and the query result set is loaded into
+the Readline completion list. This will only work for Sybase ASE and Microsoft
+MS-SQL servers.
+This variable also controls dynamic loading of a column list to be auto-
+completed by Readline. When an object name is followed by a dot and TAB
+completion is requested, <em>sqsh</em> dynamically creates a list of columns that
+belongs to the object (table, view, procedure) and allows for Readline TAB
+completion of the column or parameter names. This feature is only available if
+GNU Readline support has been compiled into <em>sqsh</em> and <strong>$keyword_completion</strong>
+is set to a value greater than zero.</p>
+</dd>
 <dt><strong><a name="keyword_file" class="item">keyword_file (string)</a></strong></dt>
 
 <dd>
-<p>If readline support has been compiled into <em>sqsh</em>, and <em>sqsh</em> is being run in
+<p>If Readline support has been compiled into <em>sqsh</em>, and <em>sqsh</em> is being run in
 interactive mode, the contents of this file are used for keyword tab completion
-by readline rather than the default set of TSQL syntactical keywords. The
-default is <em>$HOME/.sqsh_words</em>.</p>
+by Readline rather than the default set of TSQL syntactical keywords. The
+default is <em>$HOME/.sqsh_words</em>. When <strong>$keyword_dynamic</strong> is enabled this
+takes precedence and overrules the list loaded from <strong>$keyword_file</strong>.</p>
+</dd>
+<dt><strong><a name="keyword_query" class="item">keyword_query (string)</a></strong></dt>
+
+<dd>
+<p>This variable contains the query that will be executed when a change of database
+is detected or during initial login (Msg 5701). The default query is:</p>
+<pre>
+    select name from sysobjects order by name</pre>
+<p>But you can supply a different query that suits your needs even better. E.g.</p>
+<pre>
+    \set keyword_query=&quot;\\
+      select name from sysobjects \\
+      where type in ('U','V','P','S') \\
+      union \\
+      select name from sybsystemprocs..sysobjects \\
+      where type='P' \\
+      order by name&quot;</pre>
+<p>This feature is controlled by the variables <strong>$keyword_completion</strong> and
+<strong>$keyword_dynamic</strong> and is only available if GNU Readline support has been
+compiled into <em>sqsh</em>.</p>
 </dd>
 <dt><strong><a name="language" class="item">language (string)</a></strong></dt>
 
