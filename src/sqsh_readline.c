@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.3 2009/04/14 10:41:33 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.4 2012/03/14 09:17:51 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -98,6 +98,8 @@ int sqsh_readline_init()
         return True;
     }
 
+    DBG(sqsh_debug( DEBUG_READLINE, "sqsh_readline_init: Initializing\n" );)
+
     /*
      * Set up the limit on the size of the readline history
      * buffer according to the value of $readline_history.
@@ -134,7 +136,12 @@ int sqsh_readline_init()
         varbuf_destroy (exp_buf);
     }
 
-    DBG(sqsh_debug( DEBUG_READLINE, "sqsh_readline_init: Initializing\n" );)
+    /*
+     * sqsh-2.1.8: Moved loading keyword_file from sqsh_main.c to here.
+     * If the user has requested some form of keyword completion
+     * then attempt to read the contents of the keywords file.
+    */
+    (void) sqsh_readline_load ();
 
     rl_readline_name                 = "sqsh" ;
     rl_completion_entry_function     = (rl_compentry_func_t*)sqsh_completion ;
@@ -298,6 +305,42 @@ char* sqsh_readline( prompt )
 
     sqsh_set_error( SQSH_E_NONE, NULL );
     return line;
+}
+
+/*
+ * sqsh_readline_load ():
+ *
+ * sqsh-2.1.8: Check and expand keyword_file variable and call sqsh_readline_read
+ * to suck in the keyword list.
+ */
+int sqsh_readline_load ( void )
+{
+#if !defined(USE_READLINE)
+    sqsh_set_error(SQSH_E_EXIST, "sqsh compiled without readline support" ) ;
+    return False ;
+#else
+    char          *keyword_file;
+    varbuf_t      *exp_buf;
+    int           ret = False ;
+
+    env_get( g_env, "keyword_file", &keyword_file );
+    if ( keyword_file != NULL && *keyword_file != '\0')
+    {
+        exp_buf = varbuf_create( 512 );
+        if (exp_buf == NULL)
+        {
+            fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+            sqsh_exit( 255 );
+        }
+        if (sqsh_expand( keyword_file, exp_buf, 0 ) != False)
+            ret = sqsh_readline_read( varbuf_getstr( exp_buf) );
+        else
+            fprintf( stderr, "sqsh: Error expanding $keyword_file: %s\n",
+                   sqsh_get_errstr() );
+        varbuf_destroy( exp_buf );
+    }
+    return ret;
+#endif
 }
 
 /*

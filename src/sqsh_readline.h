@@ -44,6 +44,7 @@ extern void add_history      ();
 int   sqsh_readline_init  _ANSI_ARGS(( void ));
 int   sqsh_readline_exit  _ANSI_ARGS(( void ));
 char* sqsh_readline       _ANSI_ARGS(( char* )) ;
+int   sqsh_readline_load  _ANSI_ARGS(( void  )) ;
 int   sqsh_readline_read  _ANSI_ARGS(( char* )) ;
 int   sqsh_readline_add   _ANSI_ARGS(( char* )) ;
 int   sqsh_readline_clear _ANSI_ARGS(( void )) ;

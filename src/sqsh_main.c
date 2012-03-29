@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.17 2010/02/17 11:35:06 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.18 2011/08/12 08:49:24 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -145,7 +145,6 @@ main( argc, argv )
     char          *batch_failcount;
     char          *exit_failcount;
     char          *exit_value;
-    char          *keyword_file;
     char          *term_title;
     char           str[512];
     int            ch;
@@ -769,31 +768,9 @@ main( argc, argv )
         }
 
         /*
-         * If the user has requested some form of keyword completion
-         * then attempt to read the contents of the keywords file.
-         * sqsh-2.1.6 feature - Expand keyword_file variable
-         */
-        env_get( g_env, "keyword_file", &keyword_file );
-        if ( keyword_file != NULL && *keyword_file != '\0')
-        {
-            exp_buf = varbuf_create( 512 );
-            if (exp_buf == NULL)
-            {
-                fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
-                sqsh_exit( 255 );
-            }
-            if (sqsh_expand( keyword_file, exp_buf, 0 ) != False)
-                sqsh_readline_read( varbuf_getstr( exp_buf) );
-            else
-                fprintf( stderr, "sqsh: Error expanding $keyword_file: %s\n",
-                       sqsh_get_errstr() );
-            varbuf_destroy( exp_buf );
-        }
-
-        /*
          * Initialize the readline "sub-system".  This basically consists
          * of installing handlers for readline keyword completion and
-         * sucking in the readline history file.
+         * sucking in the completion keyword list and the readline history file.
          */
         sqsh_readline_init();
     }

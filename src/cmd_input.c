@@ -52,7 +52,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_input.c,v 1.5 2010/01/28 15:30:37 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_input.c,v 1.6 2012/03/14 09:17:51 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -1089,6 +1089,9 @@ static int DynKeywordLoad ()
         return (CS_FAIL);
     }
 
+    (void) sqsh_readline_clear();       /* Empty the current keyword list     */
+    (void) sqsh_readline_load ();       /* Reload keywords from $keyword_file */
+
     while ((results_ret = ct_results(cmd, &result_type)) == CS_SUCCEED)
     {
         switch ((int) result_type)
@@ -1101,8 +1104,6 @@ static int DynKeywordLoad ()
                 columns[0].locale    = NULL;
                 ct_bind(cmd, 1, &columns[0], name, &datalength[0], &indicator[0]);
 
-                sqsh_readline_clear();
-
                 while ( ct_fetch (cmd, CS_UNUSED, CS_UNUSED, CS_UNUSED, &count) == CS_SUCCEED )
                 {
                     /* Remove trailing blanks, tabs and newlines, just in case */
@@ -1111,6 +1112,17 @@ static int DynKeywordLoad ()
                           name[idx--] = '\0');
                     sqsh_readline_add (name);    /* Add name to readline linked list of keywords */
                 }
+                break;
+
+            case CS_COMPUTE_RESULT:
+            case CS_CURSOR_RESULT:
+            case CS_MSG_RESULT:
+            case CS_PARAM_RESULT:
+            case CS_STATUS_RESULT:
+                /*
+                 * Just ignore these kind of results.
+                 */
+                while ( ct_fetch (cmd, CS_UNUSED, CS_UNUSED, CS_UNUSED, &count) == CS_SUCCEED );
                 break;
 
             case CS_CMD_SUCCEED:
