@@ -103,6 +103,31 @@
 6 - Bug fix     - Unable to use "-P -" to provide a password on stdin.
 	Bug report ID: 3388213
 
+7 - Bug fix	- Nested \if statements did not work
+
+	\set x=''
+	\if [ -z ${x} ]
+	        \echo "Level 1: EMPTY -${x}-"
+	        \set x='a'
+	        \if [ -z ${x} ]
+	                \echo "Level 2: EMPTY -${x}-"
+	        \else
+	                \echo "Level 2: NOT EMPTY -${x}-"
+	        \fi
+	\else
+	        \echo "Level 1: NOT EMPTY -${x}-"
+	\fi
+
+	This script executed in sqsh-2.1.7 would produce the incorrect results:
+
+	Level 1: EMPTY --
+	Level 2: EMPTY -a-
+	Level 2: NOT EMPTY -a-
+
+	This is now fixed in sqsh-2.1.8 and the correct results are produced now:
+
+	Level 1: EMPTY --
+	Level 2: NOT EMPTY -a-
 
 
 This version of sqsh has been successfully built and tested on Cygwin 32 bits,
@@ -140,6 +165,17 @@ sqsh-2.1.8/src/cmd_exit.c
 	Kill running jobs:           \kill <jobnr>
 	Show output:                 \show <jobnr> > /dev/null
 	Wait for jobs to finish:     \wait ...
+
+sqsh-2.1.8/src/cmd_if.c
+	Implements a fix for bug report 7).
+	While parsing an \if statement the body of the if and else branch are
+	copied to a buffer for subsequent body execution, depending on the
+	evaluation of the \if statement. When a nested \if statement was
+	discovered, the nestlevel was increased but the \if statement itself not
+	copied to this buffer. With this fix, the if and else branch will now
+	contain the nested \if statements and will successfully execute.
+	Also the evaluationvalue of the \if statement (true or false) will now
+	be available in the ${?} variable.
 
 sqsh-2.1.8/src/cmd_input.c
 	Implements feature 1), by executing a query to refresh the Readline
@@ -180,6 +216,9 @@ sqsh-2.1.8/src/sqsh_config.h
 	Defines a default value that will be assigned to $keyword_query.
 	  "select name from sysobjects order by name"
 	Also sets SQSH_VERSION to the string "sqsh-2.1.8".
+
+sqsh-2.1.8/src/sqsh_global.c
+	Changed copyright string.
 
 sqsh-2.1.8/src/sqsh_job.c
 	Implements enhancement 3), tilde expansion on the command line. If you

@@ -233,7 +233,7 @@ int cmd_if_exec( argc, argv, exit_status )
 		case -1:
 			fprintf( stderr, "\\if: fork() call failed: %s\n",
 				strerror(errno) );
-			env_set( g_internal_env, "$?", "-1" );
+			env_set( g_internal_env, "?", "-1" );
 			sig_restore();
 			return(CMD_FAIL);
 		
@@ -264,7 +264,7 @@ int cmd_if_exec( argc, argv, exit_status )
 				fprintf( stderr, "\\if: Error from waitpid(): %s\n",
 					strerror(errno) );
 
-				env_set( g_internal_env, "$?", "-1" );
+				env_set( g_internal_env, "?", "-1" );
 				sig_restore();
 				return(CMD_FAIL);
 			}
@@ -279,7 +279,7 @@ int cmd_if_exec( argc, argv, exit_status )
 			}
 
 			sprintf( nbr, "%d", *exit_status );
-			env_set( g_internal_env, "$?", nbr );
+			env_set( g_internal_env, "?", nbr );
 			break;
 	}
 
@@ -468,6 +468,15 @@ int cmd_if_input( if_buf, else_buf )
 				}
 				prompt_indent[i] = '\0';
 				env_put( g_env, "prompt_indent", prompt_indent, ENV_F_TRAN );
+
+				/*
+				** Bugfix sqsh-2.1.8
+				** Copy the nested new 'if' into the current buffer.
+				*/
+				if (parse_state == STATE_IF)
+					varbuf_strcat( if_buf, str );
+				else
+					varbuf_strcat( else_buf, str );
 			}
 			else if (strcmp( cmd, "elif" ) == 0 && 
 				nesting_level == 1)
