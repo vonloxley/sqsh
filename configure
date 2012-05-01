@@ -2909,7 +2909,7 @@ echo $ECHO_N "checking Open Client libraries... $ECHO_C" >&6
 
 		SYBASE_LIBS=
 
-		for i in blk cs ct tcl comn intl
+		for i in blk cs ct tcl comn intl unic
 		do
 			x=
 			if test -f $SYBASE_LIBDIR/lib${i}.a; then
@@ -3261,7 +3261,7 @@ echo "${ECHO_T}${READLINE_LIBS}" >&6
 	else
 		if test "$READLINE_LIBDIR" = "/usr/lib" -o ${READLINE_LIBDIR} = "/lib"
 		then
-			READLINE_LIBDIR="# -L${READLINE_LIBDIR}"
+			READLINE_LIBDIR=""
 		else
 			READLINE_LIBDIR="-L${READLINE_LIBDIR}"
 		fi

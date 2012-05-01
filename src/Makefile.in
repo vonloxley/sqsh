@@ -167,7 +167,7 @@ INCLUDE_DIRS   = $(X_INCDIR) $(MOTIF_INCDIR) $(SYBASE_INCDIR) $(READLINE_INCDIR)
 LIB_DIRS       = $(X_LIBDIR) $(MOTIF_INCDIR) $(SYBASE_LIBDIR) $(READLINE_LIBDIR)
 CFLAGS         = @CFLAGS@ $(DEBUG) $(DEFINES) $(INCLUDE_DIRS)
 CPPFLAGS       = @CPPFLAGS@
-LDFLAGS        = $(DEBUG) $(LIB_DIRS)
+LDFLAGS        = $(DEBUG) $(LIB_DIRS) @LDFLAGS@
 LIBS           = $(SYBASE_LIBS) $(X_LIBS) $(READLINE_LIBS) @LIBS@
 
 # The follow define information about the components that make up
