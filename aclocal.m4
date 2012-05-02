@@ -235,7 +235,7 @@ AC_DEFUN([AC_SYBASE_ASE], [
 
 		SYBASE_LIBS=
 
-		for i in blk cs ct tcl comn intl
+		for i in blk cs ct tcl comn intl unic
 		do
 			x=
 			if test -f $SYBASE_LIBDIR/lib${i}.a; then

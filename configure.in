@@ -210,7 +210,7 @@ else
 	else
 		if test "$READLINE_LIBDIR" = "/usr/lib" -o ${READLINE_LIBDIR} = "/lib"
 		then
-			READLINE_LIBDIR="# -L${READLINE_LIBDIR}"
+			READLINE_LIBDIR=""
 		else
 			READLINE_LIBDIR="-L${READLINE_LIBDIR}"
 		fi

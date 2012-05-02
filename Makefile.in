@@ -3,6 +3,7 @@
 #
 
 prefix         = @prefix@
+datarootdir    = @datarootdir@
 src_dir        = @srcdir@
 exec_prefix    = @exec_prefix@
 bin_dir        = @bindir@

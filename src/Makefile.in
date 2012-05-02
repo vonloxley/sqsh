@@ -143,6 +143,7 @@ X_LIBS       = @ATHENA_LIBS@ $(MOTIF_LIBS) @X_LIBS@
 #
 
 prefix         = @prefix@
+datarootdir    = @datarootdir@
 src_dir        = @srcdir@
 exec_prefix    = @exec_prefix@
 bin_dir        = $(exec_prefix)/bin

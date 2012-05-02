@@ -1,3 +1,6 @@
+For recent changes please read the files CHANGES-2.1.6,
+CHANGES-2.1.7 and CHANGES-2.1.8 in the doc directory.
+
 2005-12-30  Michael Peppler  <mpeppler@peppler.org>
 
 	* src/sqsh_main.c (main): Add support for -P command line argument
@@ -115,7 +118,7 @@
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.13 2005/07/24 11:41:19 mpeppler Exp $
+$Id: ChangeLog,v 1.14 2006/04/16 09:45:33 mpeppler Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against

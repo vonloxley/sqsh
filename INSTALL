@@ -4,7 +4,7 @@ Description
 -=-=-=-=-=-
 
 The follow document describes how to build and install the Sqsh SQL
-shell, version 2.1.7. For an overall description of the package, please
+shell, version 2.1.8. For an overall description of the package, please
 refer to the file README.
 
 Supported Platforms
@@ -40,7 +40,7 @@ In order to build this package, you will need:
       64 bit code, and you will need to add -DSYB_LP64 to the CFLAGS
       macro in src/Makefile. Note that any libraries that you want to 
       link with (for example "readline" must also have the 64bit
-      objects - you can't link 32 bir and 64 bit code in the same 
+      objects - you can't link 32 bit and 64 bit code in the same 
       binary).
 
    o  FreeTDS
@@ -75,7 +75,7 @@ In order to build this package, you will need:
          http://cnswww.cns.cwru.edu/~chet/readline/rltop.html
       
       Sqsh should work with versions of readline as old as 2.2,
-      but is currently being tested with version 4.2.
+      but is currently being tested with version 6.1.
 
 Problems
 -=-=-=-=-
@@ -187,12 +187,24 @@ Just follow the following directions:
          found earlier in your path.
       
    Also, the following environment variables may be set prior to
-   running 'configure' to alter its behavior:
+   running 'configure' to alter its behavior (see conf.sh for an
+   example on how to use these flags):
 
       CC 
          Forces configure to use the value of $CC as the default
          C compiler.  This variable may also specify flags to pass
-         to the compiler, such as "cc -O -Wall".
+         to the compiler, such as "cc -O -Wall" or just "gcc".
+
+      CFLAGS
+         Pass on additional compiler flags, for example "-g -O2 -m64"
+         when making sqsh in 64bit mode.
+
+      CPPFLAGS
+         Define preproccesor flags like "-DSYB_LP64" when making
+         sqsh in 64bit mode.
+
+      LDFLAGS
+         Define linker flags like "-m64" for example.
 
       INCDIRS
          When attempting to discover the location of the readline
@@ -260,13 +272,13 @@ Just follow the following directions:
 
    $ make install.man
 
-   Which will cause the man page to be copied into ${prefix}/man/man3.
+   Which will cause the man page to be copied into ${prefix}/man/man1.
    However, if your machine supports compressed man pages, you may use:
 
    $ make install.zman
 
    Which will cause the man page to be compressed and copied into
-   ${prefix}/man/man3.Z.
+   ${prefix}/man/man1.Z.
 
 Now if all went well, you have a working program with man pages and
 everything.  However, if you ever decide to do the unimaginable, and
@@ -302,8 +314,9 @@ Good Luck
 -=-=-=-=-
 
 Well, hopefully everything went OK for you.  If you have any problems
-or you run across any bugs in the program, contact me at:
+or you run across any bugs in the program, contact us at:
 
 mpeppler@peppler.org
+mwesdorp@users.sourceforge.net
 
-Michael Peppler, November 2004
+Michael Peppler, Martin Wesdorp, May 2012
