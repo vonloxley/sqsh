@@ -34,7 +34,7 @@
  * this.
  */
 extern void stifle_history   ();
-extern void unstifle_history ();
+extern int  unstifle_history ();
 extern int  read_history     ();
 extern int  write_history    ();
 extern void add_history      ();
