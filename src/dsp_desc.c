@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.7 2010/10/23 19:49:42 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.8 2012/03/14 09:17:51 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -528,28 +528,34 @@ CS_INT dsp_desc_fetch( cmd, d )
                          (double)(*((CS_FLOAT*)d->d_cols[i].c_native)) );
                 break;
 
+            /*
+             * sqsh-2.1.9 - Also take date and time datatypes into consideration
+            */
             case CS_DATETIME_TYPE:
             case CS_DATETIME4_TYPE:
 #if defined(CS_DATE_TYPE)
-		    case CS_DATE_TYPE:
+	    case CS_DATE_TYPE:
 #endif
 #if defined(CS_TIME_TYPE)
-		    case CS_TIME_TYPE:
+	    case CS_TIME_TYPE:
 #endif
-#if defined(CS_BIGDATETIME)
-		    case CS_BIGDATETIME_TYPE:
-		    case CS_BIGTIME_TYPE:
+#if defined(CS_BIGTIME_TYPE)
+	    case CS_BIGTIME_TYPE:
+#endif
+#if defined(CS_BIGDATETIME_TYPE)
+	    case CS_BIGDATETIME_TYPE:
 #endif
                 if (dsp_datetime_conv( g_context,              /* Context */
-                                       &d->d_cols[i].c_format, /* Data format */
+                                      &d->d_cols[i].c_format,  /* Data format */
                                        d->d_cols[i].c_native,  /* Data */
                                        d->d_cols[i].c_data,    /* Destination */
-                                       d->d_cols[i].c_maxlength+1 ) != CS_SUCCEED)
+                                       d->d_cols[i].c_maxlength+1,
+				       d->d_cols[i].c_format.datatype ) != CS_SUCCEED)
                 {
                     return CS_FAIL;
                 }
                 break;
-            
+
             default:
                 d->d_cols[i].c_format.maxlength = d->d_cols[i].c_native_len;
 

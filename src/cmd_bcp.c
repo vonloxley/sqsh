@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.9 2010/02/04 15:21:34 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.10 2010/03/28 11:46:05 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -54,10 +54,16 @@ USE(RCS_Id)
 
 /*
  * sg_interrupted:  This variable is set by the bcp_signal() signal
- *      handler and is to be polled periodically to determine if 
+ *      handler and is to be polled periodically to determine if
  *      a signal has been recieved.
  */
 static int sg_interrupted  = False;
+
+/*
+ * sg_error: This variable is set by the callback functions and is
+ *      used when the init command returns an error.
+ */
+static int sg_error        = False;
 
 /*
  * sg_bcp_connection: This variable is used by the signal handler
@@ -112,7 +118,7 @@ static void        bcp_signal       _ANSI_ARGS(( int, void* ));
 static bcp_data_t* bcp_data_bind    _ANSI_ARGS(( CS_COMMAND*, CS_INT ));
 static CS_INT      bcp_data_xfer    _ANSI_ARGS(( bcp_data_t*, CS_COMMAND*, CS_BLKDESC* ));
 static void        bcp_data_destroy _ANSI_ARGS(( bcp_data_t* ));
-static CS_RETCODE  bcp_server_cb    
+static CS_RETCODE  bcp_server_cb
     _ANSI_ARGS(( CS_CONTEXT*, CS_CONNECTION*, CS_SERVERMSG* ))
 #if defined(_CYGWIN32_)
    __attribute__ ((stdcall))
@@ -185,6 +191,13 @@ int cmd_bcp( argc, argv )
     CS_BOOL           have_identity = CS_FALSE;
 
     /*
+     * sqsh-2.1.9 - Feature BCP execute an initialization command
+     */
+    char           *init_cmd     = NULL;    /* BCP init command option */
+    CS_COMMAND     *bcp_cmd_init = NULL;    /* Command sent to server */
+    CS_RETCODE      retcode;                /* return code */
+
+    /*
      * Retrieve value of variables used to configure the connection.
      * These values may be overriden by command line parameters.
      */
@@ -199,16 +212,16 @@ int cmd_bcp( argc, argv )
     env_get( g_env, "hostname",   &hostname );
     env_get( g_env, "packet_size", &packet_size );
 
-    while ((opt = sqsh_getopt( argc, argv, "A:b:I:J:m:NP;S:U:Xz:" )) != EOF) 
+    while ((opt = sqsh_getopt( argc, argv, "A:b:I:i:J:m:NP;S:U:Xz:" )) != EOF)
     {
-        switch (opt) 
+        switch (opt)
         {
             case 'A':
                 packet_size = sqsh_optarg;
                 break;
 
             case 'b':
-                if ((batchsize = atoi(sqsh_optarg)) <= 0) 
+                if ((batchsize = atoi(sqsh_optarg)) <= 0)
                 {
                     fprintf(stderr, "\\bcp: -b: Invalid value '%s'\n", sqsh_optarg);
                     return CMD_FAIL;
@@ -223,18 +236,22 @@ int cmd_bcp( argc, argv )
                 }
                 break;
 
+            case 'i' :
+                init_cmd = sqsh_optarg;
+                break;
+
             case 'J' :
                 charset = sqsh_optarg;
                 break;
 
             case 'm':
-                if ((maxerrors = atoi(sqsh_optarg)) <= 0) 
+                if ((maxerrors = atoi(sqsh_optarg)) <= 0)
                 {
                     fprintf(stderr, "\\bcp: -m: Invalid value '%s'\n", sqsh_optarg);
                     return CMD_FAIL;
                 }
                 break;
-            
+
             case 'N':
                 have_identity = CS_TRUE;
                 break;
@@ -247,7 +264,7 @@ int cmd_bcp( argc, argv )
                 server = sqsh_optarg;
                 break;
 
-            case 'U' : 
+            case 'U' :
                 username = sqsh_optarg;
                 break;
 
@@ -267,13 +284,13 @@ int cmd_bcp( argc, argv )
 
     /*
      * If there isn't a table name left on the command line, or an
-     * invalid argument was supplied, then print out usage 
+     * invalid argument was supplied, then print out usage
      * information.
      */
-    if ((argc - sqsh_optind) != 1 || have_error) 
+    if ((argc - sqsh_optind) != 1 || have_error)
     {
-        fprintf(stderr, 
-           "Use: \\bcp [-A packsetsize] [-b batchsize] [-I interfaces]\n"
+        fprintf(stderr,
+           "Use: \\bcp [-A packsetsize] [-b batchsize] [-I interfaces] [-i initcmd]\n"
            "          [-J charset] [-m maxerrors] [-N] [-P password]\n"
            "          [-S server] [-U username] [-X] [-z language] table_name\n");
         return CMD_FAIL;
@@ -291,6 +308,7 @@ int cmd_bcp( argc, argv )
      * handlers and various other data structures created.
      */
     sg_interrupted    = False;
+    sg_error          = False;
     sg_bcp_connection = NULL;
 
     sig_save();
@@ -302,20 +320,20 @@ int cmd_bcp( argc, argv )
      * remote database (that we are bcp'ing too), lets launch our
      * query and see if it is valid.
      */
-    if (expand == NULL || *expand != '0') 
+    if (expand == NULL || *expand != '0')
     {
         /*
          * Temporarily create a buffer in which to store the expanded
          * SQL buffer.
          */
-        if ((exp_buf = varbuf_create(512)) == NULL) 
+        if ((exp_buf = varbuf_create(512)) == NULL)
         {
             fprintf(stderr, "\\bcp: varbuf_create: %s\n", sqsh_get_errstr());
             goto return_fail;
         }
 
         if (sqsh_expand( varbuf_getstr( g_sqlbuf ), exp_buf,
-                         EXP_STRIPESC|EXP_COMMENT|EXP_COLUMNS ) == False) 
+                         EXP_STRIPESC|EXP_COMMENT|EXP_COLUMNS ) == False)
         {
             fprintf(stderr, "\\bcp: sqsh_expand: %s\n", sqsh_get_errstr());
             goto return_fail;
@@ -323,7 +341,7 @@ int cmd_bcp( argc, argv )
 
         cmd_sql = varbuf_getstr( exp_buf );
 
-    } 
+    }
     else
     {
         cmd_sql = varbuf_getstr( g_sqlbuf );
@@ -411,7 +429,7 @@ int cmd_bcp( argc, argv )
 
     if (sg_interrupted)
         goto return_interrupt;
-    
+
     /*
      * If we have reached this point, then everything looks like it
      * went OK, so it is now time to create a new connection to the
@@ -441,7 +459,7 @@ int cmd_bcp( argc, argv )
                      CS_SERVERMSG_CB,           /* Type */
                      (CS_VOID*)bcp_server_cb    /* Callback Pointer */
                    ) != CS_SUCCEED)
-        goto return_fail;             
+        goto return_fail;
 
     /*-- Set Bulk Login --*/
     if (ct_con_props( bcp_con,                    /* Connection */
@@ -465,7 +483,7 @@ int cmd_bcp( argc, argv )
                       (CS_INT*)NULL               /* Output Length */
                          ) != CS_SUCCEED)
     {
-        fprintf( stderr, 
+        fprintf( stderr,
             "\\bcp: Unable to set username to '%s' for BCP connection\n",
             username );
         goto return_fail;
@@ -493,7 +511,7 @@ int cmd_bcp( argc, argv )
                       (CS_INT*)NULL               /* Output Length */
                           ) != CS_SUCCEED)
     {
-        fprintf( stderr, 
+        fprintf( stderr,
             "\\bcp: Unable to set appname to 'sqsh-bcp' for BCP connection\n" );
         goto return_fail;
     }
@@ -508,7 +526,7 @@ int cmd_bcp( argc, argv )
                               (CS_INT*)NULL            /* Output Length */
                              ) != CS_SUCCEED)
         {
-            fprintf( stderr, 
+            fprintf( stderr,
                 "\\bcp: Unable to set hostname to '%s' for BCP connection\n",
                 hostname );
             goto return_fail;
@@ -526,8 +544,8 @@ int cmd_bcp( argc, argv )
                               (CS_INT*)NULL            /* Output Length */
                              ) != CS_SUCCEED)
         {
-            fprintf( stderr, 
-                "\\bcp: Unable to set packetsize to %d for BCP connection\n", 
+            fprintf( stderr,
+                "\\bcp: Unable to set packetsize to %d for BCP connection\n",
                 (int)i );
             goto return_fail;
         }
@@ -544,7 +562,7 @@ int cmd_bcp( argc, argv )
                               (CS_INT*)NULL            /* Output Length */
                              ) != CS_SUCCEED)
         {
-            fprintf( stderr, 
+            fprintf( stderr,
                 "\\bcp: Unable to set enable encryption for BCP connection\n" );
             goto return_fail;
         }
@@ -557,7 +575,7 @@ int cmd_bcp( argc, argv )
      */
     if (cs_loc_alloc( g_context, &bcp_locale ) != CS_SUCCEED)
     {
-        fprintf( stderr, 
+        fprintf( stderr,
             "\\bcp: Unable to allocate locale for BCP connection\n" );
         goto return_fail;
     }
@@ -572,7 +590,7 @@ int cmd_bcp( argc, argv )
                    (CS_INT*)NULL                 /* Output Length */
                      ) != CS_SUCCEED)
     {
-        fprintf( stderr, 
+        fprintf( stderr,
             "\\bcp: Unable to initialize locale for BCP connection\n" );
         goto return_fail;
     }
@@ -588,7 +606,7 @@ int cmd_bcp( argc, argv )
                           (CS_INT*)NULL              /* Output Length */
                          ) != CS_SUCCEED)
         {
-            fprintf( stderr, 
+            fprintf( stderr,
                 "\\bcp: Unable to set language to '%s' for BCP connection\n",
                 language );
             goto return_fail;
@@ -606,7 +624,7 @@ int cmd_bcp( argc, argv )
                           (CS_INT*)NULL              /* Output Length */
                          ) != CS_SUCCEED)
         {
-            fprintf( stderr, 
+            fprintf( stderr,
                 "\\bcp: Unable to set charset to '%s' for BCP connection\n",
                 charset );
             goto return_fail;
@@ -662,9 +680,41 @@ int cmd_bcp( argc, argv )
         }
     }
 #endif /* CTLIB_SIGPOLL_BUG */
-    
+
     /*-- Inform signal handler of connection --*/
     sg_bcp_connection = bcp_con;
+
+    /*
+     * sqsh-2.1.9 - Feature BCP execute an initialization command
+     *              Process the initialization command provided in init_cmd
+     */
+    if (init_cmd != NULL)
+    {
+        if ((retcode = ct_cmd_alloc(bcp_con, &bcp_cmd_init)) != CS_SUCCEED || sg_error == True)
+        {
+            fprintf( stderr, "\\bcp: ct_cmd_alloc failed. (retcode=%d, sg_error=%d)\n", retcode, sg_error );
+            goto return_fail;
+        }
+
+        if ((retcode = ct_command(bcp_cmd_init, CS_LANG_CMD, init_cmd, CS_NULLTERM, CS_UNUSED) != CS_SUCCEED) ||
+            sg_error == True)
+        {
+            fprintf( stderr, "\\bcp: ct_command() for init_cmd failed. (retcode=%d, sg_error=%d)\n",
+                     retcode, sg_error);
+            goto return_fail;
+        }
+
+        if ((retcode = ct_send(bcp_cmd_init)) != CS_SUCCEED || sg_error == True)
+        {
+            fprintf( stderr, "\\bcp: ct_send() for init_cmd failed. (retcode=%d, sg_error=%d)\n",
+                     retcode, sg_error);
+            goto return_fail;
+        }
+
+        while ((return_code = ct_results(bcp_cmd_init, &result_type)) == CS_SUCCEED);
+        if (sg_error == True)
+            goto return_fail;
+    }
 
     /*-- Allocate a block descriptor --*/
     DBG(sqsh_debug(DEBUG_BCP, "bcp: blk_alloc(blk_ver)\n");)
@@ -674,7 +724,7 @@ int cmd_bcp( argc, argv )
         fprintf( stderr, "\\bcp: Unable to allocate bulk descriptor\n" );
         goto return_fail;
     }
-    
+
     /*
      * Configure whether or not this connection is to contain the
      * value for the identity column in a result set.  We default
@@ -685,8 +735,8 @@ int cmd_bcp( argc, argv )
         if (blk_props( bcp_desc,                    /* Descriptor */
                        CS_SET,                      /* Action */
                        BLK_IDENTITY,                /* Property */
-                       (CS_VOID*)&have_identity,    /* Buffer */  
-                       CS_UNUSED,                   /* Buffer Length*/  
+                       (CS_VOID*)&have_identity,    /* Buffer */
+                       CS_UNUSED,                   /* Buffer Length*/
                        (CS_INT*)NULL                /* Output Length */
                       ) == CS_FAIL)
         {
@@ -700,7 +750,7 @@ int cmd_bcp( argc, argv )
     DBG(sqsh_debug(DEBUG_BCP, "bcp: blk_init(CS_BLK_IN,'%s',%d)\n",
         bcp_table, strlen(bcp_table));)
 
-    if (blk_init( bcp_desc, CS_BLK_IN, bcp_table, 
+    if (blk_init( bcp_desc, CS_BLK_IN, bcp_table,
                   strlen(bcp_table) ) != CS_SUCCEED)
     {
         fprintf( stderr, "\\bcp: Unable to initialize bulk copy on table '%s'\n",
@@ -709,7 +759,7 @@ int cmd_bcp( argc, argv )
     }
 
     fprintf(stderr, "\nStarting copy...\n" );
-    
+
     /*
      * Allrightythen.  We have already sent the command to retrieve
      * data through g_dbproc, and have succesfully created bcp_dbproc
@@ -724,7 +774,7 @@ int cmd_bcp( argc, argv )
     {
         if (sg_interrupted)
             goto return_interrupt;
-        
+
         if (return_code != CS_SUCCEED)
             break;
 
@@ -742,8 +792,8 @@ int cmd_bcp( argc, argv )
                 if ((bcp_dat = bcp_data_bind( bcp_cmd, result_type )) == NULL)
                     goto return_fail;
 
-                while ((return_code = 
-                        bcp_data_xfer( bcp_dat, 
+                while ((return_code =
+                        bcp_data_xfer( bcp_dat,
                                             bcp_cmd,
                                          bcp_desc )) != CS_END_DATA)
                 {
@@ -790,18 +840,18 @@ int cmd_bcp( argc, argv )
                     }
                 } /* while (bcp_data_xfer()) */
                 break;
-            
+
             case CS_PARAM_RESULT:
             case CS_STATUS_RESULT:
             case CS_COMPUTE_RESULT:
-                while ((return_code = ct_fetch( bcp_cmd, CS_UNUSED, CS_UNUSED, 
+                while ((return_code = ct_fetch( bcp_cmd, CS_UNUSED, CS_UNUSED,
                     CS_UNUSED, &nrows )) == CS_SUCCEED);
-                
+
                 if (return_code != CS_END_DATA)
                 {
                     fprintf( stderr,
                         "\\bcp: Error discarding extraneous result sets\n" );
-                    
+
                     goto return_fail;
                 }
                 break;
@@ -812,7 +862,7 @@ int cmd_bcp( argc, argv )
 
     }
 
-    if (rows_in_batch > 0) 
+    if (rows_in_batch > 0)
     {
         DBG(sqsh_debug(DEBUG_BCP, "bcp: FINAL: blk_done(CS_BLK_BATCH)\n");)
         if (blk_done( bcp_desc,
@@ -825,9 +875,9 @@ int cmd_bcp( argc, argv )
         if (sg_interrupted)
             goto return_interrupt;
 
-        if (nrows != rows_in_batch) 
+        if (nrows != rows_in_batch)
         {
-            if (++nerrors == maxerrors) 
+            if (++nerrors == maxerrors)
                 goto return_fail;
         }
         total_rows += nrows;
@@ -840,11 +890,11 @@ int cmd_bcp( argc, argv )
         goto return_fail;
 
     gettimeofday( &tv_end, NULL );
-    
+
     if (rows_in_batch != 0)
         fprintf(stderr,"Batch successfully bulk-copied to SQL Server\n");
 
-    fprintf( stderr, "\n%d row%s copied.\n", total_rows, 
+    fprintf( stderr, "\n%d row%s copied.\n", total_rows,
                 (total_rows != 1) ? "s" : "" );
 
     /* add check for non-zero number of rows passed to avoid
@@ -852,11 +902,11 @@ int cmd_bcp( argc, argv )
        patch by Onno van der Linden */
     if(total_rows > 0) {
         secs = ELAPSED_SEC(tv_start,tv_end);
-        fprintf( stderr, 
+        fprintf( stderr,
                  "Clock Time (sec.): Total = %-.4f  Avg = %-.4f (%.2f rows per sec.)\n",
                  secs, secs / (double)total_rows, (double)total_rows / secs );
     }
-    
+
     return_code = CMD_RESETBUF;
     goto leave;
 
@@ -887,7 +937,7 @@ return_fail:
 
       /*-- If connected, disconnect --*/
       if (con_status == CS_CONSTAT_CONNECTED)
-      {  
+      {
             if (bcp_desc != NULL)
             {
                 DBG(sqsh_debug(DEBUG_ERROR, "bcp:    Cancelling bcp batch.\n");)
@@ -940,13 +990,16 @@ leave:
 
     if (bcp_cmd != NULL)
         ct_cmd_drop( bcp_cmd );
-    
+
+    if (bcp_cmd_init != NULL)
+        ct_cmd_drop( bcp_cmd_init );
+
     if (bcp_desc != NULL)
     {
         DBG(sqsh_debug(DEBUG_BCP, "bcp: blk_drop()\n");)
         blk_drop( bcp_desc );
     }
-    
+
     if (bcp_con != NULL)
     {
         ct_close( bcp_con, CS_FORCE_CLOSE );
@@ -956,7 +1009,7 @@ leave:
     if (bcp_locale != NULL)
         cs_loc_drop( g_context, bcp_locale );
 
-    sig_restore();    
+    sig_restore();
     return return_code;
 }
 
@@ -984,7 +1037,7 @@ static bcp_data_t* bcp_data_bind ( cmd, result_type )
     d = (bcp_data_t*)calloc( 1, sizeof( bcp_data_t ) );
     c = (bcp_col_t*)calloc( ncols, sizeof( bcp_col_t ) );
 
-    if (d == NULL || c == NULL) 
+    if (d == NULL || c == NULL)
     {
         fprintf( stderr, "bcp_data_bind: Memory allocation failure.\n" );
         if (d != NULL)
@@ -999,9 +1052,9 @@ static bcp_data_t* bcp_data_bind ( cmd, result_type )
     d->d_ncols = ncols;
     d->d_cols  = c;
 
-    for (i = 0; i < ncols; i++) 
+    for (i = 0; i < ncols; i++)
         d->d_cols[i].c_data = NULL;
-    
+
     for (i = 0; i < ncols; i++)
     {
         c = &d->d_cols[i];
@@ -1010,9 +1063,9 @@ static bcp_data_t* bcp_data_bind ( cmd, result_type )
         c->c_nullind = 0;
 
         /*-- Get description for column --*/
-        if (ct_describe( cmd, i+1, &c->c_format ) != CS_SUCCEED) 
+        if (ct_describe( cmd, i+1, &c->c_format ) != CS_SUCCEED)
         {
-            fprintf( stderr, 
+            fprintf( stderr,
                 "bcp_data_bind: Unable to fetch column %d description\n",
                 (int) i+1 );
             bcp_data_destroy( d );
@@ -1036,7 +1089,7 @@ static bcp_data_t* bcp_data_bind ( cmd, result_type )
                          &c->c_nullind                   /* NULL Indicator */
                       ) != CS_SUCCEED)
         {
-            fprintf( stderr, 
+            fprintf( stderr,
                 "bcp_data_bind: Unable to bind column %d\n",
                 (int) i+1 );
             bcp_data_destroy( d );
@@ -1062,7 +1115,7 @@ static CS_INT bcp_data_xfer( d, cmd, blkdesc )
                             CS_UNUSED,        /* Offset */
                             CS_UNUSED,        /* Option */
                             &nrows );
-    
+
     if (return_code != CS_SUCCEED)
     {
         return return_code;
@@ -1100,8 +1153,8 @@ static CS_INT bcp_data_xfer( d, cmd, blkdesc )
                               &c->c_len,                /* Buffer Length */
                               &c->c_nullind ) != CS_SUCCEED)
             {
-                fprintf( stderr, 
-                    "bcp_data_xfer: Unable to bind results for column %d\n", 
+                fprintf( stderr,
+                    "bcp_data_xfer: Unable to bind results for column %d\n",
                     (int) i+1 );
                 return CS_FAIL;
             }
@@ -1111,7 +1164,7 @@ static CS_INT bcp_data_xfer( d, cmd, blkdesc )
     DBG(sqsh_debug(DEBUG_BCP, "bcp: blk_rowxfer()\n");)
     if (blk_rowxfer( blkdesc ) != CS_SUCCEED)
     {
-        fprintf( stderr, 
+        fprintf( stderr,
             "bcp_data_xfer: Unable to transfer row to remote SQL Server\n" );
         return CS_FAIL;
     }
@@ -1196,12 +1249,12 @@ static CS_RETCODE bcp_server_cb (ctx, con, msg)
          * If the severity is something other than 0 or the msg number is
          * 0 (user informational messages).
          */
-        if (msg->severity >= 0 || msg->msgnumber == 0) 
+        if (msg->severity >= 0 || msg->msgnumber == 0)
         {
             /*
              * If the message was something other than informational, and
              * the severity was greater than 0, then print information to
-             * stderr with a little pre-amble information.  According to 
+             * stderr with a little pre-amble information.  According to
              * the Sybase System Administrator's guide, severity level 10
              * messages should not display severity information.
              */
@@ -1218,8 +1271,10 @@ static CS_RETCODE bcp_server_cb (ctx, con, msg)
                 fprintf( stderr, "\n" );
                 fprintf( stderr, "%s\n", msg->text );
                 fflush( stderr );
+
+                sg_error = True;
             }
-            else 
+            else
             {
                 /*
                  * Otherwise, it is just an informational (e.g. print) message
@@ -1260,6 +1315,8 @@ static CS_RETCODE bcp_client_cb ( ctx, con, msg )
     }
     fprintf( stderr, "%s\n", msg->msgstring );
     fflush( stderr ) ;
+
+    sg_error = True;
 
     return CS_SUCCEED ;
 }

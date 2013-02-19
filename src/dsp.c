@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp.c,v 1.2 2005/07/24 11:41:19 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp.c,v 1.3 2008/05/21 17:51:24 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -305,8 +305,22 @@ static int dsp_prop_set( prop, ptr, len )
 {
 	switch (prop)
 	{
+		/*
+		 * sqsh-2.1.9 - Introduced and remapped property types DSP_DATETIMEFMT, DSP_DATEFMT
+		 * and DSP_TIMEFMT to implement date and time datatype conversions with strftime as
+		 * already existed for the datetime and smalldatetime datatypes.
+		 * This feature request was filed as bugreport 3603409 on Sourceforge.
+		 */
+		case DSP_DATETIMEFMT:
+			return dsp_datetimefmt_set( (char*)ptr );
+			break;
+
 		case DSP_DATEFMT:
 			return dsp_datefmt_set( (char*)ptr );
+			break;
+
+		case DSP_TIMEFMT:
+			return dsp_timefmt_set( (char*)ptr );
 			break;
 
 		case DSP_COLWIDTH:
@@ -591,6 +605,12 @@ static int dsp_prop_get( prop, ptr, len )
 {
 	switch (prop)
 	{
+		/*
+		 * sqsh-2.1.9 - Introduced and remapped property types DSP_DATETIMEFMT, DSP_DATEFMT
+		 * and DSP_TIMEFMT to implement date and time datatype conversions with strftime as
+		 * already existed for the datetime and smalldatetime datatypes.
+		 * This feature request was filed as bugreport 3603409 on Sourceforge.
+		 */
 		case DSP_COLWIDTH:
 			DBG(sqsh_debug(DEBUG_DISPLAY, 
 				"dsp_prop: dsp_prop(DSP_GET, DSP_COLWIDTH) = %d\n", 
@@ -631,6 +651,20 @@ static int dsp_prop_get( prop, ptr, len )
 			*((int*)ptr) = g_dsp_props.p_real_scale;
 			break;
 
+		case DSP_DATETIMEFMT:
+			DBG(sqsh_debug(DEBUG_DISPLAY, 
+				"dsp_prop: dsp_prop(DSP_GET, DSP_DATETIMEFMT) = %s\n", 
+				dsp_datetimefmt_get());)
+
+			if (len <= 0)
+			{
+				sqsh_set_error( SQSH_E_INVAL, "length must be greater than 0" );
+				return DSP_FAIL;
+			}
+
+			strncpy( (char*)ptr, dsp_datetimefmt_get(), len );
+			break;
+
 		case DSP_DATEFMT:
 			DBG(sqsh_debug(DEBUG_DISPLAY, 
 				"dsp_prop: dsp_prop(DSP_GET, DSP_DATEFMT) = %s\n", 
@@ -643,6 +677,20 @@ static int dsp_prop_get( prop, ptr, len )
 			}
 
 			strncpy( (char*)ptr, dsp_datefmt_get(), len );
+			break;
+
+		case DSP_TIMEFMT:
+			DBG(sqsh_debug(DEBUG_DISPLAY, 
+				"dsp_prop: dsp_prop(DSP_GET, DSP_TIMEFMT) = %s\n", 
+				dsp_timefmt_get());)
+
+			if (len <= 0)
+			{
+				sqsh_set_error( SQSH_E_INVAL, "length must be greater than 0" );
+				return DSP_FAIL;
+			}
+
+			strncpy( (char*)ptr, dsp_timefmt_get(), len );
 			break;
 			
 		case DSP_STYLE:

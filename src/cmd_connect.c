@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.22 2010/03/28 11:46:05 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.23 2012/03/14 09:17:51 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -531,7 +531,8 @@ int cmd_connect( argc, argv )
      */
     if( preserve_context && database != NULL && *database != '\0' ) 
     {
-        strncpy( use_database, database , 127) ;
+        strncpy( use_database, database, sizeof(use_database)-1 ) ;
+        use_database[sizeof(use_database)-1] = '\0';
         autouse = use_database ;
     }
 
@@ -855,6 +856,23 @@ int cmd_connect( argc, argv )
                               (CS_INT*)NULL            /* Output Length */
                              ) != CS_SUCCEED)
             goto connect_fail;
+
+#if defined (CS_SEC_EXTENDED_ENCRYPTION)
+        /*
+         * sqsh-2.1.9: Enable extended password encryption to be able to
+         * connect to ASE servers with 'net password encryption reqd'
+         * configured to 2 (RSA).
+        */
+        if (ct_con_props( g_connection,                   /* Connection */
+                              CS_SET,                     /* Action */
+                              CS_SEC_EXTENDED_ENCRYPTION, /* Property */
+                              (CS_VOID*)&i,               /* Buffer */
+                              CS_UNUSED,                  /* Buffer Length */
+                              (CS_INT*)NULL               /* Output Length */
+                             ) != CS_SUCCEED)
+            goto connect_fail;
+#endif
+
     }
 
     /*
@@ -947,10 +965,15 @@ int cmd_connect( argc, argv )
          * error handlers.
          */
         if (ct_connect( g_connection, server,
-            (server == NULL)?CS_UNUSED:CS_NULLTERM ) != CS_SUCCEED)
+            (server == NULL) ? CS_UNUSED : CS_NULLTERM ) != CS_SUCCEED)
         {
-            if (*password_retry != '1' || !sqsh_stdin_isatty() ||
-                sg_login_failed != True)
+            /*
+             * sqsh-2.1.9: Check for g_interactive instead of sqsh_stdin_isatty()
+             * because that may not be determined at this point. Do not prompt
+             * for a password if Network authentication is used but just failed.
+             */
+            if (*password_retry != '1'  || g_interactive   == False ||
+                sg_login_failed != True || NetAuthRequired == True)
             {
                 goto connect_fail;
             }
@@ -1485,13 +1508,17 @@ static CS_RETCODE syb_cs_cb ( ctx, msg )
     /*
      * If this is the "The attempt to connect to the server failed"
      * message and we previously got a "Login Failed" message from
-     * the server, then ignore it.
+     * the server (44), then ignore it.
+     *
+     * sqsh-2.1.9: The same for the freetds "Adaptive Server connection failed"
+     * message number 34. Also check for g_interactive and display the Client
+     * Message if the session is not interactive.
      */
-    if (CS_NUMBER(msg->msgnumber) == 44 && sg_login_failed == True)
+    if ((CS_NUMBER(msg->msgnumber) == 34 || CS_NUMBER(msg->msgnumber) == 44)
+        && sg_login_failed == True && g_interactive == True)
     {
         return CS_SUCCEED;
     }
-
     fprintf( stderr, "Open Client Message\n" );
 
     if (CS_NUMBER(msg->msgnumber) > 0)

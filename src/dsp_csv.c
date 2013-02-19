@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_csv.c,v 1.1 2004/04/11 15:14:32 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_csv.c,v 1.1 2005/07/24 11:41:19 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -206,7 +206,12 @@ static void dsp_col( output, col_value, col_width )
 	if (end > col_value || (end == col_value && !isspace((int)*end))) {
 	    dsp_fputc('"', output);
 	    for (; col_value <= end; ++col_value)
+	    {
+                /* sqsh-2.1.9 - Bug fix 3525302 */
+		if (*col_value == '"')
+		    dsp_fputc('"', output);
 		dsp_fputc( *col_value, output );
+	    }
 	    dsp_fputc('"', output);
 	}
     }

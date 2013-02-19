@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_dsp.c,v 1.2 2005/07/24 11:41:19 mpeppler Exp $";
+static char RCS_Id[] = "$Id: var_dsp.c,v 1.3 2009/12/23 12:47:46 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -118,13 +118,21 @@ int var_set_fltfmt( env, var_name, var_value )
 	return True;
 }
 
+/*
+ * sqsh-2.1.9 - Implement date and time datatype conversion routines.
+ * New and modified functions: var_set_datetime, var_get_datetime,
+ * var_set_datefmt, var_get_datefmt, var_set_timefmt, var_get_timefmt.
+ */
 int var_set_datetime( env, var_name, var_value )
 	env_t    *env ;
 	char     *var_name ;
 	char     **var_value ;
 {
+        if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
+                *var_value = NULL ;
+
 	if (dsp_prop( DSP_SET,
-	              DSP_DATEFMT, 
+	              DSP_DATETIMEFMT, 
 	              (void*)(*(var_value)),
 	              DSP_NULLTERM ) != DSP_SUCCEED)
 	{
@@ -142,7 +150,83 @@ int var_get_datetime( env, var_name, var_value )
 	static char date_str[64];
 
 	if (dsp_prop( DSP_GET,
+	              DSP_DATETIMEFMT, 
+	              (void*)date_str,
+	              sizeof(date_str) ) != DSP_SUCCEED)
+	{
+		return False;
+	}
+
+	*var_value = date_str;
+	return True;
+}
+
+int var_set_datefmt( env, var_name, var_value )
+	env_t    *env ;
+	char     *var_name ;
+	char     **var_value ;
+{
+        if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
+                *var_value = NULL ;
+
+	if (dsp_prop( DSP_SET,
 	              DSP_DATEFMT, 
+	              (void*)(*(var_value)),
+	              DSP_NULLTERM ) != DSP_SUCCEED)
+	{
+		return False;
+	}
+
+	return True;
+}
+
+int var_get_datefmt( env, var_name, var_value )
+	env_t    *env ;
+	char     *var_name ;
+	char     **var_value ;
+{
+	static char date_str[64];
+
+	if (dsp_prop( DSP_GET,
+	              DSP_DATEFMT, 
+	              (void*)date_str,
+	              sizeof(date_str) ) != DSP_SUCCEED)
+	{
+		return False;
+	}
+
+	*var_value = date_str;
+	return True;
+}
+
+int var_set_timefmt( env, var_name, var_value )
+	env_t    *env ;
+	char     *var_name ;
+	char     **var_value ;
+{
+        if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
+                *var_value = NULL ;
+
+	if (dsp_prop( DSP_SET,
+	              DSP_TIMEFMT, 
+	              (void*)(*(var_value)),
+	              DSP_NULLTERM ) != DSP_SUCCEED)
+	{
+		return False;
+	}
+
+	return True;
+}
+
+int var_get_timefmt( env, var_name, var_value )
+	env_t    *env ;
+	char     *var_name ;
+	char     **var_value ;
+{
+	static char date_str[64];
+
+	if (dsp_prop( DSP_GET,
+	              DSP_TIMEFMT, 
 	              (void*)date_str,
 	              sizeof(date_str) ) != DSP_SUCCEED)
 	{

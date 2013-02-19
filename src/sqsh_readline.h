@@ -32,6 +32,7 @@
  * Readline history functions - for some reason not all
  * readline installs have history.h available, so we do
  * this.
+ * sqsh-2.1.9 - Fixed declaration of unstifle_history
  */
 extern void stifle_history   ();
 extern int  unstifle_history ();

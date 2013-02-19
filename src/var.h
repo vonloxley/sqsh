@@ -60,6 +60,8 @@ int var_set_bcp_colsep      _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_bcp_rowsep      _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_bcp_trim        _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_maxlen          _ANSI_ARGS(( env_t*, char*, char** )) ;
+int var_set_datefmt         _ANSI_ARGS(( env_t*, char*, char** )) ;
+int var_set_timefmt         _ANSI_ARGS(( env_t*, char*, char** )) ;
 
 /*-- Retrieval validation functions --*/
 int var_get_date            _ANSI_ARGS(( env_t*, char*, char** )) ;
@@ -78,6 +80,8 @@ int var_get_bcp_rowsep      _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_get_bcp_trim        _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_get_interactive     _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_get_maxlen          _ANSI_ARGS(( env_t*, char*, char** )) ;
+int var_get_datefmt         _ANSI_ARGS(( env_t*, char*, char** )) ;
+int var_get_timefmt         _ANSI_ARGS(( env_t*, char*, char** )) ;
 
 #ifdef SQSH_INIT
 
@@ -100,13 +104,13 @@ static var_entry_t  sg_var_entry[] = {
     { "banner",           "1",           var_set_bool,        NULL            },
     { "batch_failcount",  "0",           var_set_add,         NULL            },
     { "batch_pause",      "0",           var_set_bool,        NULL            },
-    { "bcp_colsep",       NULL,          var_set_bcp_colsep, var_get_bcp_colsep},
-    { "bcp_rowsep",       NULL,          var_set_bcp_rowsep, var_get_bcp_rowsep},
-    { "bcp_trim",         NULL,          var_set_bcp_trim,    var_get_bcp_trim},
-    { "chained",          NULL,          var_set_bool,        NULL }, /* XXX */
+    { "bcp_colsep",       "|",           var_set_bcp_colsep, var_get_bcp_colsep},
+    { "bcp_rowsep",       "|",           var_set_bcp_rowsep, var_get_bcp_rowsep},
+    { "bcp_trim",         "1",           var_set_bcp_trim,    var_get_bcp_trim},
+    { "chained",          NULL,          var_set_bool,        NULL            },
     { "charset",          NULL,          var_set_nullstr,     NULL            },
     { "clear_on_fail",    "1",           var_set_bool,        NULL            },
-    { "colsep",           NULL,          var_set_colsep,      var_get_colsep  },
+    { "colsep",           " ",           var_set_colsep,      var_get_colsep  },
     { "colwidth",         "32",          var_set_colwidth,    var_get_colwidth},
     { "DISPLAY",          NULL,          var_set_env,         var_get_env     },
     { "database",         NULL,          var_set_nullstr,     NULL            },
@@ -124,44 +128,44 @@ static var_entry_t  sg_var_entry[] = {
     { "footers",          "1",           var_set_bool,        NULL            },
     { "headers",          "1",           var_set_bool,        NULL            },
     { "help_dir",         SQSH_HELP,     var_set_path_r,      NULL            },
-    { "history",          SQSH_HISTORY,  NULL,                NULL            },
+    { "history",          SQSH_HISTORY,  var_set_nullstr,     NULL            },
     { "history_shorthand","0",           var_set_bool,        NULL            },
     { "histnum",          "0",           var_set_int,         NULL            },
     { "histsave",         "1",           var_set_bool,        NULL            },
     { "histsize",         "10",          var_set_histsize,    NULL            },
     { "hostname",         NULL,          var_set_nullstr,     NULL            },
     { "ifs",              "\n\f\r\t\v",  var_set_esc,         NULL            },
-    { "interactive",      "1",           NULL,           var_get_interactive  },
-    { "interfaces",        NULL,         var_set_interfaces,  NULL            },
+    { "interactive",      "1",           var_set_readonly,    var_get_interactive },
+    { "interfaces",       NULL,          var_set_interfaces,  NULL            },
     { "keyword_completion", "0",         var_set_completion,  NULL            },
-    { "keyword_file",     SQSH_WORDS,    NULL,                NULL            },
+    { "keyword_file",     SQSH_WORDS,    var_set_nullstr,     NULL            },
     { "language",         NULL,          var_set_nullstr,     NULL            },
     { "lineno",           "1",           var_set_add,         NULL            },
     { "linesep",          NULL,          var_set_linesep,     var_get_linesep },
     { "lock",             NULL,          var_set_lock,        NULL            },
-    { "maxlen",           NULL,          var_set_maxlen,      var_get_maxlen  },
+    { "maxlen",           "32768",       var_set_maxlen,      var_get_maxlen  },
     { "newline_go",       "0",           var_set_bool,        NULL            },
     { "output_parms",     "1",           var_set_outputparms, var_get_outputparms },
     { "packet_size",      NULL,          var_set_packet,      NULL            },
     { "password",         "",            var_set_password,    NULL            },
     { "password_retry",   "1",           var_set_bool,        NULL            },
-    { "prompt",         "\\\\${lineno}> ",NULL,               NULL            },
-    { "prompt2",        "\\\\${lineno}--> ",NULL,             NULL            },
-    { "rcfile",           SQSH_RC,       NULL,                NULL            },
-    { "repeat_batch",    "0",            var_set_bool,        NULL            },
-    { "readline_history",SQSH_RLHISTORY, NULL,                NULL            },
+    { "prompt",        "\\\\${lineno}> ",var_set_nullstr,     NULL            },
+    { "prompt2",     "\\\\${lineno}--> ",var_set_nullstr,     NULL            },
+    { "rcfile",           SQSH_RC,       var_set_nullstr,     NULL            },
+    { "repeat_batch",     "0",           var_set_bool,        NULL            },
+    { "readline_history",SQSH_RLHISTORY, var_set_nullstr,     NULL            },
     { "readline_histsize","100",         var_set_rl_histsize, NULL            },
-    { "semicolon_hack",  "0",            var_set_bool,        NULL            },
-    { "semicolon_cmd",   "\\go",         var_set_nullstr,     NULL            },
+    { "semicolon_hack",   "0",           var_set_bool,        NULL            },
+    { "semicolon_cmd",    "\\go",        var_set_nullstr,     NULL            },
     { "session",          SQSH_SESSION,  var_set_nullstr,     NULL            },
-    { "start_connected", "1",            var_set_bool,        NULL            },
-    { "statistics",      "0",            var_set_bool,        NULL            },
-    { "style",           "horiz",        var_set_style,       var_get_style   },
-    { "thresh_display",  "0",            var_set_severity,    NULL            },
-    { "thresh_exit",     "0",            var_set_int,         NULL            },
-    { "thresh_fail",     "11",           var_set_severity,    NULL            },
-    { "tmp_dir",          SQSH_TMP,      NULL,                NULL            },
-    { "username",         NULL,          NULL,                NULL            },
+    { "start_connected",  "1",           var_set_bool,        NULL            },
+    { "statistics",       "0",           var_set_bool,        NULL            },
+    { "style",            "horizontal",  var_set_style,       var_get_style   },
+    { "thresh_display",   "0",           var_set_severity,    NULL            },
+    { "thresh_exit",      "0",           var_set_int,         NULL            },
+    { "thresh_fail",      "11",          var_set_severity,    NULL            },
+    { "tmp_dir",          SQSH_TMP,      var_set_nullstr,     NULL            },
+    { "username",         NULL,          var_set_nullstr,     NULL            },
     { "version",          SQSH_VERSION,  var_set_readonly,    NULL            },
     { "width",            NULL,          var_set_width,       var_get_width   },
     { "xgeom",            NULL,          var_set_xgeom,       var_get_xgeom   },
@@ -188,6 +192,9 @@ static var_entry_t  sg_var_entry[] = {
     { "keyword_dynamic",  "0",           var_set_bool,        NULL            },
     { "keyword_query",    SQSH_KEYQUERY, var_set_nullstr,     NULL            },
 #endif
+    /* sqsh-2.1.9 - New variables */
+    { "datefmt",          NULL,          var_set_datefmt,     var_get_datefmt },
+    { "timefmt",          NULL,          var_set_timefmt,     var_get_timefmt },
 } ;
 
 #endif /* SQSH_INIT */

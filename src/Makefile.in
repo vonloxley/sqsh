@@ -196,7 +196,7 @@ VARS           = \
 
 CORE           = \
 	sqsh_alias.o sqsh_args.o sqsh_avl.o sqsh_buf.o sqsh_cmd.o \
-	sqsh_compat.o sqsh_ctx.o sqsh_debug.o sqsh_env.o sqsh_error.o \
+	sqsh_compat.o sqsh_debug.o sqsh_env.o sqsh_error.o \
 	sqsh_expand.o sqsh_fd.o sqsh_filter.o sqsh_fork.o sqsh_func.o \
 	sqsh_getopt.o sqsh_global.o sqsh_history.o sqsh_init.o \
 	sqsh_job.o sqsh_readline.o sqsh_sig.o sqsh_sigcld.o sqsh_stdin.o \
@@ -431,8 +431,6 @@ sqsh_cmd.o: sqsh_cmd.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h sqsh_avl.h sqsh_cmd.h
 sqsh_compat.o: sqsh_compat.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h sqsh_sig.h
-sqsh_ctx.o: sqsh_ctx.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_ctx.h sqsh_varbuf.h dsp.h
 sqsh_debug.o: sqsh_debug.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h
 sqsh_env.o: sqsh_env.c sqsh_config.h config.h sqsh_compat.h \

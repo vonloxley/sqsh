@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.18 2011/08/12 08:49:24 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.19 2012/03/29 16:25:46 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -215,6 +215,8 @@ main( argc, argv )
         else
         {
             rcfile = NULL;
+	    /* sqsh-2.1.9 - Set rcfile environment variable also to NULL */
+            env_set( g_env, "rcfile", rcfile );
         }
     }
     else
@@ -282,6 +284,8 @@ main( argc, argv )
 
             cptr = strtok( NULL, ":\n\t\r" );
         }
+	/* sqsh-2.1.9 - Remove temporary environment variable cur_rcfile */
+	env_remove( g_env, "cur_rcfile", 0);
         varbuf_destroy(exp_buf);
     }
 

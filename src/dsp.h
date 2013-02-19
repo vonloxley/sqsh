@@ -122,13 +122,17 @@ extern int g_dsp_interrupted;
 #define DSP_GET           1
 #define DSP_SET           2
 
+/*
+ * sqsh-2.1.9 - Introduced or changed property types DSP_DATETIMEFMT, DSP_DATEFMT and DSP_TIMEFMT
+ */
+
 /*-- Types of properties for dsp_prop() --*/
 #define DSP_WIDTH         1
 #define DSP_COLSEP        2
 #define DSP_LINESEP       3
 #define DSP_XGEOM         4
 #define DSP_STYLE         5
-#define DSP_DATEFMT       6
+#define DSP_DATETIMEFMT   6
 #define DSP_FLOAT_SCALE   7
 #define DSP_FLOAT_PREC    8
 #define DSP_REAL_SCALE    9
@@ -141,7 +145,9 @@ extern int g_dsp_interrupted;
 #define DSP_MAXLEN       16
 #define DSP_CSV_COLSEP   17
 #define DSP_CSV_ROWSEP   18
-#define DSP_VALID_PROP(p) ((p) >= DSP_WIDTH && (p) <= DSP_CSV_ROWSEP)
+#define DSP_DATEFMT      19
+#define DSP_TIMEFMT      20
+#define DSP_VALID_PROP(p) ((p) >= DSP_WIDTH && (p) <= DSP_TIMEFMT)
 
 
 /*-- Length for dsp_prop() --*/
@@ -226,34 +232,44 @@ typedef struct dsp_prop_st {
  * (or as defaulted).
  */
 extern dsp_prop_t g_dsp_props;
-	
+
+/*
+ * sqsh-2.1.9 - To implement the date and time datatypes conversion feature,
+ * the following prototypes have been added or modified: dsp_datetimefmt_set,
+ * dsp_datetimefmt_get, dsp_datefmt_set, dsp_datefmt_get, dsp_timefmt_set,
+ * dsp_timefmt_get and dsp_datetime_conv.
+*/
+
 /*-- Internal Prototypes --*/
-dsp_out_t*  dsp_fopen         _ANSI_ARGS(( FILE* ));
-int         dsp_fputc         _ANSI_ARGS(( int, dsp_out_t* ));
-int         dsp_fputs         _ANSI_ARGS(( char*, dsp_out_t* ));
-int         dsp_fflush        _ANSI_ARGS(( dsp_out_t* ));
-int         dsp_fprintf       _ANSI_ARGS(( dsp_out_t*, char*, ... ));
-int         dsp_fclose        _ANSI_ARGS(( dsp_out_t* ));
-int         dsp_horiz         _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
-int         dsp_meta          _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
-int         dsp_vert          _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
-int         dsp_bcp           _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
-int         dsp_csv           _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
-int         dsp_html          _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
-int         dsp_none          _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
-int         dsp_pretty        _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
-int         dsp_x             _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int, dsp_t* ));
-int         dsp_datefmt_set   _ANSI_ARGS(( char* ));
-char*       dsp_datefmt_get   _ANSI_ARGS(( void ));
-dsp_desc_t* dsp_desc_bind     _ANSI_ARGS(( CS_COMMAND*, CS_INT ));
-CS_INT      dsp_desc_fetch    _ANSI_ARGS(( CS_COMMAND*, dsp_desc_t* ));
-void        dsp_desc_destroy  _ANSI_ARGS(( dsp_desc_t* ));
-CS_INT      dsp_datetime_len  _ANSI_ARGS(( CS_CONTEXT*, CS_INT ));
-CS_INT      dsp_datetime4_len _ANSI_ARGS(( CS_CONTEXT* ));
-CS_INT      dsp_money_len     _ANSI_ARGS(( CS_CONTEXT* ));
-CS_INT      dsp_money4_len    _ANSI_ARGS(( CS_CONTEXT* ));
-CS_RETCODE  dsp_datetime_conv _ANSI_ARGS(( CS_CONTEXT*, CS_DATAFMT*, CS_VOID*,
-                                           CS_CHAR*, CS_INT ));
+dsp_out_t*  dsp_fopen             _ANSI_ARGS(( FILE* ));
+int         dsp_fputc             _ANSI_ARGS(( int, dsp_out_t* ));
+int         dsp_fputs             _ANSI_ARGS(( char*, dsp_out_t* ));
+int         dsp_fflush            _ANSI_ARGS(( dsp_out_t* ));
+int         dsp_fprintf           _ANSI_ARGS(( dsp_out_t*, char*, ... ));
+int         dsp_fclose            _ANSI_ARGS(( dsp_out_t* ));
+int         dsp_horiz             _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
+int         dsp_meta              _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
+int         dsp_vert              _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
+int         dsp_bcp               _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
+int         dsp_csv               _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
+int         dsp_html              _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
+int         dsp_none              _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
+int         dsp_pretty            _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
+int         dsp_x                 _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int, dsp_t* ));
+int         dsp_datetimefmt_set   _ANSI_ARGS(( char* ));
+char*       dsp_datetimefmt_get   _ANSI_ARGS(( void ));
+int         dsp_datefmt_set       _ANSI_ARGS(( char* ));
+char*       dsp_datefmt_get       _ANSI_ARGS(( void ));
+int         dsp_timefmt_set       _ANSI_ARGS(( char* ));
+char*       dsp_timefmt_get       _ANSI_ARGS(( void ));
+dsp_desc_t* dsp_desc_bind         _ANSI_ARGS(( CS_COMMAND*, CS_INT ));
+CS_INT      dsp_desc_fetch        _ANSI_ARGS(( CS_COMMAND*, dsp_desc_t* ));
+void        dsp_desc_destroy      _ANSI_ARGS(( dsp_desc_t* ));
+CS_INT      dsp_datetime_len      _ANSI_ARGS(( CS_CONTEXT*, CS_INT ));
+CS_INT      dsp_datetime4_len     _ANSI_ARGS(( CS_CONTEXT* ));
+CS_INT      dsp_money_len         _ANSI_ARGS(( CS_CONTEXT* ));
+CS_INT      dsp_money4_len        _ANSI_ARGS(( CS_CONTEXT* ));
+CS_RETCODE  dsp_datetime_conv     _ANSI_ARGS(( CS_CONTEXT*, CS_DATAFMT*, CS_VOID*, CS_CHAR*, CS_INT, CS_INT ));
 
 #if defined(DEBUG)
 char*   dsp_result_name _ANSI_ARGS(( CS_INT ));

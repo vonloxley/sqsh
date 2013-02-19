@@ -31,12 +31,23 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_conv.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: dsp_conv.c,v 1.2 2004/04/10 00:10:30 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
+/*
+ * sqsh-2.1.9 - Introduced and remapped global variables sg_datetime_fmt, sg_date_fmt
+ * and sg_time_fmt as well as the functions dsp_datetimefmt_set, dsp_datetimefmt_get,
+ * dsp_datefmt_set, dsp_datefmt_get, dsp_timefmt_set and dsp_timefmt_get to implement
+ * date and time datatype conversions with strftime as already existed for the datetime
+ * and smalldatetime datatypes.
+ * This feature request was filed as bugreport 3603409 on Sourceforge.
+ */
+
 /*-- Local Globals --*/
 static char sg_datetime_fmt[64]  = "\0";
+static char sg_date_fmt[64]      = "\0";
+static char sg_time_fmt[64]      = "\0";
 static int  sg_datetime_len      = -1;
 static int  sg_datetime4_len     = -1;
 static int  sg_date_len          = -1;
@@ -48,14 +59,14 @@ static CS_INT dsp_type_len       _ANSI_ARGS(( CS_CONTEXT*, CS_CHAR*,
 static char*  dsp_datetime_strip _ANSI_ARGS(( CS_INT, char*, int ));
 
 /*
- * dsp_datefmt_set():
+ * dsp_datetimefmt_set():
  *
  * Set the conversion format to be used by the display routine when
  * converting dates.  A format string of NULL or "default" indicates
  * that the default CT-Lib conversion method should be used.  Otherwise
  * a string suitable for use by strftime() should be supplied.
  */
-int dsp_datefmt_set( fmt )
+int dsp_datetimefmt_set( fmt )
     char         *fmt;
 {
     /*
@@ -82,18 +93,19 @@ int dsp_datefmt_set( fmt )
      * longer than the size of sg_datetime_fmt, then we quietly
      * trim it to the appropriate length.
      */
-    strncpy( sg_datetime_fmt, fmt, sizeof(sg_datetime_fmt) );
+    strncpy( sg_datetime_fmt, fmt, sizeof(sg_datetime_fmt)-1 );
+    sg_datetime_fmt[sizeof(sg_datetime_fmt)-1] = '\0';
     return DSP_SUCCEED;
 }
 
 /*
- * dsp_datefmt_get():
+ * dsp_datetimefmt_get():
  *
  * Retrieve the conversion format to be used by the display routine when
  * converting dates.  A format string of NULL or "default" indicates
  * that the default CT-Lib conversion method should be used.
  */
-char* dsp_datefmt_get()
+char* dsp_datetimefmt_get()
 {
     if (*sg_datetime_fmt == '\0')
     {
@@ -101,6 +113,127 @@ char* dsp_datefmt_get()
     }
 
     return sg_datetime_fmt;
+}
+
+
+/*
+ * dsp_datefmt_set():
+ *
+ * sqsh-2.1.9 - Date and time datatype conversion feature.
+ *
+ * Set the conversion format to be used by the display routine when
+ * converting dates.  A format string of NULL or "default" indicates
+ * that the default CT-Lib conversion method should be used.  Otherwise
+ * a string suitable for use by strftime() should be supplied.
+ */
+int dsp_datefmt_set( fmt )
+    char         *fmt;
+{
+    /*
+     * The dsp_datetime_len() function uses these global variables
+     * to store the results of the last time it was called.  Since
+     * we are now changing the format from what it was, these
+     * variables should be reset.
+     */
+    sg_date_len  = -1;
+
+    /*
+     * If the format is NULL or "default", then we simply store
+     * away the format to be used as an empty string.
+     */
+    if (fmt == NULL || strcmp( fmt, "default" ) == 0)
+    {
+        sg_date_fmt[0] = '\0';
+        return DSP_SUCCEED;
+    }
+
+    /*
+     * This is a little cheesy. If the user passes us a string
+     * longer than the size of sg_date_fmt, then we quietly
+     * trim it to the appropriate length.
+     */
+    strncpy( sg_date_fmt, fmt, sizeof(sg_date_fmt)-1 );
+    sg_date_fmt[sizeof(sg_date_fmt)-1] = '\0';
+    return DSP_SUCCEED;
+}
+
+/*
+ * dsp_datefmt_get():
+ *
+ * sqsh-2.1.9 - Date and time datatype conversion feature.
+ *
+ * Retrieve the conversion format to be used by the display routine when
+ * converting dates.  A format string of NULL or "default" indicates
+ * that the default CT-Lib conversion method should be used.
+ */
+char* dsp_datefmt_get()
+{
+    if (*sg_date_fmt == '\0')
+    {
+        return "default";
+    }
+
+    return sg_date_fmt;
+}
+
+/*
+ * dsp_timefmt_set():
+ *
+ * sqsh-2.1.9 - Date and time datatype conversion feature.
+ *
+ * Set the conversion format to be used by the display routine when
+ * converting times.  A format string of NULL or "default" indicates
+ * that the default CT-Lib conversion method should be used.  Otherwise
+ * a string suitable for use by strftime() should be supplied.
+ */
+int dsp_timefmt_set( fmt )
+    char         *fmt;
+{
+    /*
+     * The dsp_time_len() function uses these global variables
+     * to store the results of the last time it was called.  Since
+     * we are now changing the format from what it was, these
+     * variables should be reset.
+     */
+    sg_time_len  = -1;
+
+    /*
+     * If the format is NULL or "default", then we simply store
+     * away the format to be used as an empty string.
+     */
+    if (fmt == NULL || strcmp( fmt, "default" ) == 0)
+    {
+        sg_time_fmt[0] = '\0';
+        return DSP_SUCCEED;
+    }
+
+    /*
+     * This is a little cheesy. If the user passes us a string
+     * longer than the size of sg_time_fmt, then we quietly
+     * trim it to the appropriate length.
+     */
+    strncpy( sg_time_fmt, fmt, sizeof(sg_time_fmt)-1 );
+    sg_time_fmt[sizeof(sg_time_fmt)-1] = '\0';
+    return DSP_SUCCEED;
+}
+
+/*
+ * dsp_timefmt_get():
+ *
+ * sqsh-2.1.9 - Date and time datatype conversion feature.
+ *
+ * Retrieve the conversion format to be used by the display routine when
+ * converting dates.  A format string of NULL or "default" indicates
+ * that the default CT-Lib conversion method should be used.
+ */
+char* dsp_timefmt_get()
+{
+    if (*sg_time_fmt == '\0')
+    {
+        return "default";
+    }
+
+    return sg_time_fmt;
 }
 
 /*
@@ -111,6 +244,8 @@ char* dsp_datefmt_get()
  * is similar to dsp_money_len() except that every month is 
  * converted to verify if particular month names are longer than
  * others.
+ *
+ * sqsh-2.1.9 - Also implement date and time datatype conversions.
  */
 CS_INT dsp_datetime_len( ctxt, type )
     CS_CONTEXT   *ctxt;
@@ -141,6 +276,13 @@ CS_INT dsp_datetime_len( ctxt, type )
         return sg_datetime4_len;
     }
 
+#if defined(CS_BIGDATETIME_TYPE)
+    if (type == CS_BIGDATETIME_TYPE && sg_datetime_len != -1)
+    {
+        return sg_datetime_len;
+    }
+#endif
+
 #if defined(CS_DATE_TYPE)
     if (type == CS_DATE_TYPE && sg_date_len != -1)
     {
@@ -155,6 +297,13 @@ CS_INT dsp_datetime_len( ctxt, type )
     }
 #endif
 
+#if defined(CS_BIGTIME_TYPE)
+    if (type == CS_BIGTIME_TYPE && sg_time_len != -1)
+    {
+        return sg_time_len;
+    }
+#endif
+
     /*
      * If the user is using the default CT-Lib conversion format then
      * we try a brute force test of all of the months in the year,
@@ -162,13 +311,19 @@ CS_INT dsp_datetime_len( ctxt, type )
      */
     max_len = 0;
 
-	/* The user defined conversion with strftime, etc. is not implemented
-	   for the CS_DATE_TYPE and CS_TIME_TYPE datatypes */
-    if (*sg_datetime_fmt == '\0' || 
+    if ((type == CS_DATETIME_TYPE  && *sg_datetime_fmt == '\0')
+     || (type == CS_DATETIME4_TYPE && *sg_datetime_fmt == '\0')
+#if defined(CS_BIGDATETIME_TYPE)
+     || (type == CS_BIGDATETIME_TYPE && *sg_datetime_fmt == '\0')
+#endif
 #if defined(CS_DATE_TYPE)
-		(type == CS_DATE_TYPE || type == CS_TIME_TYPE)
-#else
-		0
+     || (type == CS_DATE_TYPE && *sg_date_fmt == '\0')
+#endif
+#if defined(CS_TIME_TYPE)
+     || (type == CS_TIME_TYPE && *sg_time_fmt == '\0')
+#endif
+#if defined(CS_BIGTIME_TYPE)
+     || (type == CS_BIGTIME_TYPE && *sg_time_fmt == '\0')
 #endif
 		)
     {
@@ -189,8 +344,23 @@ CS_INT dsp_datetime_len( ctxt, type )
         for (i = 1; i <= 12; i++)
         {
             /*-- Build a made-up day of the month --*/
-            sprintf( dt_buf, "%d/12/1997 11:59:53:123PM", i );
 
+            switch (type)
+              {
+#if defined(CS_DATE_TYPE)
+              case CS_DATE_TYPE:
+                sprintf( dt_buf, "%d/12/1997", i );
+                break;
+#endif
+#if defined(CS_TIME_TYPE)
+              case CS_TIME_TYPE:
+                sprintf( dt_buf, "11:59:53:123PM", i );
+                break;
+#endif
+                default:
+                  sprintf( dt_buf, "%d/12/1997 11:59:53:123PM", i );
+                break;
+              }
             len = dsp_type_len( ctxt, (CS_CHAR*)dt_buf, &dt_fmt, &dt );
 
             /*-- Keep track of the longest date encountered --*/
@@ -219,7 +389,27 @@ CS_INT dsp_datetime_len( ctxt, type )
          * datatype, and replace the ms (%u) with the longest possible
          * number.
          */
-        fmt = dsp_datetime_strip( type, sg_datetime_fmt, 999 );
+            switch (type)
+              {
+#if defined(CS_DATE_TYPE)
+              case CS_DATE_TYPE:
+                fmt = dsp_datetime_strip( type, sg_date_fmt, 999 );
+                break;
+#endif
+#if defined(CS_TIME_TYPE)
+              case CS_TIME_TYPE:
+                fmt = dsp_datetime_strip( type, sg_time_fmt, 999 );
+                break;
+#endif
+#if defined(CS_BIGTIME_TYPE)
+              case CS_BIGTIME_TYPE:
+                fmt = dsp_datetime_strip( type, sg_time_fmt, 999 );
+                break;
+#endif
+                default:
+                fmt = dsp_datetime_strip( type, sg_datetime_fmt, 999 );
+                break;
+              }      
 
         max_len   = 0;
         max_month = 0;
@@ -272,16 +462,21 @@ CS_INT dsp_datetime_len( ctxt, type )
 
     DBG(sqsh_debug(DEBUG_DISPLAY, 
                    "dsp_datetime_len: %s = %d chars\n", 
-                   (type == CS_DATETIME_TYPE)?"CS_DATETIME":"CS_SMALLDATETIME",
+                   (type == CS_DATETIME_TYPE)?"CS_DATETIME":"Other DATE/TIME type",
                    max_len);)
 
 	switch(type) {
 	  case CS_DATETIME_TYPE:
-        sg_datetime_len = max_len;
+		sg_datetime_len = max_len;
 		break;
 	  case CS_DATETIME4_TYPE:
 		sg_datetime4_len = max_len;
 		break;
+#if defined(CS_BIGDATETIME_TYPE)
+	  case CS_BIGDATETIME_TYPE:
+		sg_datetime_len = max_len;
+		break;
+#endif
 #if defined(CS_DATE_TYPE)
 	  case CS_DATE_TYPE:
 		sg_date_len = max_len;
@@ -292,7 +487,12 @@ CS_INT dsp_datetime_len( ctxt, type )
 		sg_time_len = max_len;
 		break;
 #endif
-    }
+#if defined(CS_BIGTIME_TYPE)
+	  case CS_BIGTIME_TYPE:
+		sg_time_len = max_len;
+		break;
+#endif
+	}
 
 /*	fprintf(stderr, "type = %d, len = %d\n", type, max_len); */
 
@@ -306,30 +506,51 @@ CS_INT dsp_datetime_len( ctxt, type )
  * of length, len according to the conversion style as defined in
  * dsp_datetime_fmt().  This function returns CS_SUCCEED up success or
  * CS_FAIL upon failure (duh!).
+ *
+ * sqsh-2.1.9 - Also implement the date and time datatype conversions.
  */
-CS_RETCODE dsp_datetime_conv( ctx, dt_fmt, dt, buf, len )
+CS_RETCODE dsp_datetime_conv( ctx, dt_fmt, dt, buf, len, type )
     CS_CONTEXT  *ctx;     /* Context */
     CS_DATAFMT  *dt_fmt;  /* Date format */
     CS_VOID     *dt;      /* Pointer to date */
     CS_CHAR     *buf;     /* Buffer */
     CS_INT       len;     /* Length */
+    CS_INT       type;    /* CS_TYPE */
 {
     struct tm   tm;
     char       *fmt;
     CS_DATEREC  dr;
     CS_DATAFMT  cs_fmt;
+    char       *conv_fmt;
+
+
+    switch (type)
+    {
+#if defined(CS_DATE_TYPE)
+        case CS_DATE_TYPE:
+            conv_fmt = sg_date_fmt;
+            break;
+#endif
+#if defined(CS_TIME_TYPE)
+        case CS_TIME_TYPE:
+            conv_fmt = sg_time_fmt;
+            break;
+#endif
+#if defined(CS_BIGTIME_TYPE)
+        case CS_BIGTIME_TYPE:
+            conv_fmt = sg_time_fmt;
+            break;
+#endif
+        default:
+            conv_fmt = sg_datetime_fmt;
+            break;
+    }
 
     /*
      * If the user has not specified a format, then we let ct-lib
      * do its thing.  This seems to be OK for most platforms.
      */
-    if (*sg_datetime_fmt == '\0' ||
-#if defined(CS_DATE_TYPE)
-		(dt_fmt->datatype == CS_DATE_TYPE || dt_fmt->datatype == CS_TIME_TYPE)
-#else
-		0
-#endif
-		)
+    if (*conv_fmt == '\0')
     {
         cs_fmt.datatype  = CS_CHAR_TYPE;
         cs_fmt.locale    = NULL;
@@ -379,7 +600,7 @@ CS_RETCODE dsp_datetime_conv( ctx, dt_fmt, dt, buf, len )
      * type of date that we are processing and replace the ms
      * field if it exists.
      */
-    fmt = dsp_datetime_strip( dt_fmt->datatype, sg_datetime_fmt, 
+    fmt = dsp_datetime_strip( dt_fmt->datatype, conv_fmt, 
                               (int)dr.datemsecond );
 
     /*
