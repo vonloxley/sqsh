@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.11 2013/02/19 18:06:42 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.12 2013/02/20 10:32:53 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -360,6 +360,17 @@ int cmd_bcp( argc, argv )
 
     /*-- Find the appropriate BLK_VERSION_xxx value --*/
     /*-- sqsh-2.1.7 - Make it compile with freetds-0.82 --*/
+    /*-- sqsh-2.1.9 - Added version BLK_VERSION_157     --*/
+#if defined(CS_VERSION_157)
+    if(blk_ver == -1 && g_cs_ver == CS_VERSION_157) {
+#if defined(BLK_VERSION_157)
+	blk_ver = BLK_VERSION_157;
+#else
+	blk_ver = BLK_VERSION_110;
+#endif
+    }
+#endif
+
 #if defined(CS_VERSION_155)
     if(blk_ver == -1 && g_cs_ver == CS_VERSION_155) {
 #if defined(BLK_VERSION_155)

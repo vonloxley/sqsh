@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.23 2012/03/14 09:17:51 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.24 2013/02/19 18:06:42 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -561,6 +561,18 @@ int cmd_connect( argc, argv )
     g_cs_ver = CS_CURRENT_VERSION;
     retcode = cs_ctx_alloc(g_cs_ver, &g_context);
 }
+#endif
+#if defined(CS_VERSION_157)
+        if(retcode != CS_SUCCEED) {
+	    g_cs_ver = CS_VERSION_157;
+	    retcode = cs_ctx_alloc(g_cs_ver, &g_context);
+	}
+#endif
+#if defined(CS_VERSION_155)
+        if(retcode != CS_SUCCEED) {
+	    g_cs_ver = CS_VERSION_155;
+	    retcode = cs_ctx_alloc(g_cs_ver, &g_context);
+	}
 #endif
 #if defined(CS_VERSION_150)
         if(retcode != CS_SUCCEED) {
