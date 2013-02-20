@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.10 2010/03/28 11:46:05 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.11 2013/02/19 18:06:42 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -563,9 +563,30 @@ int cmd_bcp( argc, argv )
                              ) != CS_SUCCEED)
         {
             fprintf( stderr,
-                "\\bcp: Unable to set enable encryption for BCP connection\n" );
+                "\\bcp: Unable to set password encryption for BCP connection\n" );
             goto return_fail;
         }
+
+#if defined (CS_SEC_EXTENDED_ENCRYPTION)
+        /*
+         * sqsh-2.1.9: Enable extended password encryption to be able to
+         * connect to ASE servers with 'net password encryption reqd'
+         * configured to 2 (RSA).
+        */
+        if (ct_con_props( bcp_con,                    /* Connection */
+                              CS_SET,                     /* Action */
+                              CS_SEC_EXTENDED_ENCRYPTION, /* Property */
+                              (CS_VOID*)&i,               /* Buffer */
+                              CS_UNUSED,                  /* Buffer Length */
+                              (CS_INT*)NULL               /* Output Length */
+                             ) != CS_SUCCEED)
+        {
+            fprintf( stderr,
+                "\\bcp: Unable to set extended password encryption for BCP connection\n" );
+            goto return_fail;
+        }
+#endif
+
     }
 
     /*
