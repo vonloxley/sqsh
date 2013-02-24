@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.24 2013/02/19 18:06:42 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.25 2013/02/20 13:31:57 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -217,7 +217,7 @@ int cmd_connect( argc, argv )
      * Parse the command line options.
      * sqsh-2.1.6 - New options added and case evaluation neatly ordered.
      */
-    while ((c = sqsh_getopt( argc, argv, "cD:I;K:n:N:P;Q:R:S:T:U:V;Z;" )) != EOF) 
+    while ((c = sqsh_getopt( argc, argv, "cD:I;K:n:N:P;Q:R:S:T:U:V;XZ;" )) != EOF) 
     {
         switch( c ) 
         {
@@ -339,6 +339,15 @@ int cmd_connect( argc, argv )
 		have_error = True;
 	    }
 	    break ;
+	  case 'X' : /* sqsh-2.1.9 */
+	    if (env_put( g_env, "encryption", "1",
+			 ENV_F_TRAN ) == False)
+	    {
+		fprintf( stderr, "\\connect: -X: %s\n",
+			 sqsh_get_errstr() );
+		have_error = True;
+	    }
+	    break ;
 	  case 'Z' : /* sqsh-2.1.6 */
             if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
 	      return_code = env_put( g_env, "secmech", "default", ENV_F_TRAN);
@@ -371,7 +380,7 @@ int cmd_connect( argc, argv )
             "Use: \\connect [-c] [-I interfaces] [-U username] [-P pwd] [-S server]\n"
             "               [-D database ] [-N appname] [-n {on|off}] [-Q query_timeout]\n"
             "               [-T login_timeout] [-K keytab_file] [-R principal]\n"
-            "               [-V [bcdimoqru]] [-Z [secmech|default|none]]\n"
+            "               [-V [bcdimoqru]] [-X] [-Z [secmech|default|none]]\n"
         ) ;
     
         env_rollback( g_env );
