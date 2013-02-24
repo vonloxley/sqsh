@@ -33,7 +33,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_getopt.c,v 1.2 2005/12/30 15:22:59 mpeppler Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_getopt.c,v 1.3 2008/04/06 10:03:08 mpeppler Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -366,7 +366,8 @@ int sqsh_getopt_env( var_name, opt_flags )
 
 	/*-- Arguments must begin with a '-' --*/
 	if( *var_value != '-' ) {
-		sqsh_set_error( SQSH_E_BADPARAM, "Options must begin with '-'" ) ;
+		sqsh_set_error( SQSH_E_BADPARAM, "Options must begin with '-' (found: %s)",
+			       	var_value ) ;
 		goto leave_err ;
 	}
 
@@ -394,8 +395,7 @@ int sqsh_getopt_env( var_name, opt_flags )
 		 * Check to see if the next thing on the line is either EOF
 		 * or another argument.
 		 */
-		if( *var_value == '\0' || isspace((int)*var_value) ||
-			is_flag(var_value) ) {
+		if( *var_value == '\0' || is_flag(var_value) ) {
 			/*
 			 * If this option requires an argument and there isn't one
 			 * available, then spew an error message.
@@ -431,7 +431,6 @@ int sqsh_getopt_env( var_name, opt_flags )
 	/*
 	 * The option doesn't take an argument, so simply return.
 	 */
-	++var_value ;
 	sqsh_optarg = NULL ;
 	return flag ;
 
