@@ -1,4 +1,4 @@
-$Id: README,v 1.2 2006/04/16 09:45:34 mpeppler Exp $
+$Id: README,v 1.3 2010/02/08 13:31:57 mwesdorp Exp $
 
 Building sqsh on Windows in the Cygwin environment
 
@@ -13,7 +13,86 @@ non-standard operations both because the configure script
 hasn't been adapted for Cygwin, and because sqsh can't use the
 Sybase DLLs directly.
 
-For building sqsh using Sybase Open Client 15 see below.
+
+
+          Building sqsh for Cygwin using Sybase Open Client 15.x
+
+1) To be able to link the compiled sqsh object files with the Sybase client libraries
+   to a working sqsh executable, you will need the libsybcs.a, libsybct.a and libsybblk.a
+   link libraries, which are also provided in the cygwin directory. These libraries are
+   generated from the files libsybblk.lib libsybcs.lib libsybct.lib in the
+   %SYBASE%\%SYBASE_OCS%\lib directory. The files provided are based upon version OCS 15.7
+   EBF20835 ESD #5.
+   To generate your own versions of these libs, you can use the script cygwin-syb15.sh.
+   Make sure the location of your Sybase installation directory in this script is correct.
+   The default is /cygdrive/c/Sybase.
+   Run this script from the cygwin directory and you will have three new library files:
+   libsybblk.a, libsybcs.a and libsybct.a. Copy these files to /usr/local/lib or
+   any other location you want, or just keep them here in the cygwin directory.
+
+2) Check the Makefile-syb15 for the default Sybase OCS-15_0 location in variable
+   SYBASE_OCOS on line 25 (default location is /cygdrive/c/Sybase/OCS-15_0).
+
+   SYBASE_OCOS   = /cygdrive/c/Sybase/OCS-15_0
+
+   and the SYBASE_LIBS entry on line 46 must point to the directory where you copied
+   the libraries into, in the previous step. Default is /usr/local/lib.
+
+   SYBASE_LIBS = -L/usr/local/lib -lsybblk -lsybcs -lsybct
+
+   If you want X and Motif support, you also have to uncomment the appropriate
+   entries in the Makefile.
+
+3) Go to the sqsh root level and do an export to your Sybase root level in Unix format
+   and run configure:
+
+     export SYBASE=/cygdrive/c/Sybase
+     ./configure --with-readline # optional --with-x --with-motif
+
+   If you run into errors you probably miss some Cygwin development packages.
+   Install these missing packages and retry the ./configure. When succesfull, this will
+   generate some required installation files like src/config.h for example.
+   Now copy the Cygwin makefile to the src directory. This will overwrite the generated
+   Makefile with the Cygwin Makefile you just edited in the previous step:
+
+     cp cygwin/Makefile-syb15 src/Makefile
+
+4) Now you can run
+     make
+     make install
+     make install.man
+
+   By default, sqsh will be installed in /usr/local/bin. Make sure this directory is
+   in your PATH.
+
+5) Install a .sqshrc file in your $HOME directory. There are some examples in the doc
+   directory. If you choose the sqshrc-2.1.9 file as a template,
+   you will also have to create a $HOME/.sqsh and $HOME/tmp directory.
+   Please note that this template will use a prompt and text color scheme that is fitted
+   for a white background. Adjust the prompt and text color definitions accordingly to
+   your terminal color scheme.
+
+     cd sqsh-2.1.9/doc
+     cp sqshrc-2.1.9 $HOME/.sqshrc
+     cd $HOME && mkdir .sqsh && mkdir tmp
+
+6) Make sure you have a valid sql.ini file in your %SYBASE%\ini directory.
+
+7) Some recent installations of Sybase OpenClient and SDK version 15.x do not properly
+   set the SYBASE and SYBASE_OCS environment variables in the users variables region of
+   Windows XP, 7, e.a.
+   So make sure these variables are defined correctly. SYBASE points to the root
+   installation directory (C:\Sybase for example), SYBASE_OCS contains the value OCS-15_0.
+   The variables can also be defined as string values in the registry in
+   HKEY_CURRENT_USER\Environment or HKEY_LOCAL_MACHINE\SOFTWARE\SYBASE\Setup.
+
+8) Now you should be able to run sqsh from a cygwin terminal.
+
+
+
+
+
+          Building sqsh for Cygwin using Sybase Open Client 12.x.
 
 1. Generating the appropriate libXXX.a files
    The cygwin.sh script in this directory can be used to generate
@@ -76,43 +155,4 @@ several links were needed from -liconv.
   Again, thanks.
 
 --Linn
-
-
-          Building sqsh for Cygwin using Sybase Open Client 15.
-
-1) As described in the procedure above for OCS-12_5, you need to generate
-   link libraries, using the script cygwin-syb15.sh. Make sure the location
-   of your Sybase install directory is correct.
-   The default is /cygdrive/c/Sybase.
-   Run the script in the cygwin directory and you will have three library files:
-   libsybblk.a, libsybcs.a and libsybct.a. Copy these files to /usr/local/lib or
-   any other location you want or keep them here in the cygwin directory.
-
-2) Check the Makefile-syb15 for the default Sybase OCS-15_0 location
-   SYBASE_OCOS (default location is /cygdrive/c/Sybase/OCS-15_0).
-   and the SYBASE_LIBS entry must point to the directory you copied
-   the libraries to in the previous step. Default is /usr/local/lib.
-   If you want X and Motif support, you must uncomment the appropriate
-   entries in the Makefile.
-
-3) Go to the sqsh root level and do a
-     export SYBASE=/cygdrive/c/Sybase
-     ./configure --with-readline   # optional --with-x --with-motif
-   If you run into errors you probably miss some Cygwin development packages.
-   Install missing packages and retry the ./configure.
-   Copy the Cygwin makefile to the src directory:
-     cp cygwin/Makefile-syb15 src/Makefile
-
-4) Now you can run
-     make
-     make install
-     make install.man
-
-5) Install a .sqshrc file in your $HOME directory. If you choose the
-   more-advanced.sqshrc file as template from the doc directory, you also have
-   to create a $HOME/.sqsh and $HOME/tmp directory.
-
-6) Make sure you have a valid sql.ini file in your %SYBASE%\ini directory.
-
-7) Now you should be able to run sqsh and connect to an ASE server.
 
