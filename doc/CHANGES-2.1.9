@@ -1,0 +1,175 @@
+                     What is new or fixed in version sqsh-2.1.9
+
+
+                       New features, enhancements, bug fixes:
+
+1 - Feature     - New -i option to the \bcp command that will enable you to execute
+                  a SQL command on the target server just before the bulk copy
+                  operation starts. This is very useful to do some initialization
+                  on the target server. You could for example truncate the target
+                  table first, or run a stored procedure to change the target database
+                  options. For example:
+
+    $ sqsh -SPROD -Uworkshop -Pmy5ecret
+    1> select * from proddb..materials
+    2> \bcp -S DTA -i "truncate table testdb..materials" -N testdb..materials
+
+    Starting copy...
+    Batch successfully bulk-copied to SQL Server
+
+    18 rows copied.
+    Clock Time (sec.): Total = 0.1250  Avg = 0.0069 (144.00 rows per sec.)
+
+
+
+2 - Feature     - Introduce the variables datefmt and timefmt that control how
+                  SQL server DATE and TIME datatypes are converted and displayed in
+                  the result set. This is similar to the existing datetime datatype
+                  conversion routines. By default these variables are set to NULL
+                  which means no conversion will be done and the CT-Lib functions
+                  will decide how to display the date and time datatype columns.
+                  Note, the variables can be preset in the .sqshrc file.
+                  For example:
+
+    1> \set datefmt='%d %B %Y'
+    1> \set timefmt='%H:%M:%S'
+    1> \set datetime='%e %b %Y %H:%M[:%S]'
+    1> select convert(date,getdate());
+       -----------------
+       04 February 2013 
+
+    1> select convert(time,getdate());
+       --------
+       15:20:27
+
+    1> select convert(smalldatetime,getdate())
+       ----------------
+       4 Feb 2013 15:20
+
+
+3 - Enhancement - Client-side password encryption is enhanced to be able to
+                  use RSA encryption if the OpenClient and ASE server support it.
+                  In ASE 15.0.2 a new configuration parameter was introduced,
+                  "net password encryption reqd" that can be set to 1 to force
+                  clients to use CT-Lib password encryption of the password that
+                  is send over the network from the client to the server. Plain
+                  passwords are not excepted over the network in that case.
+                  If the configuration parameter is set to 2, then the client must
+                  even perform stronger RSA password encryption.
+                  If the parameter is set to the default value of 0, then no net
+                  password encryption is required and the password will be send in
+                  plain text to the server if you do not request for encryption when
+                  you connect to the server.
+                  Sqsh will now use the highest type of encryption possible
+                  when the variable $encryption is set to On or 1. You can also start
+                  sqsh with the -X option. In sqsh-2.1.9 it is also possible to use
+                  the -X option with the \connect or \reconnect commands.
+                  The -X option was already present on the \bcp command, but is also
+                  enhanced here to use RSA encryption when appropriate.
+
+4 - Enhancement - The \bcp command is made to work with OpenClient and bulk copy
+                  library version 15.7.
+
+5 - Bugfix      - When the result set is displayed in CSV format and the data contains
+                  a double quote, it is now preceded with an additional double quote.
+                  That makes it possible to read the data into a spreadsheet program
+                  much more easily.
+
+6 - Bugfix      - Prototype declaration of the readline function unstifle_history
+                  changed from "extern void" to "extern int" as some picky
+                  compiler settings may complain about a redeclaration of this
+                  function from /usr/include/readline/history.h.
+
+7 - Bugfix      - Parsing of the SQSH environment variable for sqsh startup options
+                  failed. In particular when options were used that do not require any
+                  arguments. For example:
+
+   $ export SQSH="-X -SDTA -b"
+   $ sqsh -Usa -P
+   sqsh: Options must begin with '-'
+   Use: sqsh ....
+
+
+This version of sqsh has been successfully built and tested on Cygwin 32 bits,
+Solaris x86_64, Linux Ubuntu 32bits, Linux CentOS 5.2 64 bits, AIX 5.3L 64 bits.
+Also various versions of Readline, Sybase OpenClient (15.7, 15.5) and freetds
+(0.83, 0.91) have been used to build and test sqsh-2.1.9. Enjoy!!!
+
+
+
+
+                Changed source files in sqsh-2.1.9 compared to sqsh-2.1.8
+
+
+sqsh-2.1.9/src/cmd_bcp.c
+    Implementation of feature 1 (-i option) and enhancement 3 (RSA password encryption)
+    and enhancement 4 (bulk copy library version 15.7 awareness)
+
+sqsh-2.1.9/src/cmd_connect.c
+    Enhancement 3 (RSA password encryption) and addition of -X parameter
+    to the \connect and \reconnect command.
+    Also some improvements on password_retry when connecting to a Sybase
+    Replication Server, Sybase IQ Server or MSSQL server are implemented.
+
+sqsh-2.1.9/src/dsp.c
+    Feature 2, datefmt and timefmt implementation.
+
+sqsh-2.1.9/src/dsp.h
+    Feature 2, datefmt and timefmt implementation.
+
+sqsh-2.1.9/src/dsp_conv.c
+    Feature 2, datefmt and timefmt implementation.
+
+sqsh-2.1.9/src/dsp_csv.c
+    Bug fix 5 implementation.
+
+sqsh-2.1.9/src/dsp_desc.c
+    Feature 2, datefmt and timefmt implementation.
+
+sqsh-2.1.9/src/Makefile.in
+    Removed references to files sqsh_ctx.c and sqsh_ctx.h. These are
+    not being used and will no longer be distributed in the tar ball.
+
+sqsh-2.1.9/src/sqsh_config.
+    Version string changed to sqsh-2.1.9
+
+sqsh-2.1.9/src/sqsh_getopt.c
+    Bug fix 7 implementation.
+
+sqsh-2.1.9/src/sqsh_global.c
+    Copyright string updated.
+
+sqsh-2.1.9/src/sqsh_main.c
+    Environment variable rcfile is set to NULL when sqsh started with -r option
+    without a sqshrc file specified.
+    Temporary environment variable cur_rcfile removed when finished with sqshrc
+    file processing.
+
+sqsh-2.1.9/src/sqsh_readline.h
+    Bugfix 6 implementation.
+
+sqsh-2.1.9/src/var.h
+    For feature 2, the variables datefmt and timefmt are defined here.
+    All variables that are defined to NULL by default, must have the ability
+    to be reset back to NULL with \set varname=NULL .
+    For those variables that did not have a setting/validation function defined,
+    this function is now set to var_set_nullstr.
+    Variables that are also stored in specific storage structures (like maxlen,
+    datefmt, datetime, bcp_colsep, e.a), along with the g_env environment
+    setting, are set to the same default value.
+
+    For example in sqsh-2.1.8:
+
+    1> \set | grep maxlen
+    maxlen=NULL
+    1> \echo $maxlen
+    32768
+
+    In sqsh-2.1.9:
+
+    1> \set | grep maxlen
+    maxlen=32768
+
+sqsh-2.1.9/src/var_dsp.c
+    Feature 2 (datefmt and timefmt implementation)
+

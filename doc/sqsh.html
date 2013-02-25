@@ -127,7 +127,7 @@
 <p>
 </p>
 <h1><a name="name">NAME</a></h1>
-<p>sqsh - Interactive database shell (version 2.1.8)</p>
+<p>sqsh - Interactive database shell (version 2.1.9)</p>
 <p>
 </p>
 <hr />
@@ -206,10 +206,10 @@ times on the command line.</p>
 <dt><strong><a name="a_count" class="item">-a count</a></strong></dt>
 
 <dd>
-<p>Sets the maximum <em>count</em> of failures (as determined by the $thresh_fail
+<p>Sets the maximum <em>count</em> of failures (as determined by the <strong>$thresh_fail</strong>
 variable) that may occur before sqsh will abort. Setting this to 0 indicates
 that sqsh should not exit on errors. This value defaults to 0 and may also be
-set using the $thresh_exit variable. See section <strong>EXIT STATUS</strong> for details.</p>
+set using the <strong>$thresh_exit</strong> variable. See section <strong>EXIT STATUS</strong> for details.</p>
 </dd>
 <dt><strong><a name="a_packetsize" class="item">-A packetsize</a></strong></dt>
 
@@ -217,14 +217,14 @@ set using the $thresh_exit variable. See section <strong>EXIT STATUS</strong> fo
 <p>Specifies the size of the network TDS packets used to communicate with the SQL
 server. This value must be between 512 and 8192, and be a multiple of 512. Check
 your SQL Server configuration to determine supported packet sizes. This value
-may also be specified at run-time using the $packet_size variable.</p>
+may also be specified at run-time using the <strong>$packet_size</strong> variable.</p>
 </dd>
 <dt><strong><a name="b" class="item">-b</a></strong></dt>
 
 <dd>
 <p>Suppress the banner message upon startup. This is unnecessary in cases where
 stdout has been redirected to a file. This option may also be set via the
-$banner variable.</p>
+<strong>$banner</strong> variable.</p>
 </dd>
 <dt><strong><a name="b" class="item">-B</a></strong></dt>
 
@@ -251,33 +251,33 @@ exhibited by the -i flag. This <em>sql</em> statement may not contain double quo
 <dd>
 <p>Sets the minimum SQL Server error severity that will be displayed to the user.
 The default is 0, and valid ranges are from 0 to 22. This may also be set using
-the $thresh_display variable. See section <strong>EXIT STATUS</strong>.</p>
+the <strong>$thresh_display</strong> variable. See section <strong>EXIT STATUS</strong>.</p>
 </dd>
 <dt><strong><a name="d_database" class="item">-D database</a></strong></dt>
 
 <dd>
 <p>Causes sqsh to attempt to start with your database context set to <em>database</em>
 rather than your default database (usually master). This may also be set using
-the $database variable.</p>
+the <strong>$database</strong> variable.</p>
 </dd>
 <dt><strong><a name="e" class="item">-e</a></strong></dt>
 
 <dd>
 <p>Includes each command issued to sqsh to be included in the output. This option
-may also be set via the $echo variable (which is unrelated to the <strong>\echo</strong>
+may also be set via the <strong>$echo</strong> variable (which is unrelated to the <strong>\echo</strong>
 command).</p>
 </dd>
 <dt><strong><a name="e_editor" class="item">-E editor</a></strong></dt>
 
 <dd>
 <p>Set the default editor to <em>editor</em>. This may also be set using the UNIX
-environment variable $EDITOR to the name of the editor desired.</p>
+environment variable <strong>$EDITOR</strong> to the name of the editor desired.</p>
 </dd>
 <dt><strong><a name="f_severity" class="item">-f severity</a></strong></dt>
 
 <dd>
 <p>Sets the minimum <em>severity</em> level considered a failure by sqsh. This is the
-same as setting the $thresh_fail variable. See section <strong>EXIT STATUS</strong> for
+same as setting the <strong>$thresh_fail</strong> variable. See section <strong>EXIT STATUS</strong> for
 details.</p>
 </dd>
 <dt><strong><a name="g_tds_version" class="item">-G tds_version</a></strong></dt>
@@ -285,9 +285,9 @@ details.</p>
 <dd>
 <p>Set the TDS version to use. Valid versions are 4.0, 4.2, 4.6, 4.9.5, 5.0 and
 freetds additionally supports versions 7.0 and 8.0. The specified value is
-assigned to the variable $tds_version. Input validation is not performed by
+assigned to the variable <strong>$tds_version</strong>. Input validation is not performed by
 sqsh. However, when an invalid TDS version is specified, the default version of
-5.0 will be used. After a session is setup, the variable $tds_version will be
+5.0 will be used. After a session is setup, the variable <strong>$tds_version</strong> will be
 set to the TDS version in effect. The variable will not be available if option
 -G is not used. Meant for test and debugging purposes only.</p>
 <p>TDS stands for Tabular Data Stream and is the communication protocol Sybase and
@@ -302,7 +302,7 @@ Microsoft uses for Client-Server communication.</p>
 
 <dd>
 <p>Sets the client hostname as reported in sysprocesses. This may also be set via
-the $hostname variable.</p>
+the <strong>$hostname</strong> variable.</p>
 </dd>
 <dt><strong><a name="i_filename" class="item">-i filename</a></strong></dt>
 
@@ -313,22 +313,22 @@ the $hostname variable.</p>
 
 <dd>
 <p>When a connection is established to the database, the <em>interfaces</em> file is used
-to turn the value of $DSQUERY into the hostname and port to which the connection
-will be made, by default this is located in $SYBASE/interfaces. This flag allows
-this default to be overridden.</p>
+to turn the value of <strong>$DSQUERY</strong> into the hostname and port to which the
+connection will be made, by default this is located in <strong>$SYBASE</strong>/interfaces.
+This flag allows this default to be overridden.</p>
 </dd>
 <dt><strong><a name="j_charset" class="item">-J charset</a></strong></dt>
 
 <dd>
 <p>Specifies the character set to be used on the client side to communicate with
-SQL Server. This may also be set using the $charset environment variable.</p>
+SQL Server. This may also be set using the <strong>$charset</strong> environment variable.</p>
 </dd>
 <dt><strong><a name="k_keywords" class="item">-k keywords</a></strong></dt>
 
 <dd>
 <p>Specifies a file containing a list of keywords to be used for keyword tab
 completion, if readline support has been compiled into sqsh. This file may also
-be set via the $keyword_file variable, which defaults to $HOME/.sqsh_words.</p>
+be set via the <strong>$keyword_file</strong> variable, which defaults to <strong>$HOME</strong>/.sqsh_words.</p>
 </dd>
 <dt><strong><a name="k_keytab" class="item">-K keytab</a></strong></dt>
 
@@ -340,12 +340,12 @@ be set via the $keyword_file variable, which defaults to $HOME/.sqsh_words.</p>
 
 <dd>
 <p>If sqsh has been compiled with -DDEBUG, this option may be used to turn on and
-off debugging options. See the $debug variable, below.</p>
+off debugging options. See the <strong>$debug</strong> variable, below.</p>
 </dd>
 <dt><strong><a name="l_var_value" class="item">-L var=value</a></strong></dt>
 
 <dd>
-<p>Sets the value of $var to <em>value</em>. This may be used to set the value of any
+<p>Sets the value of <strong>$var</strong> to <em>value</em>. This may be used to set the value of any
 sqsh variable even if an explicit command line variable is supplied for setting
 the variable. The <strong>-L</strong> flag may be used to set the value of non-configuration
 variables as well.</p>
@@ -355,8 +355,8 @@ variables as well.</p>
 <dd>
 <p>Changes the current display style to <em>style</em>. Currently supported styles are
 <strong>horiz</strong>, <strong>vert</strong>, <strong>bcp</strong>, <strong>csv</strong>, <strong>html</strong>, <strong>meta</strong>, <strong>pretty</strong> and <strong>none</strong>. The
-current display style may also be set using the $style variable or via the <strong>-m</strong>
-flag to the <strong>\go</strong> command.</p>
+current display style may also be set using the <strong>$style</strong> variable or via the
+<strong>-m</strong> flag to the <strong>\go</strong> command.</p>
 </dd>
 <dt><strong><a name="n_on_off" class="item">-n on|off</a></strong></dt>
 
@@ -380,14 +380,14 @@ application name can be retrieved from the server using the column
 
 <dd>
 <p>Display performance statistics upon completion of every SQL batch. This option
-may also be turned on via the $statistics variable, or by supplying the <strong>-p</strong>
+may also be turned on via the <strong>$statistics</strong> variable, or by supplying the <strong>-p</strong>
 flag to the <strong>\go</strong> command.</p>
 </dd>
 <dt><strong><a name="p_password" class="item">-P [password]</a></strong></dt>
 
 <dd>
 <p>The Sybase <em>password</em> for <em>username</em> required to connect to <em>server</em>
-(default, NULL). The <em>password</em> may also be set via $password. Supplying a
+(default, NULL). The <em>password</em> may also be set via <strong>$password</strong>. Supplying a
 password of '-' causes the password to be read from the first line of stdin.</p>
 <p>sqsh takes pains to hide the password from any user trying to view the command
 line used to launch sqsh, so using <strong>-P</strong> should not constitute a security hole.
@@ -439,17 +439,17 @@ this defaults to &quot; &quot;.</p>
 
 <dd>
 <p>The name of the Sybase <em>server</em> to connect, the default of this is the external
-environment variable $DSQUERY. If neither <strong>-S</strong> nor $DSQUERY is set then
+environment variable <strong>$DSQUERY</strong>. If neither <strong>-S</strong> nor <strong>$DSQUERY</strong> is set then
 defaults to &quot;SYBASE&quot;. This value may also be set via the internal variable
-$DSQUERY.</p>
+<strong>$DSQUERY</strong>.</p>
 </dd>
 <dt><strong><a name="t_filter" class="item">-t [filter]</a></strong></dt>
 
 <dd>
 <p>Enables filtering of command batches through an external program, <em>filter</em>,
 and prior to being sent to the SQL Server. If <em>filter</em> is not supplied, then
-$filter_prog is used (default is 'm4 -'). This value may also be set via the
-$filter and $filter_prog variables.</p>
+<strong>$filter_prog</strong> is used (default is 'm4 -'). This value may also be set via the
+<strong>$filter</strong> and <strong>$filter_prog</strong> variables.</p>
 </dd>
 <dt><strong><a name="t_value" class="item">-T value</a></strong></dt>
 
@@ -463,12 +463,12 @@ the <strong>$login_timeout</strong> variable.</p>
 <dd>
 <p>The Sybase <em>username</em> to connect to the database as, this defaults to the
 username of the user running <em>sqsh</em>. The <em>username</em> may also be set via the
-$username variable.</p>
+<strong>$username</strong> variable.</p>
 </dd>
 <dt><strong><a name="v" class="item">-v</a></strong></dt>
 
 <dd>
-<p>Displays the version number, $version, and exits.</p>
+<p>Displays the version number, <strong>$version</strong>, and exits.</p>
 </dd>
 <dt><strong><a name="v_bcdimoqru" class="item">-V [bcdimoqru]</a></strong></dt>
 
@@ -489,20 +489,20 @@ screen width in interactive mode.</p>
 encryption (if supported). If either SQL Server does not recognize this option,
 or if the version of CT-Lib used to compile <em>sqsh</em> does not support this
 option, then it will be ignored. This option may also be set using the
-$encryption environment variable.</p>
+<strong>$encryption</strong> environment variable.</p>
 </dd>
 <dt><strong><a name="y_directory" class="item">-y directory</a></strong></dt>
 
 <dd>
-<p>Specifies a SYBASE <em>directory</em> to use other than the value of $SYBASE in order
-to find the interfaces file.</p>
+<p>Specifies a SYBASE <em>directory</em> to use other than the value of <strong>$SYBASE</strong> in
+order to find the interfaces file.</p>
 </dd>
 <dt><strong><a name="z_language" class="item">-z language</a></strong></dt>
 
 <dd>
 <p>Specifies an alternate <em>language</em> to display sqsh prompts and messages. Without
 the <strong>-z</strong> flag, the server's default language will be used. This may also be
-set using the $language variable.</p>
+set using the <strong>$language</strong> variable.</p>
 </dd>
 <dt><strong><a name="z_secmech_default_none" class="item">-Z [secmech|default|none]</a></strong></dt>
 
@@ -526,7 +526,7 @@ more information).</p>
 <p>Upon startup, sqsh initializes all internal environment variables, commands, and
 aliases to their default values, it then looks in the system-wide configuration
 file (usually /usr/local/etc/sqshrc), followed by a local configuration file
-$HOME/.sqshrc (this may be overridden via the SQSHRC external environment
+<strong>$HOME</strong>/.sqshrc (this may be overridden via the SQSHRC external environment
 variable). If this file is found it is executed just like a script would be
 using the <strong>-i</strong> flag.</p>
 <p>The <em>.sqshrc</em> file may contain anything that could normally be typed at the
@@ -544,8 +544,8 @@ by command line options). Following that, if <em>sqsh</em> is run in interactive
 (see <strong>BUFFERS</strong>, below).</p>
 <p>Immediately prior to establishing a connection to the database (either during
 startup, or by an explicit <strong>\connect</strong> or <strong>\reconnect</strong> command), the file
-$HOME/.sqsh_session is executed. The name of this file may be overridden using
-the $session variable.</p>
+<strong>$HOME</strong>/.sqsh_session is executed. The name of this file may be overridden
+using the <strong>$session</strong> variable.</p>
 <p>
 </p>
 <h2><a name="command_line">Command line</a></h2>
@@ -668,12 +668,12 @@ line to be executed in back-quotes (`). For example:</p>
     1&gt; \echo $password
     ilikepickles</pre>
 <p>This example, the external program <strong>/sybase/bin/getpwd</strong> is executed with the
-current contents of the $DSQUERY environment variable, the entire expression is
+current contents of the <strong>$DSQUERY</strong> environment variable, the entire expression is
 then replaced with the output of <strong>getpwd (ilikepickles)</strong> prior to executing the
 <strong>\set</strong> command. By default, the output of the substituted command is first
-broken into words according to the contents of the $ifs variable prior to
+broken into words according to the contents of the <strong>$ifs</strong> variable prior to
 assembling together back into the command line. So, by overriding the contents
-of $ifs you may affect the behavior of the substitution process.</p>
+of <strong>$ifs</strong> you may affect the behavior of the substitution process.</p>
 <p>For example:</p>
 <pre>
     1&gt; \set ifs=&quot;:&quot;
@@ -784,10 +784,10 @@ backgrounding:</p>
 
 <dd>
 <p>In this mode sqsh redirects all output of the background job to a temporary file
-(located in the directory $tmp_dir) while the job is running, so that the output
-is not intermixed with what you are currently working on. When the job completes
-you are notified of the process completion and the output may be viewed using
-the <strong>\show</strong> command.</p>
+(located in the directory <strong>$tmp_dir</strong>) while the job is running, so that the
+output is not intermixed with what you are currently working on. When the job
+completes you are notified of the process completion and the output may be
+viewed using the <strong>\show</strong> command.</p>
 </dd>
 <dt><strong><a name="non_deferred" class="item">Non-Deferred</a></strong></dt>
 
@@ -795,7 +795,7 @@ the <strong>\show</strong> command.</p>
 <p>This corresponds to the common idea of a background process under UNIX. In this
 mode the output of the job is not implicitly redirected for you, and thus may
 become intermingled with what you are currently working. The mode selection you
-choose is selectable via the $defer_bg variable (which defaults to '1', or
+choose is selectable via the <strong>$defer_bg</strong> variable (which defaults to '1', or
 'On'). Typically the only reason to not use <em>deferred</em> mode is to prevent
 large result sets from filling up your file system.</p>
 </dd>
@@ -810,11 +810,11 @@ the command line, as:</p>
 <p>When sqsh encounters the &amp; on the end of the command line it spawns a child
 process (with a Unix process id of <em>xxxx</em>) then the child process calls the
 <strong>\go</strong>. <strong>\go</strong> command then establishes a new connection to the database (using
-the current values of the $DSQUERY, $username, $password variables) and executes
-the shown query. While the job is executing the commands <strong>\jobs</strong> <strong>\wait</strong> and
-<strong>\kill</strong> may be used to monitor or alter a currently running job (see section
-<strong>COMMANDS</strong>, below). When any job completes sqsh will display a notification,
-such as:</p>
+the current values of the <strong>$DSQUERY</strong>, <strong>$username</strong>, <strong>$password</strong> variables)
+and executes the shown query. While the job is executing the commands <strong>\jobs</strong>,
+<strong>\wait</strong> and <strong>\kill</strong> may be used to monitor or alter a currently running job
+(see section <strong>COMMANDS</strong>, below). When any job completes sqsh will display a
+notification, such as:</p>
 <pre>
     1&gt; select count(*) from &lt;return&gt;
     Job #1 complete (output pending)
@@ -840,14 +840,14 @@ kept around for when you run 'vi', or 'edit').</p>
 is the buffer into which you enter the current batch prior to sending it to the
 database.</p>
 <p><strong>History Buffer</strong>: This is actually a chain of 0 or more buffers (configurable
-by the $histsize variable) of the last $histsize batches that have been run.
-This buffer is only maintained when sqsh is run in interactive mode; that is,
-batches executed using the <strong>-i</strong> flag, or executed via redirection from the UNIX
-prompt will not be maintained in history (after all, they are already in a file
-somewhere).</p>
-<p>If the variable $histsave is True (see section <strong>SPECIAL VARIABLES</strong>), and sqsh
+by the <strong>$histsize</strong> variable) of the last <strong>$histsize</strong> batches that have been
+run.  This buffer is only maintained when sqsh is run in interactive mode; that
+is, batches executed using the <strong>-i</strong> flag, or executed via redirection from the
+UNIX prompt will not be maintained in history (after all, they are already in a
+file somewhere).</p>
+<p>If the variable <strong>$histsave</strong> is True (see section <strong>SPECIAL VARIABLES</strong>) and sqsh
 is in interactive mode, then the current history buffer is written to
-$HOME/.sqsh_history when you exit. This file is then read back into sqsh the
+<strong>$HOME</strong>/.sqsh_history when you exit. This file is then read back into sqsh the
 next time it is started in interactive mode.</p>
 <p><strong>Named Buffers</strong>: At any time during a session the <strong>Work Buffer</strong>, or any of the
 <strong>History Buffers</strong> may be copied into a named buffer using the <strong>\buf-copy</strong>
@@ -904,7 +904,7 @@ correct.</p>
 <p>Variables may also be contained within work buffers. Under these circumstances
 the variables remain unexpanded until the buffer is sent to the database (via
 the <strong>\go</strong> command), during which time they are expanded and replaced within the
-buffer. This behavior may be altered via the $expand variable.
+buffer. This behavior may be altered via the <strong>$expand</strong> variable.
 (see <strong>Special Variables</strong>, below).</p>
 <p>The following is an example of using variables within a buffer:</p>
 <pre>
@@ -931,8 +931,8 @@ contained within single quotes (') are left untouched. Thus:</p>
 </p>
 <h3><a name="command_substitution">Command Substitution</a></h3>
 <p>As with the command line, the output of UNIX commands may also be substituted
-within a SQL buffer upon execution (once again, only if the $expand variable is
-set to 1, or true). In this circumstance the command contained within back
+within a SQL buffer upon execution (once again, only if the <strong>$expand</strong> variable
+is set to 1, or true). In this circumstance the command contained within back
 quotes (`) is replaced with its output prior to forwarding the buffer to SQL
 server. For example:</p>
 <pre>
@@ -1453,7 +1453,7 @@ page), it is amazing how few database manipulation commands that there actually
 are. The following are commands that affect or use the current database
 connection:</p>
 <dl>
-<dt><strong><a name="connect_c_d_db_s_srv_u_user_p_pass_i_ifile_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_bcdimoqru_z_secmech_default_none" class="item">\connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-Z [secmech|default|none]]</a></strong></dt>
+<dt><strong><a name="connect_c_d_db_s_srv_u_user_p_pass_i_ifile_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_bcdimoqru_x_z_secmech_default_none" class="item">\connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-Z [secmech|default|none]]</a></strong></dt>
 
 <dd>
 <p>This command is used primarily for internal use to establish a connection to a
@@ -1540,6 +1540,15 @@ sysprocesses table.</p>
 <dd>
 <p>Security services used for Kerberos support and other security mechanisms.</p>
 </dd>
+<dt><strong><a name="x2" class="item">-X</a></strong></dt>
+
+<dd>
+<p>Initiates the login connection to the server with client-side password
+encryption (if supported). If either SQL Server does not recognize this option,
+or if the version of CT-Lib used to compile <em>sqsh</em> does not support this
+option, then it will be ignored. This option may also be set using the
+<strong>$encryption</strong> environment variable.</p>
+</dd>
 <dt><strong><a name="z_secmech_default_none3" class="item">-Z [secmech|default|none]</a></strong></dt>
 
 <dd>
@@ -1548,7 +1557,7 @@ csfkrb5 for Kerberos support.</p>
 </dd>
 </dl>
 </dd>
-<dt><strong><a name="reconnect_c_d_db_s_srv_u_user_p_pass_i_ifile_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_bcdimoqru_z_secmech_default_noe" class="item">\reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-Z [secmech|default|noe]]</a></strong></dt>
+<dt><strong><a name="reconnect_c_d_db_s_srv_u_user_p_pass_i_ifile_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_bcdimoqru_x_z_secmech_default_noe" class="item">\reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-Z [secmech|default|noe]]</a></strong></dt>
 
 <dd>
 <p>The <strong>\reconnect</strong> command may be used to force a reconnection to the database
@@ -1677,7 +1686,7 @@ is possible to <strong>\bcp</strong> the result set back to the current server (
 <p>The nitty-gritty details of <strong>\bcp</strong> go like this: First the current SQL batch is
 expanded (unless the <strong>$expand</strong> variable is set to 0) and shipped off to the
 database for processing. If all goes well, a new connection is established to
-the destination database (as specified via $DSQUERY or the <strong>-S</strong> flag) to
+the destination database (as specified via <strong>$DSQUERY</strong> or the <strong>-S</strong> flag) to
 transfer the result set using bcp. Then, the output of the source database
 connection is bound to the new bcp connection and data transfer is performed.
 <strong>\bcp</strong> can handle multiple result sets without any problem (including result
@@ -1699,6 +1708,16 @@ that is not set), the default server packet size (usually 512 bytes).</p>
 <p>The number of records transferred in a single transaction between servers. Note
 that reaching the end of a result causes the batch to be transferred, regardless
 of the value of <em>batch_size</em>. The default is the entire result set.</p>
+</dd>
+<dt><strong><a name="i_initialization_command" class="item">-i &quot;&lt;initialization command&gt;&quot;</a></strong></dt>
+
+<dd>
+<p>Using the <em>-i</em> parameter you can send a SQL command to the target server that
+will be executed just before the bulk copy operation is started. This is useful
+if you need to truncate the target table first. For example:</p>
+<pre>
+    1&gt; select * from proddb..materials
+    2&gt; \bcp -SDTA -i &quot;truncate table testdb..materials&quot; -N -X testdb..materials</pre>
 </dd>
 <dt><strong><a name="i_ifile2" class="item">-I ifile</a></strong></dt>
 
@@ -1744,7 +1763,7 @@ supplied.</p>
 <p>The Sybase <em>user</em> to connect to the database as, this defaults to <strong>$username</strong>
 variable if not supplied.</p>
 </dd>
-<dt><strong><a name="x2" class="item">-X</a></strong></dt>
+<dt><strong><a name="x3" class="item">-X</a></strong></dt>
 
 <dd>
 <p>Causes password negotiation with the destination server to be performed using
@@ -2438,7 +2457,7 @@ environment.</p>
 <dd>
 <p>Contains the name <em>sqsh</em> uses to identity itself to the server. Defaults to
 sqsh-2.1.7. The application name can be retrieved from the sysprocesses table
-like: 
+like:
   select program_name from master.dbo.sysprocesses where spid=@@pid;</p>
 </dd>
 <dt><strong><a name="autouse" class="item">autouse (string)</a></strong></dt>
@@ -2550,12 +2569,21 @@ automatically be set to the current database context.</p>
 and the variable expands to the current date in the supplied format. The default
 format for this variable is %d-%b-%y (e.g. 02-Feb-1996).</p>
 </dd>
+<dt><strong><a name="datefmt" class="item">datefmt (date-spec)</a></strong></dt>
+
+<dd>
+<p>This variable may be set with a date format similar to <strong>$date</strong> and
+is used to control the display format of all SQL Server DATE columns. (Similar
+to <strong>$datetime</strong>.) Note that only 63 bytes are available in total for the
+variable string and the remainder will be truncated.</p>
+</dd>
 <dt><strong><a name="datetime" class="item">datetime (date-spec)</a></strong></dt>
 
 <dd>
 <p>This variable may be set with a date format similar to <strong>$date</strong> and <strong>$time</strong> and
-is used to control the display format of all SQL Server DATETIME and
-SMALLDATETIME columns.</p>
+is used to control the display format of all SQL Server DATETIME, BIGDATETIME
+and SMALLDATETIME columns. Note that only 63 bytes are available in total for
+the variable string and the remainder will be truncated.</p>
 <p>Note that this features relies upon the operating system specific locale
 information for determining such things as the name of the month and day, rather
 than going through the CT-Lib locale information. This means that the date
@@ -2752,7 +2780,14 @@ being created and output sent to the screen immediately</p>
 <p>Setting the <strong>$encryption</strong> variable prior to establishing a connection to the
 server will cause the login connection to be initiated using client-side
 password encryption. This variable may also be set using the <strong>-X</strong> command line
-option.</p>
+option. Client-side password encryption will also occur when using the <strong>-X</strong>
+option on the <strong>\connect</strong>, <strong>\reconnect</strong> or <strong>\bcp</strong> commands.
+Please note that the Sybase ASE setting for the <strong>net password encryption reqd</strong>
+(15.0.2) configuration parameter may enforce you to use client side password
+encryption. <em>sqsh-2.1.9</em> supports RSA password encryption when the CT-Lib
+version in use supports it. RSA password encryption is required if the above
+mentioned ASE configuration parameter is set to <strong>2</strong>. Older version of sqsh only
+supports a value of <strong>1</strong> (CT-Lib internal encryption algorithms).</p>
 </dd>
 <dt><strong><a name="exit_failcount" class="item">exit_failcount (boolean)</a></strong></dt>
 
@@ -2954,7 +2989,7 @@ completes the keyword in exactly the same case as defined in the <em>.sqsh_words
 <dd>
 <p>This variable controls the dynamic loading of keywords in the completion list
 when initially logging in to the server or when the database context is changed
-using the <em>use database</em> command. When this variable is set to 'On' 
+using the <em>use database</em> command. When this variable is set to 'On'
 (default is 'Off'), then the query that is provided through the
 <strong>$keyword_query</strong> variable is executed and the query result set is loaded into
 the Readline completion list. This will only work for Sybase ASE and Microsoft
@@ -3286,6 +3321,14 @@ crossed, the variable <strong>$batch_failcount</strong> is incremented by 1. See
 <p>This variable may be set with a time format (see the man page for <strong>date(1)</strong>),
 and the variable expands to the current time in the supplied format. The default
 format for this variable is %H:%M:%S (e.g. 14:32:58).</p>
+</dd>
+<dt><strong><a name="timefmt" class="item">timefmt (date-spec)</a></strong></dt>
+
+<dd>
+<p>This variable may be set with a time format similar to <strong>$time</strong> and
+is used to control the display format of all SQL Server TIME and BIGTIME
+columns. (Similar to <strong>$datetime</strong>.) Note that only 63 bytes are available in
+total for the variable string and the remainder will be truncated.</p>
 </dd>
 <dt><strong><a name="tmp_dir" class="item">tmp_dir (path)</a></strong></dt>
 

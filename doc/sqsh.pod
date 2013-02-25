@@ -1,7 +1,6 @@
-
 =head1 NAME
 
-sqsh - Interactive database shell (version 2.1.8)
+sqsh - Interactive database shell (version 2.1.9)
 
 =head1 SYNOPSIS
 
@@ -79,23 +78,23 @@ times on the command line.
 
 =item -a count
 
-Sets the maximum I<count> of failures (as determined by the $thresh_fail
+Sets the maximum I<count> of failures (as determined by the B<$thresh_fail>
 variable) that may occur before sqsh will abort. Setting this to 0 indicates
 that sqsh should not exit on errors. This value defaults to 0 and may also be
-set using the $thresh_exit variable. See section B<EXIT STATUS> for details.
+set using the B<$thresh_exit> variable. See section B<EXIT STATUS> for details.
 
 =item -A packetsize
 
 Specifies the size of the network TDS packets used to communicate with the SQL
 server. This value must be between 512 and 8192, and be a multiple of 512. Check
 your SQL Server configuration to determine supported packet sizes. This value
-may also be specified at run-time using the $packet_size variable.
+may also be specified at run-time using the B<$packet_size> variable.
 
 =item -b
 
 Suppress the banner message upon startup. This is unnecessary in cases where
 stdout has been redirected to a file. This option may also be set via the
-$banner variable.
+B<$banner> variable.
 
 =item -B
 
@@ -118,38 +117,38 @@ exhibited by the -i flag. This I<sql> statement may not contain double quotes
 
 Sets the minimum SQL Server error severity that will be displayed to the user.
 The default is 0, and valid ranges are from 0 to 22. This may also be set using
-the $thresh_display variable. See section B<EXIT STATUS>.
+the B<$thresh_display> variable. See section B<EXIT STATUS>.
 
 =item -D database
 
 Causes sqsh to attempt to start with your database context set to I<database>
 rather than your default database (usually master). This may also be set using
-the $database variable.
+the B<$database> variable.
 
 =item -e
 
 Includes each command issued to sqsh to be included in the output. This option
-may also be set via the $echo variable (which is unrelated to the B<\echo>
+may also be set via the B<$echo> variable (which is unrelated to the B<\echo>
 command).
 
 =item -E editor
 
 Set the default editor to I<editor>. This may also be set using the UNIX
-environment variable $EDITOR to the name of the editor desired.
+environment variable B<$EDITOR> to the name of the editor desired.
 
 =item -f severity
 
 Sets the minimum I<severity> level considered a failure by sqsh. This is the
-same as setting the $thresh_fail variable. See section B<EXIT STATUS> for
+same as setting the B<$thresh_fail> variable. See section B<EXIT STATUS> for
 details.
 
 =item -G tds_version
 
 Set the TDS version to use. Valid versions are 4.0, 4.2, 4.6, 4.9.5, 5.0 and
 freetds additionally supports versions 7.0 and 8.0. The specified value is
-assigned to the variable $tds_version. Input validation is not performed by
+assigned to the variable B<$tds_version>. Input validation is not performed by
 sqsh. However, when an invalid TDS version is specified, the default version of
-5.0 will be used. After a session is setup, the variable $tds_version will be
+5.0 will be used. After a session is setup, the variable B<$tds_version> will be
 set to the TDS version in effect. The variable will not be available if option
 -G is not used. Meant for test and debugging purposes only.
 
@@ -163,7 +162,7 @@ Turns off column headers and trailing "(# rows affected)" from batch output.
 =item -H hostname
 
 Sets the client hostname as reported in sysprocesses. This may also be set via
-the $hostname variable.
+the B<$hostname> variable.
 
 =item -i filename
 
@@ -172,20 +171,20 @@ Read all input from I<filename> rather than from stdin.
 =item -I interfaces
 
 When a connection is established to the database, the I<interfaces> file is used
-to turn the value of $DSQUERY into the hostname and port to which the connection
-will be made, by default this is located in $SYBASE/interfaces. This flag allows
-this default to be overridden.
+to turn the value of B<$DSQUERY> into the hostname and port to which the
+connection will be made, by default this is located in B<$SYBASE>/interfaces.
+This flag allows this default to be overridden.
 
 =item -J charset
 
 Specifies the character set to be used on the client side to communicate with
-SQL Server. This may also be set using the $charset environment variable.
+SQL Server. This may also be set using the B<$charset> environment variable.
 
 =item -k keywords
 
 Specifies a file containing a list of keywords to be used for keyword tab
 completion, if readline support has been compiled into sqsh. This file may also
-be set via the $keyword_file variable, which defaults to $HOME/.sqsh_words.
+be set via the B<$keyword_file> variable, which defaults to B<$HOME>/.sqsh_words.
 
 =item -K keytab
 
@@ -196,11 +195,11 @@ See the Kerberos Support section below for details.
 =item -l debug_flags
 
 If sqsh has been compiled with -DDEBUG, this option may be used to turn on and
-off debugging options. See the $debug variable, below.
+off debugging options. See the B<$debug> variable, below.
 
 =item -L var=value
 
-Sets the value of $var to I<value>. This may be used to set the value of any
+Sets the value of B<$var> to I<value>. This may be used to set the value of any
 sqsh variable even if an explicit command line variable is supplied for setting
 the variable. The B<-L> flag may be used to set the value of non-configuration
 variables as well.
@@ -209,8 +208,8 @@ variables as well.
 
 Changes the current display style to I<style>. Currently supported styles are
 B<horiz>, B<vert>, B<bcp>, B<csv>, B<html>, B<meta>, B<pretty> and B<none>. The
-current display style may also be set using the $style variable or via the B<-m>
-flag to the B<\go> command.
+current display style may also be set using the B<$style> variable or via the
+B<-m> flag to the B<\go> command.
 
 =item -n on|off
 
@@ -230,13 +229,13 @@ Redirects all output to I<filename> rather than stdout.
 =item -p
 
 Display performance statistics upon completion of every SQL batch. This option
-may also be turned on via the $statistics variable, or by supplying the B<-p>
+may also be turned on via the B<$statistics> variable, or by supplying the B<-p>
 flag to the B<\go> command.
 
 =item -P [password]
 
 The Sybase I<password> for I<username> required to connect to I<server>
-(default, NULL). The I<password> may also be set via $password. Supplying a
+(default, NULL). The I<password> may also be set via B<$password>. Supplying a
 password of '-' causes the password to be read from the first line of stdin.
 
 sqsh takes pains to hide the password from any user trying to view the command
@@ -287,16 +286,16 @@ this defaults to " ".
 =item -S server
 
 The name of the Sybase I<server> to connect, the default of this is the external
-environment variable $DSQUERY. If neither B<-S> nor $DSQUERY is set then
+environment variable B<$DSQUERY>. If neither B<-S> nor B<$DSQUERY> is set then
 defaults to "SYBASE". This value may also be set via the internal variable
-$DSQUERY.
+B<$DSQUERY>.
 
 =item -t [filter]
 
 Enables filtering of command batches through an external program, I<filter>,
 and prior to being sent to the SQL Server. If I<filter> is not supplied, then
-$filter_prog is used (default is 'm4 -'). This value may also be set via the
-$filter and $filter_prog variables.
+B<$filter_prog> is used (default is 'm4 -'). This value may also be set via the
+B<$filter> and B<$filter_prog> variables.
 
 =item -T value
 
@@ -308,11 +307,11 @@ the B<$login_timeout> variable.
 
 The Sybase I<username> to connect to the database as, this defaults to the
 username of the user running I<sqsh>. The I<username> may also be set via the
-$username variable.
+B<$username> variable.
 
 =item -v
 
-Displays the version number, $version, and exits.
+Displays the version number, B<$version>, and exits.
 
 =item -V [bcdimoqru]
 
@@ -331,18 +330,18 @@ Initiates the login connection to the server with client-side password
 encryption (if supported). If either SQL Server does not recognize this option,
 or if the version of CT-Lib used to compile I<sqsh> does not support this
 option, then it will be ignored. This option may also be set using the
-$encryption environment variable.
+B<$encryption> environment variable.
 
 =item -y directory
 
-Specifies a SYBASE I<directory> to use other than the value of $SYBASE in order
-to find the interfaces file.
+Specifies a SYBASE I<directory> to use other than the value of B<$SYBASE> in
+order to find the interfaces file.
 
 =item -z language
 
 Specifies an alternate I<language> to display sqsh prompts and messages. Without
 the B<-z> flag, the server's default language will be used. This may also be
-set using the $language variable.
+set using the B<$language> variable.
 
 =item -Z [secmech|default|none]
 
@@ -365,7 +364,7 @@ more information).
 Upon startup, sqsh initializes all internal environment variables, commands, and
 aliases to their default values, it then looks in the system-wide configuration
 file (usually /usr/local/etc/sqshrc), followed by a local configuration file
-$HOME/.sqshrc (this may be overridden via the SQSHRC external environment
+B<$HOME>/.sqshrc (this may be overridden via the SQSHRC external environment
 variable). If this file is found it is executed just like a script would be
 using the B<-i> flag.
 
@@ -386,8 +385,8 @@ I<.sqsh_history> and loads the contents of that file into this history buffer
 
 Immediately prior to establishing a connection to the database (either during
 startup, or by an explicit B<\connect> or B<\reconnect> command), the file
-$HOME/.sqsh_session is executed. The name of this file may be overridden using
-the $session variable.
+B<$HOME>/.sqsh_session is executed. The name of this file may be overridden
+using the B<$session> variable.
 
 =head2 Command line
 
@@ -528,12 +527,12 @@ line to be executed in back-quotes (`). For example:
     ilikepickles
 
 This example, the external program B</sybase/bin/getpwd> is executed with the
-current contents of the $DSQUERY environment variable, the entire expression is
+current contents of the B<$DSQUERY> environment variable, the entire expression is
 then replaced with the output of B<getpwd (ilikepickles)> prior to executing the
 B<\set> command. By default, the output of the substituted command is first
-broken into words according to the contents of the $ifs variable prior to
+broken into words according to the contents of the B<$ifs> variable prior to
 assembling together back into the command line. So, by overriding the contents
-of $ifs you may affect the behavior of the substitution process.
+of B<$ifs> you may affect the behavior of the substitution process.
 
 For example:
 
@@ -655,17 +654,17 @@ backgrounding:
 =item Deferred
 
 In this mode sqsh redirects all output of the background job to a temporary file
-(located in the directory $tmp_dir) while the job is running, so that the output
-is not intermixed with what you are currently working on. When the job completes
-you are notified of the process completion and the output may be viewed using
-the B<\show> command.
+(located in the directory B<$tmp_dir>) while the job is running, so that the
+output is not intermixed with what you are currently working on. When the job
+completes you are notified of the process completion and the output may be
+viewed using the B<\show> command.
 
 =item Non-Deferred
 
 This corresponds to the common idea of a background process under UNIX. In this
 mode the output of the job is not implicitly redirected for you, and thus may
 become intermingled with what you are currently working. The mode selection you
-choose is selectable via the $defer_bg variable (which defaults to '1', or
+choose is selectable via the B<$defer_bg> variable (which defaults to '1', or
 'On'). Typically the only reason to not use I<deferred> mode is to prevent
 large result sets from filling up your file system.
 
@@ -682,11 +681,11 @@ the command line, as:
 When sqsh encounters the & on the end of the command line it spawns a child
 process (with a Unix process id of I<xxxx>) then the child process calls the
 B<\go>. B<\go> command then establishes a new connection to the database (using
-the current values of the $DSQUERY, $username, $password variables) and executes
-the shown query. While the job is executing the commands B<\jobs> B<\wait> and
-B<\kill> may be used to monitor or alter a currently running job (see section
-B<COMMANDS>, below). When any job completes sqsh will display a notification,
-such as:
+the current values of the B<$DSQUERY>, B<$username>, B<$password> variables)
+and executes the shown query. While the job is executing the commands B<\jobs>,
+B<\wait> and B<\kill> may be used to monitor or alter a currently running job
+(see section B<COMMANDS>, below). When any job completes sqsh will display a
+notification, such as:
 
     1> select count(*) from <return>
     Job #1 complete (output pending)
@@ -717,15 +716,15 @@ is the buffer into which you enter the current batch prior to sending it to the
 database.
 
 B<History Buffer>: This is actually a chain of 0 or more buffers (configurable
-by the $histsize variable) of the last $histsize batches that have been run.
-This buffer is only maintained when sqsh is run in interactive mode; that is,
-batches executed using the B<-i> flag, or executed via redirection from the UNIX
-prompt will not be maintained in history (after all, they are already in a file
-somewhere).
+by the B<$histsize> variable) of the last B<$histsize> batches that have been
+run.  This buffer is only maintained when sqsh is run in interactive mode; that
+is, batches executed using the B<-i> flag, or executed via redirection from the
+UNIX prompt will not be maintained in history (after all, they are already in a
+file somewhere).
 
-If the variable $histsave is True (see section B<SPECIAL VARIABLES>), and sqsh
+If the variable B<$histsave> is True (see section B<SPECIAL VARIABLES>) and sqsh
 is in interactive mode, then the current history buffer is written to
-$HOME/.sqsh_history when you exit. This file is then read back into sqsh the
+B<$HOME>/.sqsh_history when you exit. This file is then read back into sqsh the
 next time it is started in interactive mode.
 
 B<Named Buffers>: At any time during a session the B<Work Buffer>, or any of the
@@ -779,7 +778,7 @@ Refers to the named buffer I<buf_name>.
 Variables may also be contained within work buffers. Under these circumstances
 the variables remain unexpanded until the buffer is sent to the database (via
 the B<\go> command), during which time they are expanded and replaced within the
-buffer. This behavior may be altered via the $expand variable.
+buffer. This behavior may be altered via the B<$expand> variable.
 (see B<Special Variables>, below).
 
 The following is an example of using variables within a buffer:
@@ -812,8 +811,8 @@ yields the results
 =head3 Command Substitution
 
 As with the command line, the output of UNIX commands may also be substituted
-within a SQL buffer upon execution (once again, only if the $expand variable is
-set to 1, or true). In this circumstance the command contained within back
+within a SQL buffer upon execution (once again, only if the B<$expand> variable
+is set to 1, or true). In this circumstance the command contained within back
 quotes (`) is replaced with its output prior to forwarding the buffer to SQL
 server. For example:
 
@@ -1369,7 +1368,7 @@ connection:
 
 =over 4
 
-=item \connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-Z [secmech|default|none]]
+=item \connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-Z [secmech|default|none]]
 
 This command is used primarily for internal use to establish a connection to a
 database. If a connection is already established it has no effect, however if a
@@ -1446,6 +1445,14 @@ Specifies a maximum wait time for session setup.
 
 Security services used for Kerberos support and other security mechanisms.
 
+=item -X
+
+Initiates the login connection to the server with client-side password
+encryption (if supported). If either SQL Server does not recognize this option,
+or if the version of CT-Lib used to compile I<sqsh> does not support this
+option, then it will be ignored. This option may also be set using the
+B<$encryption> environment variable.
+
 =item -Z [secmech|default|none]
 
 Specifies the security mechanism to use for user authentication. For example
@@ -1453,7 +1460,7 @@ csfkrb5 for Kerberos support.
 
 =back
 
-=item \reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-Z [secmech|default|noe]]
+=item \reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-Z [secmech|default|noe]]
 
 The B<\reconnect> command may be used to force a reconnection to the database
 using a new username, server name, or password (if desired). If this command
@@ -1572,7 +1579,7 @@ B<$DSQUERY> variable), this is achieved more easily via a SELECT INTO.
 The nitty-gritty details of B<\bcp> go like this: First the current SQL batch is
 expanded (unless the B<$expand> variable is set to 0) and shipped off to the
 database for processing. If all goes well, a new connection is established to
-the destination database (as specified via $DSQUERY or the B<-S> flag) to
+the destination database (as specified via B<$DSQUERY> or the B<-S> flag) to
 transfer the result set using bcp. Then, the output of the source database
 connection is bound to the new bcp connection and data transfer is performed.
 B<\bcp> can handle multiple result sets without any problem (including result
@@ -1595,6 +1602,15 @@ that is not set), the default server packet size (usually 512 bytes).
 The number of records transferred in a single transaction between servers. Note
 that reaching the end of a result causes the batch to be transferred, regardless
 of the value of I<batch_size>. The default is the entire result set.
+
+=item -i "<initialization command>"
+
+Using the I<-i> parameter you can send a SQL command to the target server that
+will be executed just before the bulk copy operation is started. This is useful
+if you need to truncate the target table first. For example:
+
+    1> select * from proddb..materials
+    2> \bcp -SDTA -i "truncate table testdb..materials" -N -X testdb..materials
 
 =item -I ifile
 
@@ -2296,7 +2312,7 @@ environment.
 
 Contains the name I<sqsh> uses to identity itself to the server. Defaults to
 sqsh-2.1.7. The application name can be retrieved from the sysprocesses table
-like: 
+like:
   select program_name from master.dbo.sysprocesses where spid=@@pid;
 
 =item autouse (string)
@@ -2398,11 +2414,19 @@ This variable may be set with a date format (see the man page for B<date(1)>),
 and the variable expands to the current date in the supplied format. The default
 format for this variable is %d-%b-%y (e.g. 02-Feb-1996).
 
+=item datefmt (date-spec)
+
+This variable may be set with a date format similar to B<$date> and
+is used to control the display format of all SQL Server DATE columns. (Similar
+to B<$datetime>.) Note that only 63 bytes are available in total for the
+variable string and the remainder will be truncated.
+
 =item datetime (date-spec)
 
 This variable may be set with a date format similar to B<$date> and B<$time> and
-is used to control the display format of all SQL Server DATETIME and
-SMALLDATETIME columns.
+is used to control the display format of all SQL Server DATETIME, BIGDATETIME
+and SMALLDATETIME columns. Note that only 63 bytes are available in total for
+the variable string and the remainder will be truncated.
 
 Note that this features relies upon the operating system specific locale
 information for determining such things as the name of the month and day, rather
@@ -2571,7 +2595,14 @@ B<\go> command to be displayed prior to the output. This variable defaults to 0
 Setting the B<$encryption> variable prior to establishing a connection to the
 server will cause the login connection to be initiated using client-side
 password encryption. This variable may also be set using the B<-X> command line
-option.
+option. Client-side password encryption will also occur when using the B<-X>
+option on the B<\connect>, B<\reconnect> or B<\bcp> commands.
+Please note that the Sybase ASE setting for the B<net password encryption reqd>
+(15.0.2) configuration parameter may enforce you to use client side password
+encryption. I<sqsh-2.1.9> supports RSA password encryption when the CT-Lib
+version in use supports it. RSA password encryption is required if the above
+mentioned ASE configuration parameter is set to B<2>. Older version of sqsh only
+supports a value of B<1> (CT-Lib internal encryption algorithms).
 
 =item exit_failcount (boolean)
 
@@ -2752,7 +2783,7 @@ completes the keyword in exactly the same case as defined in the I<.sqsh_words>
 
 This variable controls the dynamic loading of keywords in the completion list
 when initially logging in to the server or when the database context is changed
-using the I<use database> command. When this variable is set to 'On' 
+using the I<use database> command. When this variable is set to 'On'
 (default is 'Off'), then the query that is provided through the
 B<$keyword_query> variable is executed and the query result set is loaded into
 the Readline completion list. This will only work for Sybase ASE and Microsoft
@@ -2771,7 +2802,7 @@ If Readline support has been compiled into I<sqsh>, and I<sqsh> is being run in
 interactive mode, the contents of this file are used for keyword tab completion
 by Readline rather than the default set of TSQL syntactical keywords. The
 default is I<$HOME/.sqsh_words>. When B<$keyword_dynamic> is enabled this
-takes precedence and overrules the list loaded from B<$keyword_file>. 
+takes precedence and overrules the list loaded from B<$keyword_file>.
 
 =item keyword_query (string)
 
@@ -3058,6 +3089,13 @@ B<EXIT STATUS> for details.
 This variable may be set with a time format (see the man page for B<date(1)>),
 and the variable expands to the current time in the supplied format. The default
 format for this variable is %H:%M:%S (e.g. 14:32:58).
+
+=item timefmt (date-spec)
+
+This variable may be set with a time format similar to B<$time> and
+is used to control the display format of all SQL Server TIME and BIGTIME
+columns. (Similar to B<$datetime>.) Note that only 63 bytes are available in
+total for the variable string and the remainder will be truncated.
 
 =item tmp_dir (path)
 
