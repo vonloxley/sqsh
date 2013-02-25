@@ -1,5 +1,5 @@
 For recent changes please read the files CHANGES-2.1.6,
-CHANGES-2.1.7 and CHANGES-2.1.8 in the doc directory.
+CHANGES-2.1.7, CHANGES-2.1.8 and CHANGES-2.1.9 in the doc directory.
 
 2005-12-30  Michael Peppler  <mpeppler@peppler.org>
 
@@ -118,7 +118,7 @@ CHANGES-2.1.7 and CHANGES-2.1.8 in the doc directory.
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.14 2006/04/16 09:45:33 mpeppler Exp $
+$Id: ChangeLog,v 1.15 2012/05/02 11:12:27 mwesdorp Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against
