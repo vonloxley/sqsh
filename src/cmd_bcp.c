@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.12 2013/02/20 10:32:53 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.13 2013/02/20 13:31:57 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -736,16 +736,11 @@ int cmd_bcp( argc, argv )
             goto return_fail;
         }
 
-        if ((retcode = ct_send(bcp_cmd_init)) != CS_SUCCEED || sg_error == True)
+	if ( dsp_cmd (stdout, bcp_cmd_init, init_cmd, 0) != DSP_SUCCEED || sg_error == True)
         {
-            fprintf( stderr, "\\bcp: ct_send() for init_cmd failed. (retcode=%d, sg_error=%d)\n",
-                     retcode, sg_error);
+            fprintf( stderr, "\\bcp: Execution of initialization command failed.\n");
             goto return_fail;
         }
-
-        while ((return_code = ct_results(bcp_cmd_init, &result_type)) == CS_SUCCEED);
-        if (sg_error == True)
-            goto return_fail;
     }
 
     /*-- Allocate a block descriptor --*/
