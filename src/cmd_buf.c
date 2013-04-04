@@ -34,11 +34,12 @@
 #include "sqsh_buf.h"
 #include "sqsh_stdin.h"
 #include "sqsh_expand.h" /* sqsh-2.1.6 */
+#include "sqsh_init.h" /* sqsh-2.1.6 */
 #include "cmd.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_buf.c,v 1.3 2009/04/14 09:09:32 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: cmd_buf.c,v 1.4 2010/01/26 15:03:50 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -418,7 +419,7 @@ int cmd_buf_show( argc, argv )
 
 				line = v->var_value ;
 				while( (nl = strchr( line, '\n' )) != NULL ) {
-					printf( "   %*.*s\n", nl - line, nl - line, line ) ;
+					printf( "   %*.*s\n", (int) (nl - line), (int) (nl - line), line ) ;
 					line = nl + 1 ;
 				}
 
@@ -581,7 +582,7 @@ int cmd_buf_edit( argc, argv )
 	/*
 	 * Run the editor.
 	 */
-	system(str);
+	c = system(str);
 
 	if (buf_load( write_buf, path, False ) == False)
 	{

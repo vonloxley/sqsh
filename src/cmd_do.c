@@ -257,7 +257,8 @@ int cmd_do( argc, argv )
 	if (do_connection == True && 
 		g_connection != NULL)
 	{
-		ct_close( g_connection, CS_FORCE_CLOSE );
+		if (ct_close( g_connection, CS_UNUSED ) != CS_SUCCEED)
+		    ct_close( g_connection, CS_FORCE_CLOSE );
 		ct_con_drop( g_connection );
 		g_connection = NULL;
 	}

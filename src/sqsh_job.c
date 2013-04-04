@@ -29,6 +29,7 @@
 #include "sqsh_config.h"
 #include "sqsh_error.h"
 #include "sqsh_fd.h"
+#include "sqsh_init.h"
 #include "sqsh_tok.h"
 #include "sqsh_cmd.h"
 #include "sqsh_global.h"
@@ -43,7 +44,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_job.c,v 1.4 2010/01/28 15:30:37 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_job.c,v 1.5 2012/03/14 09:17:51 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 

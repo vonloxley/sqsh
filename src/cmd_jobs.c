@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_jobs.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: cmd_jobs.c,v 1.2 2010/01/26 15:03:50 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -82,7 +82,7 @@ int cmd_jobs( argc, argv )
 				printf( "\tFlags    : %d\n", j->job_flags ) ;
 				printf( "\tOutput   : %s\n", j->job_output ) ;
 				printf( "\tStatus   : %d\n", j->job_status ) ;
-				printf( "\tChild pid: %d\n", j->job_pid ) ;
+				printf( "\tChild pid: %d\n", (int) j->job_pid ) ;
 			}
  		}
 	}

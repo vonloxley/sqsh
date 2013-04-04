@@ -50,7 +50,6 @@ int cmd_for( argc, argv )
 {
 	varbuf_t         *for_buf;
 	int               ret;
-	int               exit_status;
 	char             *var_name;
 	int               i;
 

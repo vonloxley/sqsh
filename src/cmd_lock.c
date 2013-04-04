@@ -40,7 +40,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_lock.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: cmd_lock.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -48,13 +48,14 @@ int cmd_lock( argc, argv )
 	int    argc ;
 	char  *argv[] ;
 {
+#if defined(HAVE_CRYPT)
 #if defined(HAVE_SHADOW_H)
-	struct spwd   *spwd;
+	struct spwd  *spwd;
+#endif
+	char         *crypt_pass;
 #endif
 	struct passwd *passwd;
-	char          salt[2];
 	char          pass[25];
-	char         *crypt_pass;
 	char         *real_pass = NULL;
 	int           len;
 
@@ -85,7 +86,7 @@ int cmd_lock( argc, argv )
 #if defined(HAVE_SHADOW_H)
 		/*
 		 * If the passwd->pw_passwd entry is undefined or contains an invalid
-		 * password (e.g. "x"), the we are probably using shadow passwords,
+		 * password (e.g. "x"), then we are probably using shadow passwords,
 		 * so lets give that a try.
 		 */
 		if (real_pass == NULL || strlen(real_pass) < 2) {
@@ -145,10 +146,7 @@ int cmd_lock( argc, argv )
 				return CMD_LEAVEBUF;
 
 #if defined(HAVE_CRYPT)
-			salt[0] = real_pass[0];
-			salt[1] = real_pass[1];
-
-			crypt_pass = (char*)crypt( pass, salt );
+			crypt_pass = (char*)crypt( pass, real_pass );
 
 			if (strcmp( real_pass, crypt_pass ) != 0) {
 				fprintf( stderr, "sqsh: Invalid password.\n" );

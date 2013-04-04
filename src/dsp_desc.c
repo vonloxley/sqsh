@@ -32,14 +32,13 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.8 2012/03/14 09:17:51 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.9 2013/02/19 18:06:42 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
 /*-- Local Prototypes --*/
 static CS_INT dsp_dlen           _ANSI_ARGS(( CS_DATAFMT* ));
 static CS_INT dsp_just           _ANSI_ARGS(( CS_INT ));
-static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
 
 /*
  * This is almost entirely cheesy.  Since CT-Lib does a crappy job
@@ -498,7 +497,7 @@ CS_INT dsp_desc_fetch( cmd, d )
                 d->d_cols[i].c_format.datatype == CS_IMAGE_TYPE)
             {
                 for (p = strlen (d->d_cols[i].c_data), j = p%2==0?2:3; p >= 0;
-                                 d->d_cols[i].c_data[p+j] = d->d_cols[i].c_data[p--]);
+                                 d->d_cols[i].c_data[p+j] = d->d_cols[i].c_data[p]) p--;
                 d->d_cols[i].c_data[0] = '0';
                 d->d_cols[i].c_data[1] = 'x';
                 if (j==3) d->d_cols[i].c_data[2] = '0';
@@ -614,42 +613,6 @@ void dsp_desc_destroy( d )
 
         free( d );
     }
-}
-
-static void dsp_display_fmt( nm, f )
-    CS_CHAR     *nm;
-    CS_DATAFMT  *f;
-{
-    if (f->namelen > 0 && f->namelen < CS_MAX_NAME)
-    {
-        fprintf( stderr, "%s->name      = %*.*s\n",
-                    (char*)nm, (int)f->namelen, (int)f->namelen, (char*)f->name );
-    }
-    else
-    {
-        fprintf( stderr, "%s->name      = <empty>\n",
-                    (char*)nm );
-    }
-    fprintf( stderr, "%s->namelen   = %d\n",
-             (char*)nm, (int)f->namelen );
-    fprintf( stderr, "%s->datatype  = %d\n",
-             (char*)nm, (int)f->datatype );
-    fprintf( stderr, "%s->format    = %d\n",
-             (char*)nm, (int)f->format );
-    fprintf( stderr, "%s->maxlength = %d\n",
-             (char*)nm, (int)f->maxlength );
-    fprintf( stderr, "%s->scale     = %d\n",
-             (char*)nm, (int)f->scale );
-    fprintf( stderr, "%s->precision = %d\n",
-             (char*)nm, (int)f->precision );
-    fprintf( stderr, "%s->status    = %d\n",
-             (char*)nm, (int)f->status );
-    fprintf( stderr, "%s->count     = %d\n",
-             (char*)nm, (int)f->count );
-    fprintf( stderr, "%s->usertype  = %d\n",
-             (char*)nm, (int)f->usertype );
-    fprintf( stderr, "%s->locale    = %p\n",
-             (char*)nm, (void*)f->locale );
 }
 
 /*

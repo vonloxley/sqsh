@@ -44,7 +44,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_init.c,v 1.2 2010/01/26 15:03:50 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_init.c,v 1.3 2010/02/17 11:35:06 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -312,14 +312,16 @@ void sqsh_exit( exit_status )
 
 	if( g_connection != NULL )
 	{
-		ct_close( g_connection, CS_FORCE_CLOSE );
+		if (ct_close( g_connection, CS_UNUSED) != CS_SUCCEED)
+		    ct_close( g_connection, CS_FORCE_CLOSE );
 		ct_con_drop( g_connection );
 		g_connection = NULL;
 	}
 
 	if (g_context != NULL)
 	{
-		ct_exit( g_context, CS_FORCE_EXIT );
+		if (ct_exit( g_context, CS_UNUSED ) != CS_SUCCEED)
+		    ct_exit( g_context, CS_FORCE_EXIT );
 
 		/*
 		 * If sqsh is aborting, maybe because of losing a database connection

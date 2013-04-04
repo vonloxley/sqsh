@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_debug.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: var_debug.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -103,17 +103,17 @@ int var_set_debug( env, var_name, var_value )
 	while( *str != '\0' ) {
 
 		/*-- Skip leading white space --*/
-		for( ; *str != '\0' && isspace(*str); ++str ) ;
+		for( ; *str != '\0' && isspace( (int) *str); ++str ) ;
 
-		for( i = 0; *str != '\0' && !(isspace(*str)) && *str != '|'; ++str ) {
+		for( i = 0; *str != '\0' && !(isspace( (int) *str)) && *str != '|'; ++str ) {
 			if( i < sizeof(flag_name) )
 				flag_name[i++] = *str ;
 		}
 		flag_name[i] = '\0' ;
 
-		if( isspace(*str) ) {
+		if( isspace( (int) *str) ) {
 			/*-- Skip leading white space --*/
-			for( ++str; *str != '\0' && isspace(*str); ++str ) ;
+			for( ++str; *str != '\0' && isspace( (int) *str); ++str ) ;
 			
 			if( !(*str == '\0' || *str == '|') ) {
 				sqsh_set_error( SQSH_E_INVAL,
@@ -125,7 +125,7 @@ int var_set_debug( env, var_name, var_value )
 		if( *str != '\0' )
 			++str ;
 		
-		if( isdigit(*flag_name) )
+		if( isdigit( (int) *flag_name) )
 			debug_flags |= atoi(flag_name) ;
 		else {
 			for( i = 0; i < nitems; i++ ) {

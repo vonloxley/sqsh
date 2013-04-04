@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_history.c,v 1.4 2010/02/12 15:40:46 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: cmd_history.c,v 1.5 2010/02/25 10:50:47 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -139,10 +139,10 @@ int cmd_history( argc, argv )
 				else
 				  sprintf( hdrinfo, "(%d) ", hb->hb_nbr ) ;
 
-				printf( "%s%*.*s\n", hdrinfo, nl - line, nl - line, line ) ;
+				printf( "%s%*.*s\n", hdrinfo, (int) (nl - line), (int) (nl - line), line ) ;
 
 			} else {
-				printf( "%*s%*.*s\n", strlen(hdrinfo), " ", nl - line, nl - line, line ) ;
+				printf( "%*s%*.*s\n", (int) strlen(hdrinfo), " ", (int) (nl - line), (int) (nl - line), line ) ;
 			}
 
 			line = nl + 1 ;

@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.4 2009/04/14 10:15:27 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.5 2010/01/26 15:03:50 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -752,7 +752,7 @@ static int expand_variable( cpp, str_end, buf, flags )
     if (*var_name_start == '$' && 
         (var_name_end - var_name_start) == 1)
     {
-        sprintf(nbr, "%d", getpid() );
+        sprintf(nbr, "%d", (int) getpid() );
         varbuf_strcat( buf, nbr );
         *cpp = str;
         return(True);

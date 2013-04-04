@@ -39,6 +39,7 @@ extern int  unstifle_history ();
 extern int  read_history     ();
 extern int  write_history    ();
 extern void add_history      ();
+extern void _rl_clear_screen PARAMS((void));
 #endif
 
 /*-- Prototypes --*/
@@ -49,5 +50,4 @@ int   sqsh_readline_load  _ANSI_ARGS(( void  )) ;
 int   sqsh_readline_read  _ANSI_ARGS(( char* )) ;
 int   sqsh_readline_add   _ANSI_ARGS(( char* )) ;
 int   sqsh_readline_clear _ANSI_ARGS(( void )) ;
-
 #endif /* sqsh_readline_h_included */

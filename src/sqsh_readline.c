@@ -25,16 +25,17 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "sqsh_config.h"
-#include "sqsh_error.h"
-#include "sqsh_global.h"
 #include "sqsh_env.h"
-#include "sqsh_stdin.h"
-#include "sqsh_readline.h"
+#include "sqsh_error.h"
 #include "sqsh_expand.h"   /* sqsh-2.1.6 */
+#include "sqsh_global.h"
+#include "sqsh_init.h"
+#include "sqsh_readline.h"
+#include "sqsh_stdin.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.4 2012/03/14 09:17:51 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.5 2012/03/29 16:25:46 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -1019,7 +1020,7 @@ static char* sqsh_generator( text, state )
             
             for (cptr = str; *word != '\0'; ++word, ++cptr)
             {
-                *cptr = tolower(*word);
+                *cptr = tolower( (int) *word);
             }
             *cptr = '\0';
             break;
@@ -1028,7 +1029,7 @@ static char* sqsh_generator( text, state )
 
             for (cptr = str; *word != '\0'; ++word, ++cptr)
             {
-                *cptr = toupper(*word);
+                *cptr = toupper( (int) *word);
             }
             *cptr = '\0';
             break;
@@ -1039,11 +1040,11 @@ static char* sqsh_generator( text, state )
             {
                 if (isupper((int)*text))
                 {
-                    *cptr = toupper(*word);
+                    *cptr = toupper( (int) *word);
                 }
                 else
                 {
-                    *cptr = tolower(*word);
+                    *cptr = tolower( (int) *word);
                 }
             }
             *cptr = '\0';

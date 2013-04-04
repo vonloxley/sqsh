@@ -24,6 +24,7 @@
  */
 #include <stdio.h>
 #include <ctpublic.h>
+#include <ctype.h>
 #include <bkpublic.h>
 #include "sqsh_config.h"
 #include "sqsh_global.h"
@@ -39,7 +40,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.13 2013/02/20 13:31:57 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.14 2013/02/25 09:50:22 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -150,6 +151,8 @@ int cmd_bcp( argc, argv )
     extern char*      sqsh_optarg;   /* Value of option */
     int               opt;           /* Current option */
     char             *bcp_table;     /* Table to bcp into */
+    char             *bcp_partition; /* Partition name to bcp into */
+    int               bcp_slicenum;  /* Partition number to bcp into */
     char             *cmd_sql;       /* SQL command to send to server */
     int               rows_in_batch; /* Rows processed in batch */
     int               total_rows;    /* Total rows processing */
@@ -189,6 +192,7 @@ int cmd_bcp( argc, argv )
     int               batchsize     = -1;   /* Copy all rows in one batch */
     int               have_error    = False;
     CS_BOOL           have_identity = CS_FALSE;
+    CS_BOOL           char_convert  = CS_FALSE;
 
     /*
      * sqsh-2.1.9 - Feature BCP execute an initialization command
@@ -300,6 +304,14 @@ int cmd_bcp( argc, argv )
      * Keep around a handy pointer.
      */
     bcp_table = argv[sqsh_optind];
+
+    /*
+     * sqsh-2.2.0 - Feature enable BCP_IN into a specific partition of a partitioned table
+     */
+    if ((bcp_partition = strchr(bcp_table, (int) ':')) != NULL)
+    {
+        *bcp_partition++ = '\0';
+    }
 
     /*
      * Now, install our signal handlers.  At this point, all code should
@@ -479,7 +491,7 @@ int cmd_bcp( argc, argv )
                       (CS_VOID*)&bcp_on,          /* Buffer */
                       CS_UNUSED,                  /* Buffer Lenth */
                       (CS_INT*)NULL               /* Output Length */
-                         ) != CS_SUCCEED)
+                    ) != CS_SUCCEED)
     {
         fprintf( stderr, "\\bcp: Unable to mark connection for BCP\n" );
         goto return_fail;
@@ -492,7 +504,7 @@ int cmd_bcp( argc, argv )
                       (CS_VOID*)username,         /* Buffer */
                       CS_NULLTERM,                /* Buffer Lenth */
                       (CS_INT*)NULL               /* Output Length */
-                         ) != CS_SUCCEED)
+                    ) != CS_SUCCEED)
     {
         fprintf( stderr,
             "\\bcp: Unable to set username to '%s' for BCP connection\n",
@@ -507,7 +519,7 @@ int cmd_bcp( argc, argv )
                       (CS_VOID*)password,         /* Buffer */
                       (password == NULL)?CS_UNUSED:CS_NULLTERM,
                       (CS_INT*)NULL               /* Output Length */
-                         ) != CS_SUCCEED)
+                    ) != CS_SUCCEED)
     {
         fprintf( stderr, "\\bcp: Unable to set password BCP connection\n" );
         goto return_fail;
@@ -520,7 +532,7 @@ int cmd_bcp( argc, argv )
                       (CS_VOID*)"sqsh-bcp",       /* Buffer */
                       CS_NULLTERM,                /* Buffer Lenth */
                       (CS_INT*)NULL               /* Output Length */
-                          ) != CS_SUCCEED)
+                    ) != CS_SUCCEED)
     {
         fprintf( stderr,
             "\\bcp: Unable to set appname to 'sqsh-bcp' for BCP connection\n" );
@@ -530,12 +542,12 @@ int cmd_bcp( argc, argv )
     /*-- Hostname --*/
     if (hostname != NULL && *hostname != '\0') {
         if (ct_con_props( bcp_con,                 /* Connection */
-                              CS_SET,                  /* Action */
-                              CS_HOSTNAME,             /* Property */
-                              (CS_VOID*)hostname,      /* Buffer */
-                              CS_NULLTERM,             /* Buffer Length */
-                              (CS_INT*)NULL            /* Output Length */
-                             ) != CS_SUCCEED)
+                          CS_SET,                  /* Action */
+                          CS_HOSTNAME,             /* Property */
+                          (CS_VOID*)hostname,      /* Buffer */
+                          CS_NULLTERM,             /* Buffer Length */
+                          (CS_INT*)NULL            /* Output Length */
+                        ) != CS_SUCCEED)
         {
             fprintf( stderr,
                 "\\bcp: Unable to set hostname to '%s' for BCP connection\n",
@@ -548,12 +560,12 @@ int cmd_bcp( argc, argv )
     if (packet_size != NULL) {
         i = atoi(packet_size);
         if (ct_con_props( bcp_con,                 /* Connection */
-                              CS_SET,                  /* Action */
-                              CS_PACKETSIZE,           /* Property */
-                              (CS_VOID*)&i,            /* Buffer */
-                              CS_UNUSED,               /* Buffer Length */
-                              (CS_INT*)NULL            /* Output Length */
-                             ) != CS_SUCCEED)
+                          CS_SET,                  /* Action */
+                          CS_PACKETSIZE,           /* Property */
+                          (CS_VOID*)&i,            /* Buffer */
+                          CS_UNUSED,               /* Buffer Length */
+                          (CS_INT*)NULL            /* Output Length */
+                        ) != CS_SUCCEED)
         {
             fprintf( stderr,
                 "\\bcp: Unable to set packetsize to %d for BCP connection\n",
@@ -566,12 +578,12 @@ int cmd_bcp( argc, argv )
     if (encryption != NULL && *encryption == '1') {
         i = CS_TRUE;
         if (ct_con_props( bcp_con,                 /* Connection */
-                              CS_SET,                  /* Action */
-                              CS_SEC_ENCRYPTION,       /* Property */
-                              (CS_VOID*)&i,            /* Buffer */
-                              CS_UNUSED,               /* Buffer Length */
-                              (CS_INT*)NULL            /* Output Length */
-                             ) != CS_SUCCEED)
+                          CS_SET,                  /* Action */
+                          CS_SEC_ENCRYPTION,       /* Property */
+                          (CS_VOID*)&i,            /* Buffer */
+                          CS_UNUSED,               /* Buffer Length */
+                          (CS_INT*)NULL            /* Output Length */
+                        ) != CS_SUCCEED)
         {
             fprintf( stderr,
                 "\\bcp: Unable to set password encryption for BCP connection\n" );
@@ -585,12 +597,12 @@ int cmd_bcp( argc, argv )
          * configured to 2 (RSA).
         */
         if (ct_con_props( bcp_con,                    /* Connection */
-                              CS_SET,                     /* Action */
-                              CS_SEC_EXTENDED_ENCRYPTION, /* Property */
-                              (CS_VOID*)&i,               /* Buffer */
-                              CS_UNUSED,                  /* Buffer Length */
-                              (CS_INT*)NULL               /* Output Length */
-                             ) != CS_SUCCEED)
+                          CS_SET,                     /* Action */
+                          CS_SEC_EXTENDED_ENCRYPTION, /* Property */
+                          (CS_VOID*)&i,               /* Buffer */
+                          CS_UNUSED,                  /* Buffer Length */
+                          (CS_INT*)NULL               /* Output Length */
+                        ) != CS_SUCCEED)
         {
             fprintf( stderr,
                 "\\bcp: Unable to set extended password encryption for BCP connection\n" );
@@ -598,6 +610,21 @@ int cmd_bcp( argc, argv )
         }
 #endif
 
+#if defined (CS_NOCHARSETCNV_REQD)
+        char_convert = CS_TRUE;
+        if (ct_con_props( bcp_con,                    /* Connection */
+                          CS_SET,                     /* Action */
+                          CS_NOCHARSETCNV_REQD,       /* Property */
+                          (CS_VOID*)&char_convert,    /* Buffer */
+                          CS_UNUSED,                  /* Buffer Length */
+                          (CS_INT*)NULL               /* Output Length */
+                        ) != CS_SUCCEED)
+        {
+            fprintf( stderr,
+                "\\bcp: Unable to set CS_NOCHARSETCONV_REQD for BCP connection\n" );
+            goto return_fail;
+        }
+#endif
     }
 
     /*
@@ -615,12 +642,12 @@ int cmd_bcp( argc, argv )
     /*-- Initialize --*/
     if (cs_locale( g_context,                    /* Context */
                    CS_SET,                       /* Action */
-                      bcp_locale,                   /* Locale Structure */
+                   bcp_locale,                   /* Locale Structure */
                    CS_LC_ALL,                    /* Property */
-                      (CS_CHAR*)NULL,               /* Buffer */
+                   (CS_CHAR*)NULL,               /* Buffer */
                    CS_UNUSED,                    /* Buffer Length */
                    (CS_INT*)NULL                 /* Output Length */
-                     ) != CS_SUCCEED)
+                 ) != CS_SUCCEED)
     {
         fprintf( stderr,
             "\\bcp: Unable to initialize locale for BCP connection\n" );
@@ -632,11 +659,11 @@ int cmd_bcp( argc, argv )
         if (cs_locale( g_context,                 /* Context */
                        CS_SET,                    /* Action */
                        bcp_locale,                /* Locale Structure */
-                          CS_SYB_LANG,               /* Property */
-                          (CS_CHAR*)language,        /* Buffer */
-                          CS_NULLTERM,               /* Buffer Length */
-                          (CS_INT*)NULL              /* Output Length */
-                         ) != CS_SUCCEED)
+                       CS_SYB_LANG,               /* Property */
+                       (CS_CHAR*)language,        /* Buffer */
+                       CS_NULLTERM,               /* Buffer Length */
+                       (CS_INT*)NULL              /* Output Length */
+                     ) != CS_SUCCEED)
         {
             fprintf( stderr,
                 "\\bcp: Unable to set language to '%s' for BCP connection\n",
@@ -650,11 +677,11 @@ int cmd_bcp( argc, argv )
         if (cs_locale( g_context,                 /* Context */
                        CS_SET,                    /* Action */
                        bcp_locale,                /* Locale Structure */
-                          CS_SYB_CHARSET,            /* Property */
-                          (CS_CHAR*)charset,         /* Buffer */
-                          CS_NULLTERM,               /* Buffer Length */
-                          (CS_INT*)NULL              /* Output Length */
-                         ) != CS_SUCCEED)
+                       CS_SYB_CHARSET,            /* Property */
+                       (CS_CHAR*)charset,         /* Buffer */
+                       CS_NULLTERM,               /* Buffer Length */
+                       (CS_INT*)NULL              /* Output Length */
+                     ) != CS_SUCCEED)
         {
             fprintf( stderr,
                 "\\bcp: Unable to set charset to '%s' for BCP connection\n",
@@ -665,12 +692,12 @@ int cmd_bcp( argc, argv )
 
     /*-- Locale Property --*/
     if (ct_con_props( bcp_con,                 /* Connection */
-                          CS_SET,                  /* Action */
-                          CS_LOC_PROP,             /* Property */
-                          (CS_VOID*)bcp_locale,    /* Buffer */
-                          CS_UNUSED,               /* Buffer Length */
-                          (CS_INT*)NULL            /* Output Length */
-                         ) != CS_SUCCEED)
+                      CS_SET,                  /* Action */
+                      CS_LOC_PROP,             /* Property */
+                      (CS_VOID*)bcp_locale,    /* Buffer */
+                      CS_UNUSED,               /* Buffer Length */
+                      (CS_INT*)NULL            /* Output Length */
+                    ) != CS_SUCCEED)
     {
         fprintf( stderr, "\\bcp: Unable to set locale for BCP connection\n" );
         goto return_fail;
@@ -724,7 +751,7 @@ int cmd_bcp( argc, argv )
     {
         if ((retcode = ct_cmd_alloc(bcp_con, &bcp_cmd_init)) != CS_SUCCEED || sg_error == True)
         {
-            fprintf( stderr, "\\bcp: ct_cmd_alloc failed. (retcode=%d, sg_error=%d)\n", retcode, sg_error );
+            fprintf( stderr, "\\bcp: ct_cmd_alloc failed. (retcode=%d, sg_error=%d)\n", (int) retcode, sg_error );
             goto return_fail;
         }
 
@@ -732,11 +759,11 @@ int cmd_bcp( argc, argv )
             sg_error == True)
         {
             fprintf( stderr, "\\bcp: ct_command() for init_cmd failed. (retcode=%d, sg_error=%d)\n",
-                     retcode, sg_error);
+                     (int) retcode, sg_error);
             goto return_fail;
         }
 
-	if ( dsp_cmd (stdout, bcp_cmd_init, init_cmd, 0) != DSP_SUCCEED || sg_error == True)
+        if ( dsp_cmd (stdout, bcp_cmd_init, init_cmd, 0) != DSP_SUCCEED || sg_error == True)
         {
             fprintf( stderr, "\\bcp: Execution of initialization command failed.\n");
             goto return_fail;
@@ -765,11 +792,72 @@ int cmd_bcp( argc, argv )
                        (CS_VOID*)&have_identity,    /* Buffer */
                        CS_UNUSED,                   /* Buffer Length*/
                        (CS_INT*)NULL                /* Output Length */
-                      ) == CS_FAIL)
+                     ) != CS_SUCCEED)
         {
             fprintf( stderr, "\\bcp: Unable to set BLK_IDENTITY option to %s\n",
                         have_identity == CS_TRUE ? "CS_TRUE" : "CS_FALSE" );
             goto return_fail;
+        }
+    }
+
+#if defined (BLK_CONV)
+    char_convert = CS_FALSE;
+    if (blk_props( bcp_desc,                    /* Descriptor */
+                   CS_SET,                      /* Action */
+                   BLK_CONV,                    /* Property */
+                   (CS_VOID*)&char_convert,     /* Buffer */
+                   CS_UNUSED,                   /* Buffer Length*/
+                   (CS_INT*)NULL                /* Output Length */
+                 ) != CS_SUCCEED)
+    {
+        fprintf( stderr, "\\bcp: Unable to set BLK_CONV option to CS_FALSE\n");
+        goto return_fail;
+    }
+#endif
+
+    /*
+     * sqsh-2.2.0 - Feature enable BCP_IN into a specific partition of a partitioned table
+     */
+    if (bcp_partition != NULL)
+    {
+        if (isdigit( (int) *bcp_partition))
+        {
+            bcp_slicenum = atoi (bcp_partition);
+#if defined (BLK_SLICENUM)
+            if (blk_props( bcp_desc,                    /* Descriptor */
+                           CS_SET,                      /* Action */
+                           BLK_SLICENUM,                /* Property */
+                           (CS_VOID*)&bcp_slicenum,     /* Buffer */
+                           CS_UNUSED,                   /* Buffer Length*/
+                           (CS_INT*)NULL                /* Output Length */
+                         ) != CS_SUCCEED)
+            {
+                fprintf( stderr, "\\bcp: Unable to set BLK_SLICENUM option\n");
+                goto return_fail;
+            }
+#else
+            fprintf(stderr, "\\bcp: The build version of Bulk Library does not (fully) support table partitioning.\n");
+            fprintf(stderr, "\\bcp: The specified slice number '%d' will be ignored.\n", bcp_slicenum);
+#endif
+        }
+        else
+        {
+#if defined (BLK_PARTITION)
+            if (blk_props( bcp_desc,                    /* Descriptor */
+                           CS_SET,                      /* Action */
+                           BLK_PARTITION,               /* Property */
+                           (CS_VOID*)bcp_partition,     /* Buffer */
+                           strlen(bcp_partition),       /* Buffer Length*/
+                           (CS_INT*)NULL                /* Output Length */
+                         ) != CS_SUCCEED)
+            {
+                fprintf( stderr, "\\bcp: Unable to set BLK_PARTITION option\n");
+                goto return_fail;
+            }
+#else
+            fprintf(stderr, "\\bcp: The build version of Bulk Library does not (fully) support table partitioning.\n");
+            fprintf(stderr, "\\bcp: The specified partition name '%s' will be ignored.\n", bcp_partition);
+#endif
         }
     }
 
@@ -975,7 +1063,8 @@ return_fail:
             ct_cancel( bcp_con, (CS_COMMAND*)NULL, CS_CANCEL_ALL );
 
             DBG(sqsh_debug(DEBUG_ERROR, "bcp:    Closing bcp connection.\n");)
-         ct_close( bcp_con, CS_FORCE_CLOSE );
+            if (ct_close( bcp_con, CS_UNUSED ) != CS_SUCCEED)
+                ct_close( bcp_con, CS_FORCE_CLOSE );
       }
 
         ct_con_drop( bcp_con );
@@ -1029,7 +1118,8 @@ leave:
 
     if (bcp_con != NULL)
     {
-        ct_close( bcp_con, CS_FORCE_CLOSE );
+        if (ct_close( bcp_con, CS_UNUSED ) != CS_SUCCEED)
+            ct_close( bcp_con, CS_FORCE_CLOSE );
         ct_con_drop( bcp_con );
     }
 
@@ -1109,12 +1199,12 @@ static bcp_data_t* bcp_data_bind ( cmd, result_type )
 
         /*-- Bind to the data space --*/
         if (ct_bind( cmd,                            /* Command */
-                         i + 1,                          /* Item */
-                         &c->c_format,                   /* Format */
-                         (CS_VOID*)c->c_data,            /* Buffer */
-                         (CS_INT*)&c->c_len,             /* Data Copied */
-                         &c->c_nullind                   /* NULL Indicator */
-                      ) != CS_SUCCEED)
+                     i + 1,                          /* Item */
+                     &c->c_format,                   /* Format */
+                     (CS_VOID*)c->c_data,            /* Buffer */
+                     (CS_INT*)&c->c_len,             /* Data Copied */
+                     &c->c_nullind                   /* NULL Indicator */
+                   ) != CS_SUCCEED)
         {
             fprintf( stderr,
                 "bcp_data_bind: Unable to bind column %d\n",
@@ -1174,11 +1264,11 @@ static CS_INT bcp_data_xfer( d, cmd, blkdesc )
             c->c_prevnullind = c->c_nullind;
 
             if (blk_bind( blkdesc,              /* Block Descriptor */
-                              i + 1,                /* Column Number */
-                              &c->c_format,         /* Data Format */
-                              (CS_VOID*)c->c_data,  /* Buffer */
-                              &c->c_len,                /* Buffer Length */
-                              &c->c_nullind ) != CS_SUCCEED)
+                          i + 1,                /* Column Number */
+                          &c->c_format,         /* Data Format */
+                          (CS_VOID*)c->c_data,  /* Buffer */
+                          &c->c_len,            /* Buffer Length */
+                          &c->c_nullind ) != CS_SUCCEED)
             {
                 fprintf( stderr,
                     "bcp_data_xfer: Unable to bind results for column %d\n",
@@ -1263,7 +1353,7 @@ static CS_RETCODE bcp_server_cb (ctx, con, msg)
      * Ignore "database changed", or "language changed" messages from
      * the server.
      */
-    if( msg->msgnumber == 5701 ||    /* database context change */
+    if(  msg->msgnumber == 5701 ||    /* database context change */
          msg->msgnumber == 5703 ||    /* language changed */
          msg->msgnumber == 5704 )     /* charset changed */
     {

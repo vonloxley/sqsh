@@ -180,7 +180,6 @@ int cmd_if_exec( argc, argv, exit_status )
 	pid_t   ret_pid;
 	int     status;
 	char    nbr[16];
-	int     ret;
 	func_t *f;
 	char    *return_str;
 

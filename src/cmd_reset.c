@@ -28,12 +28,16 @@
 #include "sqsh_env.h"
 #include "sqsh_cmd.h"
 #include "cmd.h"
+#if defined(USE_READLINE)
+#include "sqsh_readline.h"
+#endif
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_reset.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: cmd_reset.c,v 1.2 2010/01/26 15:03:50 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
+
 
 /*
  * cmd_clear:
@@ -50,8 +54,9 @@ int cmd_clear( argc, argv )
 		return CMD_FAIL ;
 	}
 #if defined(USE_READLINE)
-	if (g_interactive)
-	        _rl_clear_screen();
+	if (g_interactive) {
+	        _rl_clear_screen ();
+	}
 #endif
 	return CMD_CLEARBUF ;
 }

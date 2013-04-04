@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_misc.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: cmd_misc.c,v 1.2 2009/04/14 10:02:54 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -89,8 +89,8 @@ int cmd_display( sqlbuf )
 		/*-- Print the line of text --*/
 		fprintf( stdout, "%s%*.*s\n", 
 					s,                             /* Prompt */
-					end - buf,                     /* Length of line */
-					end - buf,                     /* Length of line */
+					(int) (end - buf),             /* Length of line */
+					(int) (end - buf),             /* Length of line */
 					buf ) ;                        /* Line itself */
 		fflush( stdout ) ;
 

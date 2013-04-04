@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.25 2013/02/20 13:31:57 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.26 2013/02/24 12:55:10 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -1228,7 +1228,8 @@ connect_fail:
         if (con_status == CS_CONSTAT_CONNECTED)
         {
             DBG(sqsh_debug(DEBUG_ERROR, "connect:   Closing connection\n");)
-            ct_close( g_connection, CS_FORCE_CLOSE );
+            if (ct_close( g_connection, CS_UNUSED ) != CS_SUCCEED)
+                ct_close( g_connection, CS_FORCE_CLOSE );
         }
         else
         {
@@ -1249,7 +1250,8 @@ connect_fail:
     if (g_context != NULL)
     {
         DBG(sqsh_debug(DEBUG_ERROR, "connect:   Dropping context\n");)
-        ct_exit( g_context, CS_FORCE_EXIT );
+        if (ct_exit( g_context, CS_UNUSED ) != CS_SUCCEED)
+            ct_exit( g_context, CS_FORCE_EXIT );
         cs_ctx_drop( g_context );
     }
 
@@ -1381,7 +1383,7 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
      */
     if (msg->severity > 10)
     {
-        sprintf( var_value, "%d", msg->msgnumber );
+        sprintf( var_value, "%d", (int) msg->msgnumber );
         env_set( g_internal_env, "?", var_value );
     }
 
@@ -1600,10 +1602,15 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
     if (sg_login == False)
     {
         env_get( g_env, "DSQUERY", &server ) ;
-        if (CS_SEVERITY(msg->msgnumber) >= CS_SV_COMM_FAIL || ctx == NULL || 
-            con == NULL)
+	/*
+        if (CS_SEVERITY(msg->msgnumber) >= CS_SV_COMM_FAIL ||
+            ctx == NULL || con == NULL)
+	*/
+        if ((CS_SEVERITY(msg->msgnumber) >= CS_SV_COMM_FAIL &&
+             CS_SEVERITY(msg->msgnumber) <= CS_SV_FATAL)    ||
+            ctx == NULL || con == NULL)
         {
-            fprintf (stderr, "%s: Aborting on severity %d\n", server, CS_SEVERITY(msg->msgnumber) );
+            fprintf (stderr, "%s: Aborting on severity %d\n", server, (int) CS_SEVERITY(msg->msgnumber) );
             sqsh_exit(254);
         }
     }
@@ -1906,7 +1913,7 @@ ShowNetAuthCredExp (conn, cmdname)
                 exp_time = time (NULL) + CredTimeOut;
                 cftime( dttm, datetime, &exp_time ) ;
                 fprintf (stdout, "%s: Network Authenticated session expires at: %s (%d secs)\n",
-                             cmdname, dttm, CredTimeOut );
+                             cmdname, dttm, (int) CredTimeOut );
         }
     }
     else

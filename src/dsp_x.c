@@ -29,14 +29,16 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "sqsh_config.h"
-#include "sqsh_error.h"
-#include "sqsh_global.h"
 #include "sqsh_debug.h"
+#include "sqsh_error.h"
+#include "sqsh_expand.h"
+#include "sqsh_global.h"
+#include "sqsh_init.h"
 #include "dsp.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_x.c,v 1.5 2010/02/04 15:21:34 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_x.c,v 1.6 2010/02/08 13:25:48 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -114,7 +116,7 @@ int dsp_x( output, cmd, flags, dsp_func )
 	else
 	{
 		i = 0;
-		for (cp = g_dsp_props.p_xgeom; *cp != '\0' && isdigit(*cp); ++cp)
+		for (cp = g_dsp_props.p_xgeom; *cp != '\0' && isdigit( (int) *cp); ++cp)
 		{
 			number[i++] = *cp;
 		}
@@ -251,7 +253,6 @@ static int dsp_x_init( fd, width, height )
 	int width;
 	int height;
 {
-	int    i;
 	int    nlines;
 
 	/*-- Widgets that make up our window --*/
@@ -265,12 +266,9 @@ static int dsp_x_init( fd, width, height )
 	Widget       w_btn_form;
 	Widget       w_btn_ok;
 	XmString     s_ok;
-	XmString     s_cancel;
 	cb_data_t    cd;                 /* Data for callbacks */
 	XtInputId    id;                 /* Id of input source */
 	Dimension    dim;
-	int          text_width;
-	int          orig_width;
 	int          argc;
 	char        *argv[1];
 	char        *cp;
@@ -435,12 +433,9 @@ static void dsp_x_input_cb (client_data, fd, id)
 	int         *fd;
 	XtInputId   *id;
 {
-	static int    len = 0;          /* Total Length of text in widget */
 	char          buffer[2048];     /* Read up to 2K of input */
 	int           n;
 	cb_data_t    *cd;
-	char         *cp;
-	char          number[20];
 
 	cd = (cb_data_t*)client_data;
 	

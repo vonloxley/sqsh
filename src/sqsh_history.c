@@ -23,15 +23,17 @@
  *            gray@xenotropic.com
  */
 #include <stdio.h>
+#include <sys/stat.h>
 #include "sqsh_config.h"
 #include "sqsh_error.h"
+#include "sqsh_expand.h"
+#include "sqsh_global.h"
 #include "sqsh_history.h"
 #include "sqsh_varbuf.h"
-#include "sqsh_global.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_history.c,v 1.5 2010/01/26 15:03:50 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_history.c,v 1.6 2010/01/28 15:30:37 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 

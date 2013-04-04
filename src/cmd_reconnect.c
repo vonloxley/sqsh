@@ -30,7 +30,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_reconnect.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: cmd_reconnect.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -55,7 +55,8 @@ int cmd_reconnect( argc, argv )
 		return CMD_FAIL ;
 	}
 
-	ct_close( old_connection, CS_FORCE_CLOSE );
+	if (ct_close( old_connection, CS_UNUSED ) != CS_SUCCEED)
+  	    ct_close( old_connection, CS_FORCE_CLOSE );
 	ct_con_drop( old_connection );
 
 	return CMD_LEAVEBUF ;

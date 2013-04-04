@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.19 2012/03/29 16:25:46 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.20 2013/02/19 18:06:42 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -523,7 +523,7 @@ main( argc, argv )
                   memset(buf, 0, MAXPWD);
                   if (sqsh_optarg != NULL)
                     strcpy (buf, sqsh_optarg);
-                  if (p = strchr(buf, '/')) {
+                  if ((p = strchr(buf, '/')) != NULL) {
                     *p    = '\0';
                     fdin  = atoi(buf);
                     fdout = atoi(p+1);
@@ -863,6 +863,7 @@ main( argc, argv )
      */
     sqsh_exit( 0 );
     /* NOTREACHED */
+    return (0);
 }
 
 #if defined(TIOCGWINSZ) && defined(SIGWINCH)

@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_conv.c,v 1.2 2004/04/10 00:10:30 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_conv.c,v 1.3 2013/02/19 18:06:42 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -354,7 +354,7 @@ CS_INT dsp_datetime_len( ctxt, type )
 #endif
 #if defined(CS_TIME_TYPE)
               case CS_TIME_TYPE:
-                sprintf( dt_buf, "11:59:53:123PM", i );
+                sprintf( dt_buf, "11:59:53:123PM" );
                 break;
 #endif
                 default:
