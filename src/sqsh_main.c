@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.20 2013/02/19 18:06:42 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.21 2013/04/04 10:52:36 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -215,7 +215,7 @@ main( argc, argv )
         else
         {
             rcfile = NULL;
-	    /* sqsh-2.1.9 - Set rcfile environment variable also to NULL */
+            /* sqsh-2.1.9 - Set rcfile environment variable also to NULL */
             env_set( g_env, "rcfile", rcfile );
         }
     }
@@ -268,7 +268,7 @@ main( argc, argv )
             if (access( cptr, R_OK ) != -1)
             {
                 env_set( g_env, "cur_rcfile", cptr );
-                if((jobset_run( g_jobset, "\\loop -n $cur_rcfile", &exit_status)) 
+                if((jobset_run( g_jobset, "\\loop -n $cur_rcfile", &exit_status))
                     == -1 )
                 {
                     fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
@@ -284,8 +284,8 @@ main( argc, argv )
 
             cptr = strtok( NULL, ":\n\t\r" );
         }
-	/* sqsh-2.1.9 - Remove temporary environment variable cur_rcfile */
-	env_remove( g_env, "cur_rcfile", 0);
+        /* sqsh-2.1.9 - Remove temporary environment variable cur_rcfile */
+        env_remove( g_env, "cur_rcfile", 0);
         varbuf_destroy(exp_buf);
     }
 
@@ -300,7 +300,7 @@ main( argc, argv )
         "a:A:bBc;C:d:D:eE:f:G:hH:i:I:J:k:K:l:L:m:n:N:o:pP;Q:r;R:s:S:t;T:U:vV;w:Xy:z:Z;\250:" )) != EOF)
     {
         ret = 0;
-        switch (ch) 
+        switch (ch)
         {
             case 'a' :
                 ret = env_set( g_env, "thresh_exit", sqsh_optarg );
@@ -439,19 +439,19 @@ main( argc, argv )
                     while( *sqsh_optarg != '\0' )
                         *sqsh_optarg++ = ' ';
                 }
-                
+
                 break;
             case 'Q' : /* sqsh-2.1.6 */
                 ret = env_set( g_env, "query_timeout", sqsh_optarg );
                 break;
             case 'r' :
-		/*
-		 * The alternative sqshrc file should already have been
-		 * processed above. Note that the -r option should be the
-		 * first option on the command line, otherwise the option
-		 * is ignored, also the option and the filename should be
-		 * separated by at leat a blank space.
-		*/
+                /*
+                 * The alternative sqshrc file should already have been
+                 * processed above. Note that the -r option should be the
+                 * first option on the command line, otherwise the option
+                 * is ignored, also the option and the filename should be
+                 * separated by at leat a blank space.
+                */
                 ret = True;
                 break;
             case 'R' : /* sqsh-2.1.6 */
@@ -511,11 +511,11 @@ main( argc, argv )
             case '\250' :
 #if defined(SQSH_HIDEPWD)
                 {
-		  /*
- 		   * sqsh-2.1.7 - Incorporated patch by David Wood
-		   * to solve a problem with pipes already in use. (Patch-id 2607434)
-		   * The actual pipe file descriptors will now be passed on with the \250 option.
-		  */
+                  /*
+                   * sqsh-2.1.7 - Incorporated patch by David Wood
+                   * to solve a problem with pipes already in use. (Patch-id 2607434)
+                   * The actual pipe file descriptors will now be passed on with the \250 option.
+                  */
                   char  buf[MAXPWD];
                   char *p;
                   int   fdin, fdout;
@@ -559,7 +559,7 @@ main( argc, argv )
          * Check the results from whichever variable we attempted
          * to set.
          */
-        if (ret == False) 
+        if (ret == False)
         {
             fprintf( stderr, "sqsh: -%c: %s\n", ch, sqsh_get_errstr() );
             sqsh_exit( 255 );
@@ -613,7 +613,7 @@ main( argc, argv )
         sqsh_exit( 255 );
     }
     if (stdin_tty && stdout_tty)
-	    g_interactive = True;
+        g_interactive = True;
 
 #if defined(TIOCGWINSZ)
     /*
@@ -623,24 +623,25 @@ main( argc, argv )
      */
     if (set_width == False && stdout_tty)
     {
-	/* Check to see if the width has been set via the sqshrc file.
-	   To do this we get the current setting - if it is != 80 then
-	   the sqshrc file had a \set width directive, which we don't want
-	   to override here. */
-	char *w;
-	env_get( g_env, "width", &w);
-	if(!w || atoi(w) == 80) {
-	    if (ioctl(fileno(stdout), TIOCGWINSZ, &ws ) != -1) {
-		sprintf( str, "%d", ws.ws_col );
-		env_set( g_env, "width", str );
-		
-		DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: Screen width = %d\n",
-			       ws.ws_col);)
-	    } else {
+        /* Check to see if the width has been set via the sqshrc file.
+         * To do this we get the current setting - if it is != 80 then
+         * the sqshrc file had a \set width directive, which we don't want
+         * to override here.
+         */
+        char *w;
+        env_get( g_env, "width", &w);
+        if(!w || atoi(w) == 80) {
+            if (ioctl(fileno(stdout), TIOCGWINSZ, &ws ) != -1) {
+                sprintf( str, "%d", ws.ws_col );
+                env_set( g_env, "width", str );
+
+                DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: Screen width = %d\n",
+                    ws.ws_col);)
+            } else {
             DBG(sqsh_debug(DEBUG_SCREEN,"sqsh_main: ioctl(%d,TIOCGWINSZ): %s\n",
                            (int)fileno(stdout), strerror(errno));)
-	    }
-	}
+            }
+        }
 
 #if defined(SIGWINCH)
         if (stdout_tty)
@@ -694,7 +695,7 @@ main( argc, argv )
      * banner.
      */
     env_get( g_env, "banner", &banner );
-    if (show_banner && (banner == NULL || *banner == '1') && 
+    if (show_banner && (banner == NULL || *banner == '1') &&
         g_interactive)
     {
         printf( "%s ", g_version );
@@ -741,7 +742,7 @@ main( argc, argv )
         env_get( g_env, "history", &history );
 
         /*
-         * If a history file has been defined, then we want to 
+         * If a history file has been defined, then we want to
          * expand its contents. This will allow folks to have
          * a different history file for each server.
          */
@@ -873,7 +874,7 @@ main( argc, argv )
  *
  * This function is called whenever a SIGWINCH (window size change)
  * signal is recieved during the life of sqsh.  Unfortunately, this
- * function calls quite a few functions that are known not to be 
+ * function calls quite a few functions that are known not to be
  * signal safe, but I am willing to accept the risk.  Thanks
  * to David Whitemarsh <djw@accessio.demon.co.uk> for supplying
  * this code.
@@ -896,7 +897,7 @@ static void sigwinch_handler( sig, user_data )
     if (isatty( fileno(stdout) ))
         ctty_fd = fileno(stdout);
     else {
-        
+
         /*
          * Attempt to grab the path to our controlling tty.  If we can't
          * find it, then we have to give up.
@@ -969,7 +970,7 @@ static void print_usage()
             sprintf( str, " [%s]", sg_flags[i].flag );
         else
             sprintf( str, " [%s %s]", sg_flags[i].flag, sg_flags[i].arg );
-        
+
         len = strlen( str );
 
         if( (line_len + len) > 68 ) {
@@ -1007,60 +1008,123 @@ static void print_usage()
  * sqsh-2.1.7 - Incorporated patch by David Wood
  * to solve a problem with pipes already in use. (Patch-id 2607434)
  * The actual pipe file descriptors will now be passed on with the \250 option.
+ * sqsh-2.2.0 - Function reworked.
 */
 static void hide_password (argc, argv)
   int   argc;
   char *argv[];
 {
-  int  i, j;
-  int  filedes[2];
-  char buf[32];
-  char nullpwd[2];
-  char *pwd = NULL;
+  int    i, j;
+  char **argn;
+  char   buf[32];
+  int    filedes[2];
+  char   nullpwd[2];
+  pid_t  pid;
+  char  *pwd = NULL;
+  int    status;
 
-  for (i = 1; i < argc; ++i) {
-    if (*(argv[i]) == '-' && *(argv[i] + 1) == 'P') {
-      if (*(argv[i]+2)) {
-        pwd = (argv[i]+2); /* Password passed on as: "sqsh -SSYBASE -Usa -Pxxxxxx"  , or as -P-  */
-      } else if ((i+1 < argc) && (*(argv[i+1]) != '-' || (*(argv[i+1]) == '-' && *(argv[i+1]+1) == '\0'))) {
-        pwd = argv[i + 1]; /* Password passed on as: "sqsh -SSYBASE -Usa -P xxxxxx" , or as -P - */
-        /* Reshuffle the argv list to remove the password string */
-        for (j = i + 1; j < argc - 1; j++)
-          argv[j] = argv[j + 1];
-        argv[j] = NULL;
-        argc--;
+
+  /*
+   * sqsh-2.2.0 - Allocate memory for a complete new argument list.
+  */
+  argn = malloc (sizeof(char*)*argc);
+  nullpwd[0] = '\n';
+  nullpwd[1] = '\0';
+
+  /*
+   * Loop through the list of arguments only once and skip all intermediate -P
+   * entries, but remember the last password specified.
+  */
+  for (i = 0, j = 0; argv[i] != NULL; ++i)
+  {
+    if (*(argv[i]) == '-' && *(argv[i]+1) == 'P')
+    {
+      /*
+       * New password parameter encounterd.
+      */
+      pwd = NULL;
+      if (*(argv[i]+2))
+      {
+        /*
+         * Password passed on as: "sqsh -SSYBASE -Usa -Pxxxxxx" , or as -P-
+        */
+        pwd = (argv[i]+2);
+      }
+      else if ((i+1 < argc) && (*(argv[i+1]) != '-' || (*(argv[i+1]) == '-' && *(argv[i+1]+1) == '\0')))
+      {
+        /*
+         * Password passed on as: "sqsh -SSYBASE -Usa -P xxxxxx" , or as -P -
+        */
+        pwd = argv[++i];
       }
       if (pwd == NULL || (pwd != NULL && strlen(pwd) == 0))
       {
-        nullpwd[0] = '\n';
-        nullpwd[1] = '\0';
-        pwd = nullpwd; /* Empty (NULL) password passed on as:
-			* "sqsh -SSYBASE -Usa -P " or "sqsh -SSYBASE -Usa -P '' " */
-      }
-
-      /* Create the pipe... */
-      if (pipe(filedes) == -1) {
-        perror("sqsh: Error: Can't pipe()");
-        return;
-      }
-      sprintf(buf, "-%c%d/%d", '\250', filedes[0], filedes[1]);
-      argv[i] = buf;
-
-      if (fork()) {
-        /* Re-execute ourselves, with the modified argv[] */
-        execvp(argv[0], argv);
-        /* Not reached */
-      } else {
-        /* ... and write the password to the pipe */
-        if (write(filedes[1], pwd, strlen(pwd)) != strlen(pwd)) {
-          fprintf(stderr, "sqsh: Error: Failed to write password to pipe (filedes=%d)\n", filedes[1]);
-          sqsh_exit(255);
-        }
-        close(filedes[0]);
-        close(filedes[1]);
-        sqsh_exit(0);
+        /*
+         * Empty (NULL) password passed on as:
+         * "sqsh -SSYBASE -Usa -P " or "sqsh -SSYBASE -Usa -P '' "
+        */
+        pwd = nullpwd;
       }
     }
+    else
+      argn[j++] = argv[i];
+  }
+
+  /*
+   * If pwd == NULL then no -P was specified as argument and we do not
+   * have to hide anything from the argument list.
+  */
+  if (pwd == NULL)
+  {
+    free (argn);
+    return;
+  }
+
+  /*
+   * Create the pipe.
+  */
+  if (pipe (filedes) == -1)
+  {
+    perror ("sqsh: Error: Can't pipe()");
+    return;
+  }
+  sprintf (buf, "-%c%d/%d", '\250', filedes[0], filedes[1]);
+  argn[j++] = buf;
+  argn[j]   = NULL;
+
+  if ((pid = fork()))
+  {
+    /*
+     * sqsh-2.2.0 - This code is executed by the parent process.
+     * Wait for the child process to finish execution before we continue.
+     */
+    waitpid (pid, &status, 0);
+    /*
+     * Re-execute ourselves in the parent process, with the new argn[] list.
+     */
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+      execvp (argn[0], argn);
+      /* Not reached */
+    else
+    {
+      fprintf (stderr, "sqsh: Error: Processing of function hide_password failed unexpectedly\n");
+      sqsh_exit (255);
+    }
+  }
+  else
+  {
+    /*
+     * The child process writes the password to the pipe, closes the pipe
+     * and exits.
+    */
+    if (write (filedes[1], pwd, strlen(pwd)) != strlen(pwd))
+    {
+      fprintf (stderr, "sqsh: Error: Failed to write password to pipe (filedes=%d)\n", filedes[1]);
+      sqsh_exit (255);
+    }
+    close (filedes[0]);
+    close (filedes[1]);
+    sqsh_exit (0);
   }
 }
 

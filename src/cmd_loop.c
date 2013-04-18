@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_loop.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: cmd_loop.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -50,7 +50,7 @@ int cmd_loop( argc, argv )
 	int    argc;
 	char  *argv[];
 {
-	FILE        *input_file ;         /* Where input is coming from */
+	FILE        *input_file = NULL; /* Where input is coming from */
 	int          ret;
 	int          exit_status;
 
@@ -195,7 +195,7 @@ int cmd_loop( argc, argv )
 	 * If we opened a file to read, then close it. There is a brief period
 	 * here where an interrupt could trash us, but lets hope for the best.
 	 */
-	if (file_name != NULL)
+	if (input_file != NULL)
 	{
 		/*
 		 * Let the stdin be what it used to be.

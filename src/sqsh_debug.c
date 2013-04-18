@@ -34,7 +34,7 @@
 #endif
 
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_debug.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_debug.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif
 
@@ -90,5 +90,20 @@ void sqsh_debug( debug_mask, fmt, va_alist )
 #endif /* DEBUG */
 
 	return  ;
+}
+
+#if defined(__ansi__)
+int sqsh_debug_show( int debug_mask )
+#else
+int sqsh_debug_show( debug_mask )
+    int    debug_mask ;
+#endif
+{
+#if defined(DEBUG)
+    if( debug_mask == DEBUG_ALL || (debug_mask & sg_debug_level) )
+        return True;
+    else
+        return False;
+#endif /* DEBUG */
 }
 

@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.5 2012/03/29 16:25:46 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.6 2013/04/04 10:52:36 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -215,8 +215,12 @@ char* sqsh_readline( prompt )
     char *line;
 #if defined(USE_READLINE)
     char *cp;
-    /* sqsh-2.1.6 - New variables */
+    /* sqsh-2.1.6 - New variable */
     char *ignoreeof = NULL;
+    /* sqsh-2.2.0 - New variables */
+    char *readline_histignore;
+    char *p1, *p2;
+    int  match;
 
 
     /* sqsh-2.1.6 feature - Expand color prompt */
@@ -266,11 +270,33 @@ char* sqsh_readline( prompt )
 
         if (*cp != '\0')
         {
-            add_history( line );
+            /*
+             * sqsh-2.2.0 - If $readline_histignore is set, then do not add the line to
+             * the readline history if it matches an entry in the ':' seperated list.
+             * Use case is to filter out the 'go', '\go', 'GO', quit, etc. statements
+             * from the readline history.
+            */
+            match = False;
+            env_get( g_env, "readline_histignore", &readline_histignore );
+            if (readline_histignore != NULL && *readline_histignore != '\0')
+            {
+                cp = sqsh_strdup (readline_histignore);
+                for (p1 = cp; p1 != NULL && match == False; p1 = p2)
+                {
+                    if ((p2 = strchr(p1, ':')) != NULL)
+                        *p2++ = '\0';
+                    if (strcmp (line, p1) == 0)
+                        match = True;
+                }
+                if (cp != NULL)
+                    free (cp);
+            }
+            if (match == False)
+                add_history( line );
         }
 
         /*
-         * Since readline mallocs line every time and doesn't append a 
+         * Since readline mallocs line every time and doesn't append a
          * newline, we make a copy of the current line, adding the newline
          * and free the readline copy.
          */
@@ -378,7 +404,7 @@ int sqsh_readline_read( filename )
         /*-- Skip whitespace --*/
         while( ch != EOF && isspace((int)ch) )
             ch = sqsh_getc(infile) ;
-        
+
         idx = 0 ;
         while( ch != EOF && !(isspace((int)ch)) ) {
             keyword[idx++] = ch ;
@@ -427,7 +453,7 @@ int sqsh_readline_add( keyword )
     }
     k->k_nxt = NULL ;
 
-    DBG(sqsh_debug( DEBUG_READLINE, "sqsh_readline_add: Adding '%s'\n", 
+    DBG(sqsh_debug( DEBUG_READLINE, "sqsh_readline_add: Adding '%s'\n",
                     k->k_word ) ;)
 
     if( sg_keyword_end == NULL )
@@ -471,7 +497,7 @@ int sqsh_readline_clear()
 #if defined(USE_READLINE)
 
 /*
- * This giant list is the complete list of key words avialable in 
+ * This giant list is the complete list of key words avialable in
  * in Sybase System 10.  It is used by the readline completion
  * generator function to do keyword completion. Note, this list
  * must remain in sorted order (case insensitive).
@@ -797,7 +823,7 @@ static char* sqsh_generator( text, state )
     int         low, high, middle;
     int         len;
     int         nitems;
-    int         r; 
+    int         r;
     char        *str;
     char        *cptr;
     char        *word;
@@ -813,7 +839,7 @@ static char* sqsh_generator( text, state )
      * the user even wants statement completion.  If he doesn't, then
      * don't do anything.
      */
-    if (state == 0) 
+    if (state == 0)
     {
         env_get( g_env, "keyword_completion", &keyword_completion );
 
@@ -849,7 +875,7 @@ static char* sqsh_generator( text, state )
          * If the user has supplied their own keyword completion list
          * then we want to ignore the built-in one.
          */
-        if ((sg_keyword_start != NULL) || (sg_colname_start != NULL)) 
+        if ((sg_keyword_start != NULL) || (sg_colname_start != NULL))
         {
             DBG(sqsh_debug(DEBUG_READLINE, "sqsh_generator: Using user list\n" );)
 
@@ -868,7 +894,7 @@ static char* sqsh_generator( text, state )
                 for (; cur != NULL && strncasecmp( cur->k_word, text, len ) != 0;
                     cur = cur->k_nxt );
             }
-            
+
             /*
              * If we failed to find anything, then give up and return
              * NULL to the caller indicating that we are all done or
@@ -880,16 +906,16 @@ static char* sqsh_generator( text, state )
                     sqsh_readline_clearcol();
                 return NULL;
             }
-            
+
             /*
              * Otherwise, save a pointer to the word that matched
              * so that we can figure out what to do next.
              */
             word = cur->k_word;
-        } 
+        }
         else
         {
-            DBG(sqsh_debug(DEBUG_READLINE, 
+            DBG(sqsh_debug(DEBUG_READLINE,
                            "sqsh_generator: Using internal list\n" );)
 
             /*
@@ -913,22 +939,22 @@ static char* sqsh_generator( text, state )
             }
 
             /*
-             * If we couldn't even find a partial match, then give up 
+             * If we couldn't even find a partial match, then give up
              * and return NULL.
              */
             if (low > high)
                 return NULL;
-            
+
             /*
              * Now, we have found an entry which matches (at least partially)
              * the value of text.  However, we haven't necessarily found the
-             * first on in our sorted list, so we need to back up until we 
+             * first on in our sorted list, so we need to back up until we
              * find it.
              */
             for (idx = middle;
                   idx > 0 && strncasecmp( sqsh_statements[idx-1], text, len ) == 0;
                   --idx);
-            
+
             word = sqsh_statements[idx];
         }
 
@@ -955,7 +981,7 @@ static char* sqsh_generator( text, state )
             }
 
             /*
-             * Traverse on through the list until we find another 
+             * Traverse on through the list until we find another
              * match or reach the end of the list.
              */
             if (*keyword_completion == '4') /* Exact */
@@ -970,7 +996,7 @@ static char* sqsh_generator( text, state )
                      cur != NULL && strncasecmp( cur->k_word, text, len ) != 0;
                      cur = cur->k_nxt );
             }
-            
+
             /*
              * If we hit the end, then we let the caller know that
              * we are all done.
@@ -1017,14 +1043,14 @@ static char* sqsh_generator( text, state )
     switch (*keyword_completion)
     {
         case '1':        /* Lower case */
-            
+
             for (cptr = str; *word != '\0'; ++word, ++cptr)
             {
                 *cptr = tolower( (int) *word);
             }
             *cptr = '\0';
             break;
-        
+
         case '2':        /* Upper case */
 
             for (cptr = str; *word != '\0'; ++word, ++cptr)
@@ -1033,7 +1059,7 @@ static char* sqsh_generator( text, state )
             }
             *cptr = '\0';
             break;
-        
+
         case '3':       /* Smart */
 
             for (cptr = str; *word != '\0'; ++word, ++cptr)
@@ -1049,7 +1075,7 @@ static char* sqsh_generator( text, state )
             }
             *cptr = '\0';
             break;
-        
+
         case '4':       /* Exact */
         default:
             strcpy( str, word );
@@ -1101,7 +1127,7 @@ static int sqsh_readline_addcol( keyword )
     }
     k->k_nxt = NULL ;
 
-    DBG(sqsh_debug( DEBUG_READLINE, "sqsh_readline_add: Adding '%s'\n", 
+    DBG(sqsh_debug( DEBUG_READLINE, "sqsh_readline_add: Adding '%s'\n",
                     k->k_word ) ;)
 
     if( sg_colname_end == NULL )
@@ -1181,13 +1207,13 @@ static int DynColnameLoad (objname)
                     query,              /* Query Buffer      */
                     CS_NULLTERM,        /* Buffer Length     */
                     CS_UNUSED           /* Options           */
-                  ) != CS_SUCCEED) 
+                  ) != CS_SUCCEED)
     {
         ct_cmd_drop( cmd );
         DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: Call to ct_command failed.\n"));
         return (CS_FAIL);
     }
-    if (ct_send( cmd ) != CS_SUCCEED) 
+    if (ct_send( cmd ) != CS_SUCCEED)
     {
         ct_cmd_drop( cmd );
         DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: Call to ct_send failed.\n"));

@@ -33,13 +33,14 @@
 #include "sqsh_cmd.h"
 #include "sqsh_job.h"
 #include "sqsh_init.h"
+#include "sqsh_sig.h"
 #include "sqsh_stdin.h"
 #include "cmd.h"
 #include "sqsh_expand.h" /* sqsh-2.1.6 */
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.26 2013/02/24 12:55:10 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.27 2013/04/04 10:52:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -67,14 +68,14 @@ static int sg_login_failed = False;
 static int timeouts;
 
 /*-- Local Prototypes --*/
-static CS_RETCODE syb_server_cb 
+static CS_RETCODE syb_server_cb
     _ANSI_ARGS(( CS_CONTEXT*, CS_CONNECTION*, CS_SERVERMSG* ))
 #if defined(_CYGWIN32_)
     __attribute__ ((stdcall))
 #endif /* _CYGWIN32_ */
     ;
 
-static CS_RETCODE syb_client_cb 
+static CS_RETCODE syb_client_cb
     _ANSI_ARGS(( CS_CONTEXT*, CS_CONNECTION*, CS_CLIENTMSG* ))
 #if defined(_CYGWIN32_)
     __attribute__ ((stdcall))
@@ -106,6 +107,9 @@ static CS_RETCODE ShowNetAuthCredExp _ANSI_ARGS((CS_CONNECTION *,
     __attribute__ ((stdcall))
 #endif /* _CYGWIN32_ */
     ;
+
+/* sqsh-2.2.0 - Signal handler to respond to SIGINT during cmd_connect */
+static void connect_signal ( int, void *);
 
 /*
  * cmd_connect:
@@ -217,155 +221,128 @@ int cmd_connect( argc, argv )
      * Parse the command line options.
      * sqsh-2.1.6 - New options added and case evaluation neatly ordered.
      */
-    while ((c = sqsh_getopt( argc, argv, "cD:I;K:n:N:P;Q:R:S:T:U:V;XZ;" )) != EOF) 
+    while ((c = sqsh_getopt( argc, argv, "cD:I;K:n:N:P;Q:R:S:T:U:V;XZ;" )) != EOF)
     {
-        switch( c ) 
+        switch( c )
         {
-          case 'c' :
-            preserve_context = False ;
-          break ;
-	  case 'D' :
-	    if (env_put( g_env, "database", sqsh_optarg, 
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -D: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break;
-	  case 'I' :
-	    if (env_put( g_env, "interfaces", sqsh_optarg, 
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -I: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-	  case 'K' : /* sqsh-2.1.6 */
-	    if (env_put( g_env, "keytab_file", sqsh_optarg,
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -K: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-	  case 'n' :
-	    if (env_put( g_env, "chained", sqsh_optarg,
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -n: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-          case 'N' : /* sqsh-2.1.5 */
-	    if (env_put( g_env, "appname", sqsh_optarg,
-			 ENV_F_TRAN ) == False) {
-		fprintf( stderr, "\\connect: -N: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break;
-	  case 'P' :
-	    if(g_password_set == True && g_password != NULL)
-		strcpy( orig_password, g_password );
-	    password_changed = True;
-	    
-	    if (env_put( g_env, "password", sqsh_optarg,
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -P: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break;
-	  case 'Q' : /* sqsh-2.1.6 */
-	    if (env_put( g_env, "query_timeout", sqsh_optarg,
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -Q: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-	  case 'R' : /* sqsh-2.1.6 */
-	    if (env_put( g_env, "principal", sqsh_optarg,
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -R: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-	  case 'S' :
-	    if (env_put( g_env, "DSQUERY", sqsh_optarg,
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -S: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-	  case 'T' : /* sqsh-2.1.6 */
-	    if (env_put( g_env, "login_timeout", sqsh_optarg,
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -T: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-	  case 'U' :
-	    if (env_put( g_env, "username", sqsh_optarg,
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -U: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-	  case 'V' : /* sqsh-2.1.6 */
-            if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
-	      return_code = env_put( g_env, "secure_options", "u", ENV_F_TRAN);
-            else
-	      return_code = env_put( g_env, "secure_options", sqsh_optarg, ENV_F_TRAN);
+            case 'c' :
+                preserve_context = False ;
+                break ;
+            case 'D' :
+                if (env_put( g_env, "database", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -D: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break;
+            case 'I' :
+                if (env_put( g_env, "interfaces", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -I: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'K' : /* sqsh-2.1.6 */
+                if (env_put( g_env, "keytab_file", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -K: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'n' :
+                if (env_put( g_env, "chained", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -n: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'N' : /* sqsh-2.1.5 */
+              if (env_put( g_env, "appname", sqsh_optarg, ENV_F_TRAN ) == False)
+                  {
+                    fprintf( stderr, "\\connect: -N: %s\n", sqsh_get_errstr() );
+                  have_error = True;
+                  }
+                break;
+            case 'P' :
+                if (g_password_set == True && g_password != NULL) strcpy( orig_password, g_password );
+                password_changed = True;
 
-	    if (return_code == False)
-	    {
-		fprintf( stderr, "\\connect: -V: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-	  case 'X' : /* sqsh-2.1.9 */
-	    if (env_put( g_env, "encryption", "1",
-			 ENV_F_TRAN ) == False)
-	    {
-		fprintf( stderr, "\\connect: -X: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
-	  case 'Z' : /* sqsh-2.1.6 */
-            if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
-	      return_code = env_put( g_env, "secmech", "default", ENV_F_TRAN);
-            else
-	      return_code = env_put( g_env, "secmech", sqsh_optarg, ENV_F_TRAN);
+                if (env_put( g_env, "password", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -P: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break;
+            case 'Q' : /* sqsh-2.1.6 */
+                if (env_put( g_env, "query_timeout", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -Q: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'R' : /* sqsh-2.1.6 */
+                if (env_put( g_env, "principal", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -R: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'S' :
+                if (env_put( g_env, "DSQUERY", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -S: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'T' : /* sqsh-2.1.6 */
+                if (env_put( g_env, "login_timeout", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -T: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'U' :
+                if (env_put( g_env, "username", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -U: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'V' : /* sqsh-2.1.6 */
+                if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
+                    return_code = env_put( g_env, "secure_options", "u", ENV_F_TRAN);
+                else
+                    return_code = env_put( g_env, "secure_options", sqsh_optarg, ENV_F_TRAN);
 
-	    if (return_code == False)
-	    {
-		fprintf( stderr, "\\connect: -Z: %s\n",
-			 sqsh_get_errstr() );
-		have_error = True;
-	    }
-	    break ;
+                if (return_code == False)
+                {
+                    fprintf( stderr, "\\connect: -V: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'X' : /* sqsh-2.1.9 */
+                if (env_put( g_env, "encryption", "1", ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -X: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'Z' : /* sqsh-2.1.6 */
+                if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
+                    return_code = env_put( g_env, "secmech", "default", ENV_F_TRAN);
+                else
+                    return_code = env_put( g_env, "secmech", sqsh_optarg, ENV_F_TRAN);
+                if (return_code == False)
+                {
+                    fprintf( stderr, "\\connect: -Z: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
 
-	  default :
-	    fprintf( stderr, "\\connect: %s\n", sqsh_get_errstr() ) ;
-	    have_error = True ;
-	    break ;
+            default :
+                fprintf( stderr, "\\connect: %s\n", sqsh_get_errstr() ) ;
+                have_error = True ;
+                break ;
         }
     }
 
@@ -374,15 +351,15 @@ int cmd_connect( argc, argv )
      * we have an error.
      * sqsh-2.1.6 - New options added to the list.
      */
-    if( have_error || sqsh_optind != argc ) 
+    if( have_error || sqsh_optind != argc )
     {
-        fprintf( stderr, 
+        fprintf( stderr,
             "Use: \\connect [-c] [-I interfaces] [-U username] [-P pwd] [-S server]\n"
             "               [-D database ] [-N appname] [-n {on|off}] [-Q query_timeout]\n"
             "               [-T login_timeout] [-K keytab_file] [-R principal]\n"
             "               [-V [bcdimoqru]] [-X] [-Z [secmech|default|none]]\n"
         ) ;
-    
+
         env_rollback( g_env );
         return CMD_FAIL;
     }
@@ -429,6 +406,13 @@ int cmd_connect( argc, argv )
     }
 
     /*
+     * sqsh-2.2.0 - Install a signal handler to catch SIGINT during cmd_connect.
+     * The current signals are saved first and restored at the end of cmd_connect.
+     */
+    sig_save();
+    sig_install( SIGINT, connect_signal, (void *) NULL, 0);
+
+    /*
      * If the $session variable is set and the path that it contains
      * is a valid path name, then we want to execute the contents of
      * this file immediately, and prior to connecting to the database.
@@ -439,14 +423,14 @@ int cmd_connect( argc, argv )
         if (sqsh_expand( session, exp_buf, 0 ) != False)
         {
             session = varbuf_getstr( exp_buf );
-            if (session != NULL && access( session, R_OK ) != -1) 
+            if (session != NULL && access( session, R_OK ) != -1)
             {
                 DBG(sqsh_debug(DEBUG_ENV, "cmd_connect: session file is %s.\n",
                                session);)
                 cp = malloc (strlen(session) + 12) ;
                 sprintf (cp, "\\loop -n %s", session);
                 if ((jobset_run( g_jobset, cp, &exit_status )) == -1 ||
-                    exit_status == CMD_FAIL) 
+                    exit_status == CMD_FAIL)
                 {
                     fprintf( stderr, "%s\n", sqsh_get_errstr() );
                     free (cp);
@@ -485,7 +469,7 @@ int cmd_connect( argc, argv )
         secmech         = NULL;
         secure_options  = NULL;
     }
-    if ((secmech != NULL && *secmech != '\0') || 
+    if ((secmech != NULL && *secmech != '\0') ||
         (secure_options != NULL && *secure_options != '\0'))
     {
         NetAuthRequired = CS_TRUE;
@@ -538,7 +522,7 @@ int cmd_connect( argc, argv )
      * database, then that indicates that we are to automatically
      * connect to $database prior to returning.
      */
-    if( preserve_context && database != NULL && *database != '\0' ) 
+    if( preserve_context && database != NULL && *database != '\0' )
     {
         strncpy( use_database, database, sizeof(use_database)-1 ) ;
         use_database[sizeof(use_database)-1] = '\0';
@@ -559,41 +543,41 @@ int cmd_connect( argc, argv )
     if (g_context == NULL)
     {
         /*-- Allocate a new context structure --*/
-	/*-- mpeppler 4/9/2004
+        /*-- mpeppler 4/9/2004
           we loop through the CS_VERSION_xxx values to try
           to use the highest one we find */
 
-	retcode = CS_FAIL;
+        retcode = CS_FAIL;
 
 #if defined(CS_CURRENT_VERSION)
-    if(retcode != CS_SUCCEED) {
-    g_cs_ver = CS_CURRENT_VERSION;
-    retcode = cs_ctx_alloc(g_cs_ver, &g_context);
-}
+        if(retcode != CS_SUCCEED) {
+            g_cs_ver = CS_CURRENT_VERSION;
+            retcode = cs_ctx_alloc(g_cs_ver, &g_context);
+        }
 #endif
 #if defined(CS_VERSION_157)
         if(retcode != CS_SUCCEED) {
-	    g_cs_ver = CS_VERSION_157;
-	    retcode = cs_ctx_alloc(g_cs_ver, &g_context);
-	}
+            g_cs_ver = CS_VERSION_157;
+            retcode = cs_ctx_alloc(g_cs_ver, &g_context);
+        }
 #endif
 #if defined(CS_VERSION_155)
         if(retcode != CS_SUCCEED) {
-	    g_cs_ver = CS_VERSION_155;
-	    retcode = cs_ctx_alloc(g_cs_ver, &g_context);
-	}
+            g_cs_ver = CS_VERSION_155;
+            retcode = cs_ctx_alloc(g_cs_ver, &g_context);
+        }
 #endif
 #if defined(CS_VERSION_150)
         if(retcode != CS_SUCCEED) {
-	    g_cs_ver = CS_VERSION_150;
-	    retcode = cs_ctx_alloc(g_cs_ver, &g_context);
-	}
+            g_cs_ver = CS_VERSION_150;
+            retcode = cs_ctx_alloc(g_cs_ver, &g_context);
+        }
 #endif
 #if defined(CS_VERSION_125)
         if(retcode != CS_SUCCEED) {
-	    g_cs_ver = CS_VERSION_125;
-	    retcode = cs_ctx_alloc(g_cs_ver, &g_context);
-	}
+            g_cs_ver = CS_VERSION_125;
+            retcode = cs_ctx_alloc(g_cs_ver, &g_context);
+        }
 #endif
 #if defined(CS_VERSION_120)
         if(retcode != CS_SUCCEED) {
@@ -622,12 +606,12 @@ int cmd_connect( argc, argv )
                        (CS_VOID*)syb_cs_cb,       /* Buffer */
                        CS_UNUSED,                 /* Buffer length */
                        (CS_INT*)NULL              /* Output length */
-                     ) != CS_SUCCEED) 
+                     ) != CS_SUCCEED)
         {
             fprintf( stderr, "\\connect: Unable to install message callback\n" );
             goto connect_fail;
         }
-        
+
         /*-- Initialize the context --*/
         if (ct_init( g_context, g_cs_ver ) != CS_SUCCEED)
             goto connect_fail;
@@ -647,7 +631,7 @@ int cmd_connect( argc, argv )
                               (CS_VOID*)syb_server_cb    /* Callback Pointer */
                             ) != CS_SUCCEED)
             goto connect_fail;
-        
+
         /*
          * Set the I/O type to syncronous (things would really freak out
          * in an async environment).
@@ -680,7 +664,7 @@ int cmd_connect( argc, argv )
             {
                 DBG(sqsh_debug(DEBUG_ERROR, "ct_config: Failed to set CS_TIMEOUT to %d seconds.\n", SybTimeOut);)
                 goto connect_fail;
-	    }
+            }
             DBG(sqsh_debug(DEBUG_ERROR, "ct_config: CS_TIMEOUT set to %d seconds.\n", SybTimeOut);)
         }
 
@@ -694,7 +678,7 @@ int cmd_connect( argc, argv )
                            CS_UNUSED,                  /* Buffer Length */
                            NULL                        /* Output Length */
                          ) != CS_SUCCEED)
-	    {
+            {
                 DBG(sqsh_debug(DEBUG_ERROR, "ct_config: Failed to set CS_LOGIN_TIMEOUT to %d seconds.\n", SybTimeOut);)
                 goto connect_fail;
             }
@@ -769,7 +753,7 @@ int cmd_connect( argc, argv )
         {
             fprintf( stderr, "sqsh: Error expanding $keytab_file: %s\n",
                      sqsh_get_errstr() );
-	    cp = NULL;
+            cp = NULL;
         }
     }
     else
@@ -810,7 +794,7 @@ int cmd_connect( argc, argv )
                         ) != CS_SUCCEED)
             goto connect_fail;
     }
-    
+
     if (tds_version != NULL && *tds_version != '\0') /* sqsh-2.1.6 fix on *tds_version */
     {
         if (strcmp(tds_version, "4.0") == 0)
@@ -824,7 +808,7 @@ int cmd_connect( argc, argv )
         else if (strcmp(tds_version, "5.0") == 0)
             version = CS_TDS_50;
 #if !defined(CS_TDS_50)
-	/* Then we use freetds */
+        /* Then we use freetds which uses enum instead of defines */
         else if (strcmp(tds_version, "7.0") == 0)
             version = CS_TDS_70;
         else if (strcmp(tds_version, "8.0") == 0)
@@ -833,13 +817,13 @@ int cmd_connect( argc, argv )
         else version = CS_TDS_50; /* default version */
 
 
-        if (ct_con_props(g_connection, CS_SET, CS_TDS_VERSION, 
+        if (ct_con_props(g_connection, CS_SET, CS_TDS_VERSION,
             (CS_VOID*)&version, CS_UNUSED, (CS_INT*)NULL) != CS_SUCCEED)
                 goto connect_fail;
     }
 
     /*-- Hostname --*/
-    if (hostname != NULL && *hostname != '\0') 
+    if (hostname != NULL && *hostname != '\0')
     {
         if (ct_con_props( g_connection,            /* Connection */
                               CS_SET,                  /* Action */
@@ -866,7 +850,7 @@ int cmd_connect( argc, argv )
     }
 
     /*-- Encryption --*/
-    if (encryption != NULL && *encryption == '1') 
+    if (encryption != NULL && *encryption == '1')
     {
         i = CS_TRUE;
         if (ct_con_props( g_connection,            /* Connection */
@@ -916,7 +900,7 @@ int cmd_connect( argc, argv )
         goto connect_fail;
 
     /*-- Language --*/
-    if( language != NULL && *language != '\0' ) 
+    if( language != NULL && *language != '\0' )
     {
         if (cs_locale( g_context,                 /* Context */
                        CS_SET,                    /* Action */
@@ -956,20 +940,24 @@ int cmd_connect( argc, argv )
     /* Handle case where server is defined as host:port */
 #if defined(CS_SERVERADDR)
     if(server && (cp = strchr(server, ':'))) {
-	if(*cp)
-	    *cp = ' '; 
+        if(*cp)
+            *cp = ' ';
 
-	/* fprintf(stderr, "Using %s for CS_SERVERADDR\n", server);*/
-	
-	if (ct_con_props( g_connection, CS_SET, CS_SERVERADDR,
-				   (CS_VOID*)server,
-				   CS_NULLTERM, (CS_INT*)NULL) != CS_SUCCEED)
-	    goto connect_fail;
+    /* fprintf(stderr, "Using %s for CS_SERVERADDR\n", server);*/
+
+    if (ct_con_props( g_connection,
+                      CS_SET,
+                      CS_SERVERADDR,
+                      (CS_VOID*)server,
+                      CS_NULLTERM,
+                      (CS_INT*)NULL
+                    ) != CS_SUCCEED)
+        goto connect_fail;
     }
 #endif
 
     /*
-     * We sit in a loop and attempt to connect while we are getting 
+     * We sit in a loop and attempt to connect while we are getting
      * "Login failed" messages.
      */
     do
@@ -1054,18 +1042,18 @@ int cmd_connect( argc, argv )
          * Here is the cruxt of the situation.  Async I/O works by delivering
          * the signal SIGPOLL or SIGIO every time a socket is ready to do
          * some work (either send or receive data).  Normally, this signal
-         * will only be delivered to the process that requested the 
+         * will only be delivered to the process that requested the
          * facility.  Unfortunately, on some platforms, CT-Lib is explicitly
          * requesting that the signal be sent to every process in the same
          * process group!  This means that when sqsh spawns a child process
          * during a pipe (e.g. "go | more") the child process will receive
-         * the SIGPOLL signal as well as sqsh...and, since 99% of the 
+         * the SIGPOLL signal as well as sqsh...and, since 99% of the
          * programs out there don't know how to deal with SIGPOLL, they
          * will simply exit.  Not a good situation.
          */
         if (fcntl( ctlib_fd, F_SETOWN, getpid() ) == -1)
         {
-            fprintf( stderr, 
+            fprintf( stderr,
                 "\\connect: WARNING: Cannot work around CT-Lib SIGPOLL bug: %s\n",
                 strerror(errno) );
         }
@@ -1084,36 +1072,35 @@ int cmd_connect( argc, argv )
                           (CS_VOID*)&version,     /* Buffer */
                           CS_UNUSED,              /* Buffer Length */
                           (CS_INT*)NULL ) == CS_SUCCEED)
-	{
-		switch (version) {
-			case CS_TDS_40:
-                        	env_set( g_env, "tds_version", "4.0" );
-				break;
-			case CS_TDS_42:
-                        	env_set( g_env, "tds_version", "4.2" );
-				break;
-			case CS_TDS_46:
-                        	env_set( g_env, "tds_version", "4.6" );
-				break;
-			case CS_TDS_495:
-                        	env_set( g_env, "tds_version", "4.9.5" );
-				break;
-			case CS_TDS_50:
-                        	env_set( g_env, "tds_version", "5.0" );
-				break;
+        {
+            switch (version) {
+                case CS_TDS_40:
+                    env_set( g_env, "tds_version", "4.0" );
+                    break;
+                case CS_TDS_42:
+                    env_set( g_env, "tds_version", "4.2" );
+                    break;
+                case CS_TDS_46:
+                    env_set( g_env, "tds_version", "4.6" );
+                    break;
+                case CS_TDS_495:
+                    env_set( g_env, "tds_version", "4.9.5" );
+                    break;
+                case CS_TDS_50:
+                    env_set( g_env, "tds_version", "5.0" );
+                    break;
 #if !defined(CS_TDS_50)
-			case CS_TDS_70:
-                        	env_set( g_env, "tds_version", "7.0" );
-				break;
-			case CS_TDS_80:
-                        	env_set( g_env, "tds_version", "8.0" );
-				break;
+                case CS_TDS_70:
+                    env_set( g_env, "tds_version", "7.0" );
+                    break;
+                case CS_TDS_80:
+                    env_set( g_env, "tds_version", "8.0" );
+                    break;
 #endif
-			default:
-                        	env_set( g_env, "tds_version", "unknown" );
-		}
-	}
-
+                default:
+                    env_set( g_env, "tds_version", "unknown" );
+            }
+        }
     }
 
     /*
@@ -1126,7 +1113,7 @@ int cmd_connect( argc, argv )
     }
 
     /*-- If autouse has been set, use it --*/
-    if (autouse != NULL && *autouse != '\0') 
+    if (autouse != NULL && *autouse != '\0')
     {
     CS_INT ret = CS_SUCCEED;
 
@@ -1140,13 +1127,13 @@ int cmd_connect( argc, argv )
                         sqlbuf,             /* Buffer */
                         CS_NULLTERM,        /* Buffer Length */
                         CS_UNUSED           /* Options */
-                      ) != CS_SUCCEED) 
+                      ) != CS_SUCCEED)
         {
             ct_cmd_drop( cmd );
             goto connect_succeed;
         }
 
-        if (ct_send( cmd ) != CS_SUCCEED) 
+        if (ct_send( cmd ) != CS_SUCCEED)
         {
             ct_cmd_drop( cmd );
             goto connect_succeed;
@@ -1175,14 +1162,14 @@ connect_succeed:
     /* Set chained mode, if necessary. */
     if ( chained != NULL && *chained != '\0') /* sqsh-2.1.6 sanity check */
     {
-        if ( check_opt_capability( g_connection ) ) 
+        if ( check_opt_capability( g_connection ) )
         {
             CS_BOOL value = (*chained == '1' ? CS_TRUE : CS_FALSE);
             retcode = ct_options( g_connection, CS_SET, CS_OPT_CHAINXACTS,
                                   &value, CS_UNUSED, NULL);
             if (retcode != CS_SUCCEED)
             {
-                fprintf (stderr, 
+                fprintf (stderr,
                 "\\connect: WARNING: Unable to set transaction mode %s\n",
                 (*chained == '1' ? "on" : "off"));
             }
@@ -1209,7 +1196,7 @@ connect_fail:
     }
 
     /*-- Clean up the connection if established --*/
-    if (g_connection != NULL) 
+    if (g_connection != NULL)
     {
 
         /*-- Find out if the we are connected or not --*/
@@ -1264,6 +1251,7 @@ connect_leave:
     if ( exp_buf != NULL)
         varbuf_destroy( exp_buf );
 
+    sig_restore();
     sg_login = False;
     return return_code;
 }
@@ -1293,12 +1281,16 @@ int cmd_snace( argc, argv )
 static int check_opt_capability( g_connection )
     CS_CONNECTION *g_connection;
 {
-    CS_BOOL val;
-    CS_RETCODE ret = ct_capability(g_connection, CS_GET, 
-				   CS_CAP_REQUEST,
-				   CS_OPTION_GET, (CS_VOID*)&val);
-    if(ret != CS_SUCCEED || val == CS_FALSE)
-	return 0;
+    CS_BOOL    val;
+    CS_RETCODE ret;
+
+    ret = ct_capability( g_connection,
+                         CS_GET,
+                         CS_CAP_REQUEST,
+                         CS_OPTION_GET, (CS_VOID*)&val
+                       );
+    if (ret != CS_SUCCEED || val == CS_FALSE)
+        return 0;
 
     return 1;
 }
@@ -1323,11 +1315,11 @@ static int wrap_print( outfile, str )
     cur_end = str + min(len, width) ;
     end     = str + len ;
 
-    while( len > 0 && cur_end <= end ) 
+    while( len > 0 && cur_end <= end )
     {
 
         /*-- Move backwards until we hit whitespace --*/
-        if( cur_end < end ) 
+        if( cur_end < end )
         {
             while( cur_end != start && !(isspace((int)*cur_end)) )
                 --cur_end ;
@@ -1336,10 +1328,10 @@ static int wrap_print( outfile, str )
             if( cur_end == start )
                 cur_end = start + (min(len, width)) ;
         }
-        
+
         /*-- Print out the line --*/
         fprintf( outfile, "%*.*s", (int)(cur_end - start),
-                 (int)(cur_end - start), 
+                 (int)(cur_end - start),
                  start ) ;
 
         if (*(cur_end-1) != '\n')
@@ -1398,7 +1390,7 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
         msg->msgnumber == 5704 )     /* charset changed */
     {
 
-        if (msg->text != NULL && (c = strchr( msg->text, '\'' )) != NULL) 
+        if (msg->text != NULL && (c = strchr( msg->text, '\'' )) != NULL)
         {
             i = 0;
             for( ++c; i <= 30 && *c != '\0' && *c != '\''; ++c )
@@ -1412,9 +1404,9 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
              */
             if (strcmp( var_value, "<NULL>" ) != 0)
             {
-                switch (msg->msgnumber) 
+                switch (msg->msgnumber)
                 {
-                    case 5701 : 
+                    case 5701 :
                         env_set( g_env, "database", var_value );
 #if defined(USE_READLINE)
                         /* sqsh-2.1.8 - Feature dynamic keyword load */
@@ -1452,7 +1444,7 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
 
     /*
      * Retrieve the threshold severity level for ignoring errors.
-     * If the variable is set and severity is less than the 
+     * If the variable is set and severity is less than the
      * threshold, then return without printing out the message.
      */
     env_get( g_env, "thresh_display", &thresh_display );
@@ -1464,12 +1456,12 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
          * If the severity is something other than 0 or the msg number is
          * 0 (user informational messages).
          */
-        if (msg->severity >= 0 || msg->msgnumber == 10) 
+        if (msg->severity >= 0 || msg->msgnumber == 10)
         {
             /*
              * If the message was something other than informational, and
              * the severity was greater than 0, then print information to
-             * stderr with a little pre-amble information.  According to 
+             * stderr with a little pre-amble information.  According to
              * the Sybase System Administrator's guide, severity level 10
              * messages should not display severity information.
              */
@@ -1487,7 +1479,7 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
                 wrap_print( stderr, msg->text );
                 fflush( stderr );
             }
-            else 
+            else
             {
                 /*
                  * Otherwise, it is just an informational (e.g. print) message
@@ -1505,7 +1497,7 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
      */
     env_get( g_env, "thresh_fail", &thresh_fail );
 
-    if (thresh_fail != NULL && msg->severity >= (CS_INT)atoi(thresh_fail)) 
+    if (thresh_fail != NULL && msg->severity >= (CS_INT)atoi(thresh_fail))
     {
         DBG(sqsh_debug(DEBUG_ERROR,
             "syb_server_cb: thresh_fail = %s, severity = %d, incrementing batch_failcount\n",
@@ -1602,10 +1594,10 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
     if (sg_login == False)
     {
         env_get( g_env, "DSQUERY", &server ) ;
-	/*
+        /*
         if (CS_SEVERITY(msg->msgnumber) >= CS_SV_COMM_FAIL ||
             ctx == NULL || con == NULL)
-	*/
+        */
         if ((CS_SEVERITY(msg->msgnumber) >= CS_SV_COMM_FAIL &&
              CS_SEVERITY(msg->msgnumber) <= CS_SV_FATAL)    ||
             ctx == NULL || con == NULL)
@@ -1624,14 +1616,15 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
         env_get( g_env, "DSQUERY", &server ) ;
         env_get( g_env, "max_timeout", &max_timeout ) ;
         if (max_timeout != NULL && *max_timeout != '\0' && atoi(max_timeout) > 0)
-		if (timeouts >= atoi(max_timeout))
-        	{
-	            fprintf (stderr, "%s: Query or command timeout detected, session aborted\n", server);
-	            fprintf (stderr, "%s: The client connection has detected this %d time(s).\n", server, timeouts);
-	            fprintf (stderr, "%s: Aborting on max_timeout limit %s\n", server, max_timeout );
-                    sqsh_exit(254);
-	        }
-
+        {
+            if (timeouts >= atoi(max_timeout))
+            {
+                fprintf (stderr, "%s: Query or command timeout detected, session aborted\n", server);
+                fprintf (stderr, "%s: The client connection has detected this %d time(s).\n", server, timeouts);
+                fprintf (stderr, "%s: Aborting on max_timeout limit %s\n", server, max_timeout );
+                sqsh_exit(254);
+            }
+        }
         if (ct_con_props (con, CS_GET, CS_LOGIN_STATUS, (CS_VOID *)&status, CS_UNUSED, NULL) != CS_SUCCEED)
         {
             fprintf (stderr,"%s: ct_con_props() failed\n", server);
@@ -1684,7 +1677,7 @@ SetNetAuth (conn, principal, keytab_file, secmech, req_options)
     CS_BOOL OptSupported;
 
     NET_SEC_SERVICE nss[] = {
-      /* 
+      /*
        * CS_SEC_NETWORKAUTH must be the first entry
       */
     { CS_SEC_NETWORKAUTH,    'u', "Network user authentication (unified login)" },
@@ -1859,6 +1852,8 @@ ShowNetAuthCredExp (conn, cmdname)
     char      *datetime;
     char       dttm[32];
     time_t     exp_time;
+    char       *fmt;
+    char       *cp;
 
     /*
      * Check if current session is Network Authenticated.
@@ -1892,8 +1887,8 @@ ShowNetAuthCredExp (conn, cmdname)
             return CS_FAIL;
         }
 
-	switch (CredTimeOut)
-	{
+        switch (CredTimeOut)
+        {
             case CS_NO_LIMIT:
                 fprintf (stdout, "%s: Network Authenticated session does not expire\n", cmdname);
                 break;
@@ -1907,11 +1902,30 @@ ShowNetAuthCredExp (conn, cmdname)
                 break;
 
             default:
-                env_get( g_env, "datetime", &datetime ) ;
-                if (datetime == NULL || datetime[0] == '\0' || strcmp(datetime,"default") == 0)
-                    datetime = "%Y%m%d %H:%M:%S";
                 exp_time = time (NULL) + CredTimeOut;
-                cftime( dttm, datetime, &exp_time ) ;
+                env_get( g_env, "datetime", &datetime ) ;
+                if (datetime == NULL || datetime[0] == '\0' || strcmp(datetime, "default") == 0)
+                {
+                    cftime( dttm, "%Y%m%d %H:%M:%S", &exp_time );
+                }
+                else
+                {
+                    fmt = (char *) malloc (sizeof(char) * strlen(datetime)+2);
+                    for (cp = fmt; *datetime != '\0'; ++datetime)
+                    {
+                        if (*datetime == '%' && *(datetime+1) == 'u')
+                        {
+                            sprintf (cp, "000");
+                            cp += 3;
+                            datetime += 1;
+                        }
+                        else if (*datetime != '[' && *datetime != ']')
+                            *cp++ = *datetime;
+                    }
+                    *cp = '\0';
+                    cftime( dttm, fmt, &exp_time );
+                    free (fmt);
+                }
                 fprintf (stdout, "%s: Network Authenticated session expires at: %s (%d secs)\n",
                              cmdname, dttm, (int) CredTimeOut );
         }
@@ -1923,5 +1937,16 @@ ShowNetAuthCredExp (conn, cmdname)
     fprintf (stdout, "%s: Network Authentication not supported\n", cmdname);
     return CS_SUCCEED;
 #endif
+}
+
+/*
+ * connect_signal():
+ *
+ * This function is called whenever a SIGINT signal is received while processing cmd_connect.
+ * Its only real job is to abort the connection attempt and leave sqsh.
+ */
+static void connect_signal (int sig, void *user_data )
+{
+    sqsh_exit (254);
 }
 

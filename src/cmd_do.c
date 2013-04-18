@@ -74,7 +74,7 @@ int cmd_do( argc, argv )
 	varbuf_t         *do_buf;
 	varbuf_t         *orig_sqlbuf;          /* SQL Buffer upon entry */
 	CS_CONNECTION    *orig_conn;            /* Connection upon entry */
-	int               ret;
+	int               ret        = False;
 	int               have_error = False;
 	int               exit_status;
 	int               do_connection = True;
@@ -107,14 +107,12 @@ int cmd_do( argc, argv )
 				ret = env_put( g_env, "database", sqsh_optarg, ENV_F_TRAN );
 				break;
 			default :
-				fprintf( stderr, "\\do: -%c: Invalid option\n",
-					(int)ch );
-				have_error = True;
+			       	ret = False;
 		}
 
 		if (ret != True)
 		{
-			fprintf( stderr, "\\do: -%c: %s\n", ch, sqsh_get_errstr() );
+			fprintf( stderr, "\\do: %s\n", sqsh_get_errstr() );
 			have_error = True;
 		}
 	}

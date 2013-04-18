@@ -33,7 +33,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_history.c,v 1.6 2010/01/28 15:30:37 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_history.c,v 1.7 2013/04/04 10:52:36 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -44,6 +44,7 @@ static int       hisbuf_destroy _ANSI_ARGS(( hisbuf_t* )) ;
 static unsigned long adler32    _ANSI_ARGS(( char*, int )) ;   /* sqsh-2.1.6 feature */
 static int       chk_buf_ifs    _ANSI_ARGS(( char*, int )) ;   /* sqsh-2.1.7 feature */
 static void      hist_auto_save _ANSI_ARGS(( history_t* )) ;   /* sqsh-2.1.7 feature */
+static int       history_merge  _ANSI_ARGS(( history_t*, history_t*)) ; /* sqsh-2.2.0 feature */
 
 
 /*
@@ -218,7 +219,7 @@ int history_append( h, buf )
      * order; else continue as usual.
     */
      chksum = adler32 (buf, len);
-     DBG(sqsh_debug(DEBUG_ERROR, "sqsh_history: checksum of buffer: %u\n", chksum);)
+     DBG(sqsh_debug(DEBUG_HISTORY, "sqsh_history: checksum of buffer: %u\n", chksum);)
      env_get (g_env, "histunique", &histunique);
      if (histunique != NULL && *histunique != '0')
      {
@@ -448,7 +449,7 @@ int history_range_del( h, idx_start, idx_end )
             h->h_end = hb->hb_prv ;
 
         hisbuf_destroy( hb ) ;
-	h->h_nitems--;
+        h->h_nitems--;
     }
 
     /*
@@ -512,9 +513,12 @@ int history_save( h, save_file )
     history_t   *h ;
     char        *save_file ;
 {
-    hisbuf_t  *hb ;
-    FILE      *fptr ;
-    int       saved_mask;
+    hisbuf_t   *hb ;
+    FILE       *fptr ;
+    int        saved_mask;
+    char       *histmerge;
+    history_t  *x;
+
 
     /*-- Check the arguments --*/
     if( h == NULL || save_file == NULL ) {
@@ -522,7 +526,19 @@ int history_save( h, save_file )
         return False ;
     }
 
-    /*-- Open the file to be save to --*/
+    /*
+     * sqsh-2.2.0 - Merge the history file with the buffers in memory.
+     */
+    env_get (g_env, "histmerge", &histmerge);
+    if ( histmerge != NULL && *histmerge == '1')
+    {
+        x = history_create (history_get_size(h));
+        if (history_load (x, save_file) == True)
+            history_merge (h, x);
+        history_destroy (x);
+    }
+
+    /*-- Open the file to save to --*/
     /* fix for 1105398 */
     saved_mask = umask(0066);
     if( (fptr = fopen( save_file, "w" )) == NULL ) {
@@ -879,7 +895,7 @@ static void hist_auto_save ( h )
          histsave       == NULL || *histsave       == '0')
         return;
 
-    if ( h->h_change != HISTSAVE_FORCE && 
+    if ( h->h_change != HISTSAVE_FORCE &&
          ++h->h_change < atoi(hist_auto_save) )
         return;
 
@@ -893,12 +909,205 @@ static void hist_auto_save ( h )
         if ( sqsh_expand( history, exp_buf, 0 ) == True )
         {
             history_save( h, varbuf_getstr(exp_buf) );
-            DBG(sqsh_debug(DEBUG_ERROR, "sqsh_history: History automatically saved to %s\n",
+            DBG(sqsh_debug(DEBUG_HISTORY, "sqsh_history: History automatically saved to %s\n",
                 varbuf_getstr(exp_buf));)
         }
         varbuf_destroy( exp_buf );
     }
 
     return;
+}
+
+
+/*
+ * history_merge():
+ *
+ * sqsh-2.2.0 - Merge the history list of x into the history list of h.
+ */
+static int history_merge (h, x)
+    history_t   *h;
+    history_t   *x;
+{
+    hisbuf_t    *hbh;
+    hisbuf_t    *hbx;
+    hisbuf_t    *hbt;
+    int          i;
+    char        *histunique;
+#if defined (DEBUG)
+    char         hdrinfo[64];
+    char        *line, *nl;
+#endif
+
+
+    if (h == NULL || x == NULL)
+    {
+        sqsh_set_error( SQSH_E_BADPARAM, NULL ) ;
+        return False;
+    }
+
+    /*
+     * if histunique=On then remove the oldest double entries
+     * (based on hb_chksum) from h or x, otherwise only remove
+     * double entries from x, regardless the values of hb_dttm.
+     * Kind of nested loop join, h is outer table, x is inner table.
+    */
+    env_get (g_env, "histunique", &histunique);
+    hbh = h->h_start;
+    hbx = x->h_start;
+    while (hbh != NULL && hbx != NULL)
+    {
+        if (hbh->hb_chksum == hbx->hb_chksum)
+        {
+            if (hbx->hb_dttm > hbh->hb_dttm && *histunique == '1')
+            {
+                hbt = hbh->hb_nxt;
+                if (hbh->hb_prv != NULL)
+                    hbh->hb_prv->hb_nxt = hbh->hb_nxt;
+                else
+                    h->h_start          = hbh->hb_nxt;
+                if (hbh->hb_nxt != NULL)
+                    hbh->hb_nxt->hb_prv = hbh->hb_prv;
+                else
+                    h->h_end            = hbh->hb_prv;
+                hisbuf_destroy (hbh);
+                h->h_nitems--;
+                hbh = hbt;
+                hbx = x->h_start;
+            }
+            else
+            {
+                hbt = hbx->hb_nxt;
+                if (hbx->hb_prv != NULL)
+                    hbx->hb_prv->hb_nxt = hbx->hb_nxt;
+                else
+                    x->h_start          = hbx->hb_nxt;
+                if (hbx->hb_nxt != NULL)
+                    hbx->hb_nxt->hb_prv = hbx->hb_prv;
+                else
+                    x->h_end            = hbx->hb_prv;
+                hisbuf_destroy (hbx);
+                x->h_nitems--;
+                if ((hbx = hbt) == NULL)
+                {
+                    hbh = hbh->hb_nxt;
+                    hbx = x->h_start;
+                }
+            }
+        }
+        else
+        {
+            if ((hbx = hbx->hb_nxt) == NULL)
+            {
+                hbh = hbh->hb_nxt;
+                hbx = x->h_start;
+            }
+        }
+    }
+
+#if defined (DEBUG)
+    if ( sqsh_debug_show (DEBUG_HISTORY) )
+    {
+        fprintf (stdout, "history_merge: Available entries in original list %d\n", h->h_nitems);
+        fprintf (stdout, "history_merge: Available entries in merge list %d\n", x->h_nitems);
+        for (hbx = x->h_end; hbx != NULL; hbx = hbx->hb_prv)
+        {
+            line = hbx->hb_buf;
+            while ((nl = strchr (line, '\n' )) != NULL)
+            {
+                if (line == hbx->hb_buf) {
+                    sprintf (hdrinfo, "(%d) ", hbx->hb_nbr);
+                    fprintf (stdout, "%s%*.*s\n", hdrinfo, (int) (nl - line), (int) (nl - line), line);
+                } else {
+                    fprintf (stdout, "%*s%*.*s\n", (int) strlen (hdrinfo), " ", (int) (nl - line), (int) (nl - line), line);
+                }
+                line = nl + 1;
+            }
+            if ( *line != '\0' )
+                fprintf (stdout, "     %s\n", line);
+        }
+    }
+#endif
+
+    /*
+     * The remaining entries of x should be relinked into h
+     * order by hb_dttm.
+     */
+    for (hbx = x->h_start; hbx != NULL; hbx = x->h_start)
+    {
+        /*
+         * Unlink the first node from x.
+        */
+        x->h_start = hbx->hb_nxt;
+        if (hbx->hb_nxt != NULL)
+            hbx->hb_nxt->hb_prv = NULL;
+        else
+           x->h_end = NULL;
+        x->h_nitems--;
+
+        /*
+         * Link this node into h based on value of dttm in MRU-LRU order.
+        */
+        for (hbh = h->h_start; hbh != NULL && hbh->hb_dttm > hbx->hb_dttm; hbh = hbh->hb_nxt);
+
+        if (hbh != NULL)
+        {
+            if (hbh->hb_prv != NULL)
+                hbh->hb_prv->hb_nxt = hbx;
+            else
+                h->h_start          = hbx;
+            hbx->hb_nxt = hbh;
+            hbx->hb_prv = hbh->hb_prv;
+            hbh->hb_prv = hbx;
+        }
+        else
+        {
+            if (h->h_end != NULL)
+                h->h_end->hb_nxt = hbx;
+            else
+                h->h_start       = hbx;
+            hbx->hb_prv = h->h_end;
+            h->h_end    = hbx;
+            hbx->hb_nxt = NULL;
+        }
+        ++h->h_nitems;
+    }
+
+    /*
+     * Renumber the list.
+    */
+    switch (h->h_nitems)
+    {
+        case 0 :
+            h->h_next_nbr = 1;
+            break;
+        case 1 :
+            h->h_start->hb_nbr = 1;
+            h->h_next_nbr      = 2;
+            break;
+        default :
+            for (hbh = h->h_start, i = h->h_nitems, h->h_next_nbr = i + 1;
+                 hbh != NULL; hbh->hb_nbr = i--, hbh = hbh->hb_nxt);
+            break;
+    }
+
+    /*
+     * If there are more entries than the allowed size of the list then
+     * unlink the oldest entries from the list and destroy them.
+    */
+    while (h->h_size < h->h_nitems)
+    {
+        hbh = h->h_end;
+        if (hbh->hb_prv != NULL)
+        {
+            h->h_end         = hbh->hb_prv;
+            h->h_end->hb_nxt = NULL;
+        }
+        else
+            h->h_end = h->h_start = NULL;
+        hisbuf_destroy (hbh);
+        --h->h_nitems;
+    }
+
+    return True;
 }
 

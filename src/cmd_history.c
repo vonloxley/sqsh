@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_history.c,v 1.5 2010/02/25 10:50:47 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: cmd_history.c,v 1.6 2013/04/04 10:52:35 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -64,12 +64,14 @@ int cmd_history( argc, argv )
 	char        dttm[32];
 	char        hdrinfo[64];
 	char       *datetime   = NULL;
+	char       *cp;
+	char        fmt[64];
 
 
 	/*
- 	 * Initialize number of history buffers to show to the total number of
- 	 * available buffers.
- 	*/
+	 * Initialize number of history buffers to show to the total number of
+	 * available buffers.
+	*/
 	shownum = g_history->h_nitems;
 
 	/*
@@ -81,10 +83,7 @@ int cmd_history( argc, argv )
 		{
 			case 'i' :
 				show_info = True;
-				env_get( g_env, "datetime", &datetime);
-				if (datetime == NULL || datetime[0] == '\0' || (strcmp(datetime,"default") == 0))
-					datetime = "%Y%m%d %H:%M:%S";
-			break;
+				break;
 
 			case 'x' :
 				if ((shownum = atoi(sqsh_optarg)) <= 0)
@@ -92,7 +91,7 @@ int cmd_history( argc, argv )
 					fprintf( stderr, "\\history: Invalid value for option -x (%s)\n", sqsh_optarg );
 					have_error = True;
 				}
-			break;
+				break;
 
 			default :
 				fprintf( stderr, "\\history: %s\n", sqsh_get_errstr() );
@@ -115,6 +114,33 @@ int cmd_history( argc, argv )
 	}
 
 	/*
+	 * sqsh-2.2.0 - Since the datetime format string may contain [] to filter out seconds for
+	 * smalldatetime datatypes, we have to remove these brackets here. Also replace the %u format
+	 * specifier with 000 when specified in the format string.
+	 */
+	if (show_info == True)
+	{
+		env_get( g_env, "datetime", &datetime);
+		if (datetime == NULL || *datetime == '\0' || (strcmp(datetime,"default") == 0))
+			strcpy (fmt, "%Y%m%d %H:%M:%S");
+		else
+		{
+			for (cp = fmt; *datetime != '\0'; ++datetime)
+			{
+				if (*datetime == '%' && *(datetime+1) == 'u')
+				{
+					sprintf (cp, "000");
+					cp += 3;
+					datetime += 1;
+				}
+				else if (*datetime != '[' && *datetime != ']')
+					*cp++ = *datetime;
+			}
+			*cp = '\0';
+		}
+	}
+
+	/*
 	 * Since we want to print our history from oldest to newest we
 	 * will traverse the list backwards. Note, I don't like having
 	 * cmd_history() play with the internals of the history structure,
@@ -130,14 +156,15 @@ int cmd_history( argc, argv )
 		line = hb->hb_buf ;
 		while( (nl = strchr( line, '\n' )) != NULL ) {
 			if( line == hb->hb_buf ) {
-				if (show_info == True) {
-				  ts  = localtime( &hb->hb_dttm );
-				  strftime( dttm, sizeof(dttm), datetime, ts );
-				  sprintf( hdrinfo, "(%2d - %2d/%s) ",
-                                           hb->hb_nbr, hb->hb_count, dttm ) ;
+				if (show_info == True)
+				{
+					ts  = localtime( &hb->hb_dttm );
+					strftime( dttm, sizeof(dttm), fmt, ts );
+					sprintf( hdrinfo, "(%2d - %2d/%s) ",
+						hb->hb_nbr, hb->hb_count, dttm ) ;
 				}
 				else
-				  sprintf( hdrinfo, "(%d) ", hb->hb_nbr ) ;
+					sprintf( hdrinfo, "(%d) ", hb->hb_nbr ) ;
 
 				printf( "%s%*.*s\n", hdrinfo, (int) (nl - line), (int) (nl - line), line ) ;
 
@@ -152,7 +179,6 @@ int cmd_history( argc, argv )
 			printf( "     %s\n", line ) ;
 
 	}
-
 	return CMD_LEAVEBUF ;
 }
 
@@ -176,51 +202,46 @@ int cmd_hist_load( argc, argv )
 	 * Only one argument allowed.
 	 */
 	if( argc > 2 ) {
-		fprintf( stderr, "\\hist_load: Too many arguments; Use: \\hist_load [filename]\n" ) ;
+		fprintf( stderr, "\\hist-load: Too many arguments; Use: \\hist-load [filename]\n" ) ;
 		return CMD_FAIL ;
 	}
 
+	if (argc == 2)
+		history = argv[1];
+	else
+		env_get( g_env, "history", &history );
+
 	/*
-	 * Check if the history has been created.
+	 * Check if the history has been created and a history file is provided.
 	 */
-	if (g_history != NULL)
+	if ( g_history != NULL && history != NULL && *history != '\0' )
 	{
-		if (argc == 2)
-			history = argv[1];
-		else
-			env_get( g_env, "history", &history );
+		exp_buf = varbuf_create( 512 );
 
-		if ( history != NULL )
+		if (exp_buf == NULL)
 		{
-			exp_buf = varbuf_create( 512 );
-
-			if (exp_buf == NULL)
+			fprintf( stderr, "sqsh_exit: %s\n", sqsh_get_errstr() );
+		}
+		else
+		{
+			if (sqsh_expand( history, exp_buf, 0 ) == False)
 			{
-				fprintf( stderr, "sqsh_exit: %s\n", sqsh_get_errstr() );
+				fprintf( stderr, "sqsh_exit: Error expanding $history: %s\n",
+					sqsh_get_errstr() );
 			}
 			else
 			{
-				if (sqsh_expand( history, exp_buf, 0 ) == False)
-				{
-					fprintf( stderr, "sqsh_exit: Error expanding $history: %s\n",
-						sqsh_get_errstr() );
-				}
+				if (history_load( g_history, varbuf_getstr(exp_buf) ) == True)
+					fprintf( stdout, "\\hist-load - History buffer loaded from %s\n",
+							varbuf_getstr(exp_buf) );
 				else
-				{
-					if (history_load( g_history, varbuf_getstr(exp_buf) ) == True)
-					{
-						fprintf( stdout, "History buffer loaded from %s\n",
-								varbuf_getstr(exp_buf) );
-						sprintf( str, "%d", history_get_nbr(g_history) );
-						env_set( g_env, "histnum", str );
-					}
-					else
-						fprintf( stdout, "Failed to load history from %s\n",
-								varbuf_getstr(exp_buf) );
+					fprintf( stderr, "\\hist-load - Error: Failed to load history from %s\n",
+							varbuf_getstr(exp_buf) );
 
-				}
-				varbuf_destroy( exp_buf );
+				sprintf( str, "%d", history_get_nbr(g_history) );
+				env_set( g_env, "histnum", str );
 			}
+			varbuf_destroy( exp_buf );
 		}
 	}
 	return CMD_LEAVEBUF ;
@@ -237,6 +258,7 @@ int cmd_hist_save( argc, argv )
 	int    argc ;
 	char  *argv[] ;
 {
+	char       str[16];
 	char      *history;
 	varbuf_t  *exp_buf;
 
@@ -245,45 +267,47 @@ int cmd_hist_save( argc, argv )
 	 * Only one argument allowed.
 	 */
 	if( argc > 2 ) {
-		fprintf( stderr, "\\hist_save: Too many arguments; Use: \\hist_save [filename]\n" ) ;
+		fprintf( stderr, "\\hist-save: Too many arguments; Use: \\hist-save [filename]\n" ) ;
 		return CMD_FAIL ;
 	}
 
+	if (argc == 2)
+		history = argv[1];
+	else
+		env_get( g_env, "history", &history );
+
 	/*
-	 * If the history has been created, and it contains items,
-	 * then we write the history out to a file.
+	 * If the history has been created, and it contains items, and a history file is provided
+	 * then we write the history out to this file.
 	 */
-	if (g_history != NULL)
+	if ( g_history != NULL && history != NULL && *history != '\0' && history_get_nitems( g_history ) > 0 )
 	{
-		if (argc == 2)
-			history = argv[1];
-		else
-			env_get( g_env, "history", &history );
+		exp_buf = varbuf_create( 512 );
 
-		if (history != NULL && history_get_nitems( g_history ) > 0)
+		if (exp_buf == NULL)
 		{
-			exp_buf = varbuf_create( 512 );
-
-			if (exp_buf == NULL)
+			fprintf( stderr, "sqsh_exit: %s\n", sqsh_get_errstr() );
+		}
+		else
+		{
+			if (sqsh_expand( history, exp_buf, 0 ) == False)
 			{
-				fprintf( stderr, "sqsh_exit: %s\n", sqsh_get_errstr() );
+				fprintf( stderr, "sqsh_exit: Error expanding $history: %s\n",
+					sqsh_get_errstr() );
 			}
 			else
 			{
-				if (sqsh_expand( history, exp_buf, 0 ) == False)
-				{
-					fprintf( stderr, "sqsh_exit: Error expanding $history: %s\n",
-						sqsh_get_errstr() );
-				}
+				if (history_save( g_history, varbuf_getstr(exp_buf) ) == True)
+					fprintf( stdout, "\\hist-save - History buffer saved to %s\n",
+							varbuf_getstr(exp_buf) );
 				else
-				{
-					if (history_save( g_history, varbuf_getstr(exp_buf) ) == True)
-						fprintf( stdout, "History buffer saved to %s\n",
-								varbuf_getstr(exp_buf) );
+					fprintf( stderr, "\\hist-save - Error: Failed to write history to %s\n",
+							varbuf_getstr(exp_buf) );
 
-				}
-				varbuf_destroy( exp_buf );
+				sprintf( str, "%d", history_get_nbr(g_history) );
+				env_set( g_env, "histnum", str );
 			}
+			varbuf_destroy( exp_buf );
 		}
 	}
 	return CMD_LEAVEBUF ;

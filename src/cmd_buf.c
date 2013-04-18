@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_buf.c,v 1.4 2010/01/26 15:03:50 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: cmd_buf.c,v 1.5 2013/04/04 10:52:35 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -349,8 +349,8 @@ int cmd_buf_load( argc, argv )
 	 * If we don't have any arguments on the command line, or we have too
 	 * many arguments, then print usage.
 	 */
-	if (have_error == True || 
-	    (argc - sqsh_optind) < 1 || 
+	if (have_error == True ||
+	    (argc - sqsh_optind) < 1 ||
 	    (argc - sqsh_optind) > 2)
 	{
 		fprintf( stderr, "\\buf-load [-a] filename [dest-buf]\n" );
@@ -410,7 +410,7 @@ int cmd_buf_show( argc, argv )
 	 * structure.  Oh well.  Anyway, here I just blast through the
 	 * hash table, displaying anything I run across.
 	 */
- 	count = 0 ;
+	count = 0 ;
 	for( i = 0; i < g_buf->env_hsize; i++ ) {
 		for( v = g_buf->env_htable[i]; v != NULL; v = v->var_nxt ) {
 
@@ -435,9 +435,9 @@ int cmd_buf_show( argc, argv )
 	 * If the user requested that we show a particular buffer and
 	 * we couldn't find it, then print an error message.
 	 */
- 	if( buf_name != NULL && count == 0 ) {
- 		fprintf( stderr, "\\buf-show: Buffer %s does not exist\n", buf_name ) ;
- 		return CMD_FAIL ;
+	if( buf_name != NULL && count == 0 ) {
+		fprintf( stderr, "\\buf-show: Buffer %s does not exist\n", buf_name ) ;
+		return CMD_FAIL ;
 	}
 
 	return CMD_LEAVEBUF ;
@@ -460,7 +460,7 @@ int cmd_buf_edit( argc, argv )
 	extern char *sqsh_optarg ;
 	extern int   sqsh_optind ;
 	int          c ;
-	varbuf_t    *exp_buf;               /* sqsh-2.1.6 feature */
+	varbuf_t    *exp_buf = NULL;        /* sqsh-2.1.6 feature */
 
 	/*
 	 * The editor can only be run in interactive mode.
@@ -516,16 +516,16 @@ int cmd_buf_edit( argc, argv )
 	 * Now, we need to make sure that the buffers that we want to read
 	 * from and write to actually exist.
 	 */
- 	if (buf_can_put( write_buf ) == False)
+	if (buf_can_put( write_buf ) == False)
 	{
- 		fprintf( stderr, "\\buf-edit: %s\n", sqsh_get_errstr() );
- 		return CMD_FAIL;
+		fprintf( stderr, "\\buf-edit: %s\n", sqsh_get_errstr() );
+		return CMD_FAIL;
 	}
 
 	/*
 	 * Attempt to retrieve the name of the editor from our environment.
 	 */
- 	if (strcmp(argv[0], "edit" )       == 0 || 
+	if (strcmp(argv[0], "edit" )       == 0 ||
 	    strcmp(argv[0], "\\edit" )     == 0 ||
 	    strcmp(argv[0], "\\buf-edit" ) == 0)
 	{
@@ -561,7 +561,8 @@ int cmd_buf_edit( argc, argv )
 	 * the same program.
 	 */
 	sprintf( path, "%s/sqsh-edit.%d.sql", tmp_dir, (int)getpid() );
-	varbuf_destroy( exp_buf ); /* sqsh-2.1.6 feature */
+	if (exp_buf != NULL)
+		varbuf_destroy( exp_buf ); /* sqsh-2.1.6 feature */
 
 	/*
 	 * Attempt to save the read buffer into the file that we built.

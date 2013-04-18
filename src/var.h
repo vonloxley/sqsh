@@ -195,6 +195,9 @@ static var_entry_t  sg_var_entry[] = {
     /* sqsh-2.1.9 - New variables */
     { "datefmt",          NULL,          var_set_datefmt,     var_get_datefmt },
     { "timefmt",          NULL,          var_set_timefmt,     var_get_timefmt },
+    /* sqsh-2.2.0 - New variables */
+    { "readline_histignore", NULL,       var_set_nullstr,     NULL            },
+    { "histmerge",           "0",        var_set_bool,        NULL            },
 } ;
 
 #endif /* SQSH_INIT */

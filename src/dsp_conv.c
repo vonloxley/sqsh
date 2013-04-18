@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_conv.c,v 1.3 2013/02/19 18:06:42 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_conv.c,v 1.4 2013/04/04 10:52:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -781,7 +781,7 @@ static char* dsp_datetime_strip( type, fmt, ms )
             case '%':
                 if (*(fmt + 1) == 'u')
                 {
-                    fmt += 2;
+                    fmt += 1;
                     sprintf( cp, "%03d", ms );
                     cp += 3;
                 }

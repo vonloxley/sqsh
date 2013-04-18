@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_debug.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: var_debug.c,v 1.2 2013/04/04 10:52:36 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -55,6 +55,8 @@ struct debug_st {
 	{ "ERROR",                DEBUG_ERROR   },
 	{ "EXPAND",               DEBUG_EXPAND  },
 	{ "FD",                   DEBUG_FD      },
+	{ "HISTORY",              DEBUG_HISTORY },
+	{ "HIST",                 DEBUG_HISTORY },
 	{ "JOB",                  DEBUG_JOB     },
 	{ "READLINE",             DEBUG_READLINE},
 	{ "RL",                   DEBUG_READLINE},
