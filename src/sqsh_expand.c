@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.5 2010/01/26 15:03:50 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.6 2013/04/04 10:52:36 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -722,8 +722,34 @@ static int expand_variable( cpp, str_end, buf, flags )
 	*cpp = str;
 	return True;
     }
+
     /*
-     * Check for special case. First, $# is the number of arguments.
+     * Check for special cases.
+     * sqsh-2.2.0 - First, $? is the result of last action.
+     */
+    if (*var_name_start == '?' && 
+        (var_name_end - var_name_start) == 1)
+    {
+        env_get( g_internal_env, "?", &var_value );
+        varbuf_strcat( buf, var_value );
+        *cpp = str;
+        return(True);
+    }
+
+    /*
+     * Next, $$ is the current processid.
+     */
+    if (*var_name_start == '$' && 
+        (var_name_end - var_name_start) == 1)
+    {
+        sprintf(nbr, "%d", (int) getpid() );
+        varbuf_strcat( buf, nbr );
+        *cpp = str;
+        return(True);
+    }
+
+    /*
+     * Next, $# is the number of arguments.
      */
     if (*var_name_start == '#' && 
         (var_name_end - var_name_start) == 1)
@@ -741,19 +767,6 @@ static int expand_variable( cpp, str_end, buf, flags )
             sprintf(nbr, "%d", g_func_args[g_func_nargs-1].argc - 1 );
             varbuf_strcat( buf, nbr );
         }
-        *cpp = str;
-        return(True);
-    }
-
-
-    /*
-     * Next, $$ is the current processid.
-     */
-    if (*var_name_start == '$' && 
-        (var_name_end - var_name_start) == 1)
-    {
-        sprintf(nbr, "%d", (int) getpid() );
-        varbuf_strcat( buf, nbr );
         *cpp = str;
         return(True);
     }

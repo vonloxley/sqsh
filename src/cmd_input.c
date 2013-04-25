@@ -52,7 +52,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_input.c,v 1.6 2012/03/14 09:17:51 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_input.c,v 1.7 2012/03/29 16:25:46 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -74,8 +74,8 @@ static int     DynKeywordLoad    _ANSI_ARGS(( void )); /* sqsh-2.1.8 - Feature d
 
 
 /*
- * sg_jmp_buf: The following buffer is used to contain the location 
- *             to which this module will return upon receipt of a 
+ * sg_jmp_buf: The following buffer is used to contain the location
+ *             to which this module will return upon receipt of a
  *             SIGINT. It is only used while waiting on input from the
  *             user.
  */
@@ -122,7 +122,6 @@ int cmd_input()
     int          exit_status ;        /* Exit status of sub-command */
     JMP_BUF      old_jmp_buf ;        /* Store the previous jmp_buf */
     int          is_cmd ;             /* True if the current line is cmd */
-    int          no_hist ;            /* True if hist should not be updt. */
     job_id_t     job_id ;             /* Id of job launched or completed */
     char        *defer_file ;         /* Name of file holding user output */
     struct stat  stat_buf ;           /* Check for defer file's existence */
@@ -134,6 +133,11 @@ int cmd_input()
     int         cur_lineno;
     int         interactive;
 
+    /*
+     * sqsh-2.2.0 - Extension on semicolon_hack
+     */
+    char     *semicolon_hack2 ;       /* Value of $semicolon_hack2 */
+    char     *str_remainder   = NULL; /* Remainder of input string after ; */
 
     /*
      * Variables that need to be restored before turning to the
@@ -245,7 +249,7 @@ int cmd_input()
          */
         env_get( g_env,          "keyword_dynamic", &keyword_dynamic );
         env_get( g_internal_env, "keyword_refresh", &keyword_refresh );
-        if (interactive &&  
+        if (interactive &&
             keyword_refresh != NULL && *keyword_refresh != '0' &&
             keyword_dynamic != NULL && *keyword_dynamic != '0')
         {
@@ -254,36 +258,49 @@ int cmd_input()
         }
 #endif
 
-        no_hist = False;        /* Save history for this buffer */
-
         /*
-         * Clear out the buffer that will be used to place input read
-         * from the user.
+         * sqsh-2.2.0 - Semicolon_hack2. If str_remainder is not NULL
+         * then we have a leftover from the previous loop were a ;
+         * has been processed. So this part of the input should be
+         * processed next. The else branch executes the pre-sqsh-2.2.0
+         * code path.
          */
-        varbuf_clear( read_buf );
-
-        /*
-         * If an input_file was supplied, or no input string was supplied
-         * then call input_read.  By default, if input_read gets a NULL
-         * input_file, stdin is used.
-         */
-        ret = input_read( read_buf, interactive );
-
-        if (ret <= 0)
+        if (str_remainder != NULL)
         {
-            if (ret == 0)
+            str = str_remainder;
+            str_remainder = NULL;
+        }
+        else
+        {
+            /*
+             * Clear out the buffer that will be used to place input read
+             * from the user.
+             */
+            varbuf_clear( read_buf );
+
+            /*
+             * If an input_file was supplied, or no input string was supplied
+             * then call input_read.  By default, if input_read gets a NULL
+             * input_file, stdin is used.
+             */
+            ret = input_read( read_buf, interactive );
+
+            if (ret <= 0)
             {
-                goto loop_leave;
+                if (ret == 0)
+                {
+                    goto loop_leave;
+                }
+                fprintf( stderr, "input: %s\n", sqsh_get_errstr() );
+                goto loop_abort;
             }
-            fprintf( stderr, "input: %s\n", sqsh_get_errstr() );
-            goto loop_abort;
+
+            /*
+             * Pull contents of read_buf out.
+             */
+            str = varbuf_getstr( read_buf );
         }
 
-        /*
-         * Pull contents of read_buf out.
-         */
-        str = varbuf_getstr( read_buf );
-        
         /*
          * The first thing we need to determine is if the current
          * line contains a sqsh command.  This information will be
@@ -301,7 +318,7 @@ int cmd_input()
          * then we pretend it is a buffer recall.  So, we turn
          * it into a logical call to \buf-append.
          */
-        if (is_cmd == False && interactive && *str == '!' && 
+        if (is_cmd == False && interactive && *str == '!' &&
             !isspace((int)*(str+1)))
          {
 
@@ -341,50 +358,93 @@ int cmd_input()
          * input_strchr(), returns the first ';' in str that will not
          * be contained in double quotes when str is appended to
          * g_sqlbuf.
+         * sqsh-2.2.0 - If semicolon_hack2 is set, it doesn't matter
+         * if the input line is a command or not. We still want to
+         * process possible semicolons. So that makes the if statement
+         * a bit more complex.
          */
-        env_get( g_env, "semicolon_hack", &semicolon_hack );
-        if (semicolon_hack != NULL && *semicolon_hack == '1' && !is_cmd &&
-            strchr( str, ';') != NULL && 
-            (ch = input_strchr( g_sqlbuf, str, ';' )) != NULL)
+        env_get( g_env, "semicolon_hack",  &semicolon_hack );
+        env_get( g_env, "semicolon_hack2", &semicolon_hack2 );
+        if ( (strchr( str, ';') != NULL && (ch = input_strchr( g_sqlbuf, str, ';' )) != NULL) && 
+              ((semicolon_hack != NULL && *semicolon_hack == '1' && !is_cmd) || 
+                 (semicolon_hack2 != NULL && *semicolon_hack2 == '1'))
+           )
         {
-            /*
-             * Copy everything up to the ';' into the current work buffer.
-             */
-            if (ch - str != 0)
-            {
-                varbuf_strncat( g_sqlbuf, str, ch - str );
-                varbuf_charcat( g_sqlbuf, '\n' );
-
-                /*
-                 * We now have an extra line.
-                 */
-                env_set( g_env, "lineno", "+1" );
-            }
-
             /*
              * Look up the name of the command that the user wishes
              * to use when a semicolon is encountered.
              */
             env_get( g_env, "semicolon_cmd", &semicolon_cmd );
-
             if (semicolon_cmd == NULL || *semicolon_cmd == '\0')
-            {
                 varbuf_strcpy( sg_buf, "\\go " );
+            else
+                varbuf_strcpy( sg_buf, semicolon_cmd );
+
+            /*
+             * sqsh-2.2.0 - The hack is going to be even worse and worse.
+             * If semicolon_hack2 is set, then we treat a ; as a
+             * command or batch separator, execute the portion before
+             * the ; as a SQL buffer, or as a sqsh command. The remainder
+             * of the string after the ; is saved for later use.
+             */
+            if (semicolon_hack2 != NULL && *semicolon_hack2 == '1')
+            {
+                /*
+                 * replace the ; with end of line
+                */
+                *ch = '\0';
+                /*
+                 * save the remainder of the string in str_remainder
+                 * or set it to NULL if there is really nothing left
+                */
+                str_remainder = ch + 1;
+                if (*str_remainder == '\n' || *str_remainder == '\0')
+                    str_remainder = NULL;
+                /*
+                 * Check if we have to deal with a sqsh command or
+                 * a SQL statement, at least the last part of it.
+                 */
+                if (!is_cmd && jobset_is_cmd( g_jobset, str ) == False)
+                {
+                    if (ch - str != 0)
+                    {
+                        varbuf_strncat( g_sqlbuf, str, ch - str );
+                        varbuf_charcat( g_sqlbuf, '\n' );
+                        env_set( g_env, "lineno", "+1" );
+                    }
+                    str = varbuf_getstr( sg_buf );
+                }
+                /* else the current str is a sqsh command */
             }
             else
             {
-                varbuf_strcpy( sg_buf, semicolon_cmd );
+                /*
+                 * Original pre-sqsh-2.2.0 code path with only
+                 * semicolon_hack set to true.
+                 */
+                /*
+                 * Copy everything up to the ';' into the current work buffer.
+                 */
+                if (ch - str != 0)
+                {
+                    varbuf_strncat( g_sqlbuf, str, ch - str );
+                    varbuf_charcat( g_sqlbuf, '\n' );
+
+                    /*
+                     * We now have an extra line.
+                     */
+                    env_set( g_env, "lineno", "+1" );
+                }
+
+                /*
+                 * Now, stick the semicolon command in the front of everything
+                 * following the semicolon. and turn that into the command
+                 * line.
+                 */
                 varbuf_charcat( sg_buf, ' ' );
+                varbuf_strcat( sg_buf, ch + 1 );
+                str = varbuf_getstr( sg_buf );
             }
-
-            /*
-             * Now, stick the semicolon command in the front of everything
-             * following the semicolon. and turn that into the command
-             * line.
-             */
-            varbuf_strcat( sg_buf, ch + 1 );
-
-            str = varbuf_getstr( sg_buf );
             is_cmd = True;
         }
 
@@ -474,7 +534,7 @@ int cmd_input()
                              * if $interactive is set to 0, then this entry will
                              * automatically be thrown away.
                              */
-                            if (!no_hist && interactive)
+                            if (interactive)
                             {
                                 history_append( g_history, varbuf_getstr(g_sqlbuf) );
 
@@ -488,8 +548,8 @@ int cmd_input()
 
                         case CMD_CLEARBUF:
                             /*
-			     * sqsh-2.1.7 - The same as CMD_RESETBUF but without
-			     * saving the buffer to the history.
+                             * sqsh-2.1.7 - The same as CMD_RESETBUF but without
+                             * saving the buffer to the history.
                              */
                             varbuf_clear( g_sqlbuf );
                             env_set( g_env, "lineno", "=1" ) ;  /* Set to 1 */
@@ -530,7 +590,6 @@ int cmd_input()
                         case CMD_ABORT :
                             goto loop_abort;
                             break;
-                        
 
                         default :
                             sprintf( number, "=%d", cur_lineno );
@@ -546,7 +605,7 @@ int cmd_input()
                  * jobset_run() returned a non-negative value, so it launched
                  * a background process.  The only thing we need to do it
                  * let the user know it was launched.
-		 * sqsh-2.1.7 - Also save and clear the command buffer.
+                 * sqsh-2.1.7 - Also save and clear the command buffer.
                  */
                 default :
                     if (interactive)
@@ -554,14 +613,11 @@ int cmd_input()
                         job_pid = jobset_get_pid( g_jobset, job_id );
                         fprintf( stdout, "Job #%d running [%d]\n", (int)job_id,
                                     (int)job_pid );
-                        if (!no_hist)
-                        {
-                            history_append( g_history, varbuf_getstr(g_sqlbuf) );
+                        history_append( g_history, varbuf_getstr(g_sqlbuf) );
 
-                            /*-- Set histnum to be current history number --*/
-                            sprintf( number, "%d", history_get_nbr(g_history) );
-                            env_set( g_env, "histnum", number );
-                        }
+                        /*-- Set histnum to be current history number --*/
+                        sprintf( number, "%d", history_get_nbr(g_history) );
+                        env_set( g_env, "histnum", number );
                         varbuf_clear( g_sqlbuf );
                         env_set( g_env, "lineno", "=1" ) ;  /* Set to 1 */
                     }
@@ -576,7 +632,7 @@ int cmd_input()
          * than each time the user hits return.
          */
         job_id = 0;
-        while(interactive && 
+        while(interactive &&
             (job_id = jobset_wait(g_jobset, -1, &exit_status, JOB_NONBLOCK)) > 0)
         {
             /*
@@ -674,7 +730,7 @@ loop_done :
 
     if (read_buf != NULL)
         varbuf_destroy( read_buf );
-    
+
     /*
      * Restore the line number to its previous value.
      */
@@ -692,7 +748,7 @@ loop_done :
         varbuf_destroy( g_sqlbuf );
         g_sqlbuf = (varbuf_t*)orig_sqlbuf;
     }
-    
+
     /*
      * Restore the original signal context, and, just in case
      * cmd_loop() has been recursively called, restore the original
@@ -725,7 +781,7 @@ static int input_read( output_buf, interactive )
     char            *exp_prompt   = NULL;
 
     /*
-     * If we are in interactive mode then we need to display a 
+     * If we are in interactive mode then we need to display a
      * prompt to the user.
      */
     if (interactive)
@@ -733,7 +789,7 @@ static int input_read( output_buf, interactive )
         /*
          * If we haven't already allocated a buffer in which to
          * expand the prompt then we should do so.
-	 * sqsh-2.1.6 - expand buffer from 32 to 64 bytes.
+         * sqsh-2.1.6 - expand buffer from 32 to 64 bytes.
          */
         if (sg_prompt_buf == NULL)
         {
@@ -761,13 +817,13 @@ static int input_read( output_buf, interactive )
             if (!is_continued)
             {
                 env_get( g_env, "prompt", &prompt );
-                if( prompt == NULL || *prompt == '\0' ) 
+                if( prompt == NULL || *prompt == '\0' )
                     prompt = "${lineno}> ";
             }
             else
             {
                 env_get( g_env, "prompt2", &prompt );
-                if( prompt == NULL || *prompt == '\0' ) 
+                if( prompt == NULL || *prompt == '\0' )
                     prompt = "--> ";
             }
 
@@ -780,7 +836,7 @@ static int input_read( output_buf, interactive )
                 fprintf( stderr, "prompt: %s\n", sqsh_get_errstr() );
                 varbuf_strcpy( sg_prompt_buf, "?> " );
             }
-            
+
             exp_prompt = varbuf_getstr(sg_prompt_buf);
         }
         else
@@ -898,13 +954,13 @@ static char* input_strchr( varbuf, str, c )
             case QUOTE_NONE:
                 switch (*cptr)
                 {
-                    case '\'': 
+                    case '\'':
                         quote_type = QUOTE_SINGLE;
                         break;
-                    case '\"': 
+                    case '\"':
                         quote_type = QUOTE_DOUBLE;
                         break;
-                    case '/' : 
+                    case '/' :
                         if (*(cptr + 1) == '*')
                             quote_type = QUOTE_COMMENT;
                         break;
@@ -922,28 +978,28 @@ static char* input_strchr( varbuf, str, c )
                         break;
                 }
                 break;
-            
+
             case QUOTE_COMMENT:
                 if (*cptr == '*' && *(cptr + 1) == '/')
                 {
                     quote_type = QUOTE_NONE;
                 }
                 break;
-            
+
             case QUOTE_SINGLE:
                 if (*cptr == '\'')
                 {
                     quote_type = QUOTE_NONE;
                 }
                 break;
-            
+
             case QUOTE_DOUBLE:
                 if (*cptr == '\"')
                 {
                     quote_type = QUOTE_NONE;
                 }
                 break;
-            
+
             default:
                 break;
         }
@@ -960,13 +1016,13 @@ static char* input_strchr( varbuf, str, c )
             case QUOTE_NONE:
                 switch (*cptr)
                 {
-                    case '\'': 
+                    case '\'':
                         quote_type = QUOTE_SINGLE;
                         break;
-                    case '\"': 
+                    case '\"':
                         quote_type = QUOTE_DOUBLE;
                         break;
-                    case '/' : 
+                    case '/' :
                         if (*(cptr + 1) == '*')
                             quote_type = QUOTE_COMMENT;
                         break;
@@ -984,28 +1040,28 @@ static char* input_strchr( varbuf, str, c )
                         break;
                 }
                 break;
-            
+
             case QUOTE_COMMENT:
                 if (*cptr == '*' && *(cptr + 1) == '/')
                 {
                     quote_type = QUOTE_NONE;
                 }
                 break;
-            
+
             case QUOTE_SINGLE:
                 if (*cptr == '\'')
                 {
                     quote_type = QUOTE_NONE;
                 }
                 break;
-            
+
             case QUOTE_DOUBLE:
                 if (*cptr == '\"')
                 {
                     quote_type = QUOTE_NONE;
                 }
                 break;
-            
+
             default:
                 break;
         }
@@ -1076,13 +1132,13 @@ static int DynKeywordLoad ()
                     keyword_query,      /* Buffer            */
                     CS_NULLTERM,        /* Buffer Length     */
                     CS_UNUSED           /* Options           */
-                  ) != CS_SUCCEED) 
+                  ) != CS_SUCCEED)
     {
         ct_cmd_drop( cmd );
         DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: Call to ct_command failed.\n"));
         return (CS_FAIL);
     }
-    if (ct_send( cmd ) != CS_SUCCEED) 
+    if (ct_send( cmd ) != CS_SUCCEED)
     {
         ct_cmd_drop( cmd );
         DBG(sqsh_debug(DEBUG_ERROR, "DynKeywordLoad: Call to ct_send failed.\n"));

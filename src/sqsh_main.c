@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.21 2013/04/04 10:52:36 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.22 2013/04/18 11:54:43 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -160,6 +160,15 @@ main( argc, argv )
     char          *cptr;
     int            i;
     varbuf_t      *exp_buf;
+
+    /*
+     * sqsh-2.2.0 - Variables used by password handling option
+     * moved here.
+     */
+    char           buf[MAXPWD];
+    char          *p;
+    int            fdin, fdout;
+
 
     /*
      * If termios.h defines TIOCGWINSZ, then we need to declare a
@@ -368,7 +377,6 @@ main( argc, argv )
                 read_file   = True;
                 show_banner = False;
                 ret = env_set( g_env, "script", sqsh_optarg );
-                ret = env_set( g_internal_env, "0", sqsh_optarg );
                 break;
             case 'I' :
                 ret = env_set( g_env, "interfaces", sqsh_optarg );
@@ -516,10 +524,6 @@ main( argc, argv )
                    * to solve a problem with pipes already in use. (Patch-id 2607434)
                    * The actual pipe file descriptors will now be passed on with the \250 option.
                   */
-                  char  buf[MAXPWD];
-                  char *p;
-                  int   fdin, fdout;
-
                   memset(buf, 0, MAXPWD);
                   if (sqsh_optarg != NULL)
                     strcpy (buf, sqsh_optarg);
@@ -585,7 +589,7 @@ main( argc, argv )
     {
         if (sqsh_optind > 1)
         {
-            argv[sqsh_optind-1] = argv[0];
+            env_get (g_env, "script", &(argv[sqsh_optind-1])) ;
         }
         g_func_args[g_func_nargs].argc = argc - sqsh_optind + 1;
         g_func_args[g_func_nargs].argv = &(argv[sqsh_optind-1]);
@@ -1015,7 +1019,6 @@ static void hide_password (argc, argv)
   char *argv[];
 {
   int    i, j;
-  char **argn;
   char   buf[32];
   int    filedes[2];
   char   nullpwd[2];
@@ -1024,10 +1027,6 @@ static void hide_password (argc, argv)
   int    status;
 
 
-  /*
-   * sqsh-2.2.0 - Allocate memory for a complete new argument list.
-  */
-  argn = malloc (sizeof(char*)*argc);
   nullpwd[0] = '\n';
   nullpwd[1] = '\0';
 
@@ -1043,7 +1042,7 @@ static void hide_password (argc, argv)
        * New password parameter encounterd.
       */
       pwd = NULL;
-      if (*(argv[i]+2))
+      if (*(argv[i]+2) != '\0')
       {
         /*
          * Password passed on as: "sqsh -SSYBASE -Usa -Pxxxxxx" , or as -P-
@@ -1067,7 +1066,7 @@ static void hide_password (argc, argv)
       }
     }
     else
-      argn[j++] = argv[i];
+      argv[j++] = argv[i];
   }
 
   /*
@@ -1076,7 +1075,6 @@ static void hide_password (argc, argv)
   */
   if (pwd == NULL)
   {
-    free (argn);
     return;
   }
 
@@ -1089,21 +1087,21 @@ static void hide_password (argc, argv)
     return;
   }
   sprintf (buf, "-%c%d/%d", '\250', filedes[0], filedes[1]);
-  argn[j++] = buf;
-  argn[j]   = NULL;
+  argv[j++] = buf;
+  argv[j]   = NULL;
 
-  if ((pid = fork()))
+  if ((pid = fork()) != 0)
   {
     /*
      * sqsh-2.2.0 - This code is executed by the parent process.
      * Wait for the child process to finish execution before we continue.
      */
-    waitpid (pid, &status, 0);
+    (void) waitpid (pid, &status, 0);
     /*
-     * Re-execute ourselves in the parent process, with the new argn[] list.
+     * Re-execute ourselves in the parent process, with the modified argv[] list.
      */
-    if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-      execvp (argn[0], argn);
+    if (WIFEXITED(status) != 0 && WEXITSTATUS(status) == 0)
+      (void) execvp (argv[0], argv);
       /* Not reached */
     else
     {
@@ -1117,13 +1115,13 @@ static void hide_password (argc, argv)
      * The child process writes the password to the pipe, closes the pipe
      * and exits.
     */
-    if (write (filedes[1], pwd, strlen(pwd)) != strlen(pwd))
+    if ((int) write (filedes[1], pwd, strlen(pwd)) != (int) strlen(pwd))
     {
       fprintf (stderr, "sqsh: Error: Failed to write password to pipe (filedes=%d)\n", filedes[1]);
       sqsh_exit (255);
     }
-    close (filedes[0]);
-    close (filedes[1]);
+    (void) close (filedes[0]);
+    (void) close (filedes[1]);
     sqsh_exit (0);
   }
 }

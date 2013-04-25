@@ -33,7 +33,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_history.c,v 1.7 2013/04/04 10:52:36 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_history.c,v 1.8 2013/04/18 11:54:43 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -414,6 +414,7 @@ int history_del( h, idx )
                  hb != NULL; hb->hb_nbr = i--, hb = hb->hb_nxt);
             break;
     }
+    h->h_change = HISTSAVE_FORCE;
     hist_auto_save ( h );
 
     return True ;
@@ -528,9 +529,13 @@ int history_save( h, save_file )
 
     /*
      * sqsh-2.2.0 - Merge the history file with the buffers in memory.
+     * If h_change is set to HISTSAVE_FORCE then we do not want to
+     * merge, because we may have just removed a bunch of buffers
+     * for example.
      */
     env_get (g_env, "histmerge", &histmerge);
-    if ( histmerge != NULL && *histmerge == '1')
+    if ( histmerge != NULL && *histmerge == '1' &&
+         h->h_change != HISTSAVE_FORCE)
     {
         x = history_create (history_get_size(h));
         if (history_load (x, save_file) == True)

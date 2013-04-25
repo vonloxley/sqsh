@@ -24,8 +24,10 @@
  */
 #include <stdio.h>
 #include <ctype.h>
+#include <setjmp.h>
 #include <ctpublic.h>
 #include "sqsh_config.h"
+#include "sqsh_debug.h"
 #include "sqsh_error.h"
 #include "sqsh_global.h"
 #include "sqsh_getopt.h"
@@ -40,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.27 2013/04/04 10:52:35 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.28 2013/04/18 11:54:43 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -109,7 +111,9 @@ static CS_RETCODE ShowNetAuthCredExp _ANSI_ARGS((CS_CONNECTION *,
     ;
 
 /* sqsh-2.2.0 - Signal handler to respond to SIGINT during cmd_connect */
-static void connect_signal ( int, void *);
+static JMP_BUF sg_jmp_buf;
+static int     sg_interrupted;
+static void    connect_run_sigint ( int, void *);
 
 /*
  * cmd_connect:
@@ -186,6 +190,9 @@ int cmd_connect( argc, argv )
     CS_INT    SybTimeOut;
     CS_BOOL   NetAuthRequired;
     varbuf_t  *exp_buf = NULL;
+    /* sqsh-2.2.0 - New variables */
+    char      *debug_tds_logdata;
+    char      *debug_tds_capture;
 
 #if defined(CTLIB_SIGPOLL_BUG) && defined(F_SETOWN)
     int       ctlib_fd;
@@ -257,14 +264,15 @@ int cmd_connect( argc, argv )
                 }
                 break ;
             case 'N' : /* sqsh-2.1.5 */
-              if (env_put( g_env, "appname", sqsh_optarg, ENV_F_TRAN ) == False)
-                  {
+                if (env_put( g_env, "appname", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
                     fprintf( stderr, "\\connect: -N: %s\n", sqsh_get_errstr() );
-                  have_error = True;
-                  }
+                    have_error = True;
+                }
                 break;
             case 'P' :
-                if (g_password_set == True && g_password != NULL) strcpy( orig_password, g_password );
+                if (g_password_set == True && g_password != NULL)
+                    strcpy( orig_password, g_password );
                 password_changed = True;
 
                 if (env_put( g_env, "password", sqsh_optarg, ENV_F_TRAN ) == False)
@@ -405,12 +413,15 @@ int cmd_connect( argc, argv )
         sqsh_exit( 255 );
     }
 
-    /*
-     * sqsh-2.2.0 - Install a signal handler to catch SIGINT during cmd_connect.
-     * The current signals are saved first and restored at the end of cmd_connect.
-     */
+   /*
+    * sqsh-2.2.0 - Install a signal handler to catch SIGINT during cmd_connect.
+    * The current signals are saved first and restored at the end of cmd_connect.
+    */
     sig_save();
-    sig_install( SIGINT, connect_signal, (void *) NULL, 0);
+    sig_install( SIGINT, connect_run_sigint, (void *) NULL, 0);
+    sg_interrupted = False;
+    if (SETJMP( sg_jmp_buf ) != 0)
+        goto connect_fail;
 
     /*
      * If the $session variable is set and the path that it contains
@@ -617,19 +628,19 @@ int cmd_connect( argc, argv )
             goto connect_fail;
 
         if (ct_callback( g_context,                 /* Context */
-                              (CS_CONNECTION*)NULL,      /* Connection */
-                              CS_SET,                    /* Action */
-                              CS_CLIENTMSG_CB,           /* Type */
-                              (CS_VOID*)syb_client_cb    /* Callback Pointer */
-                            ) != CS_SUCCEED)
+                         (CS_CONNECTION*)NULL,      /* Connection */
+                         CS_SET,                    /* Action */
+                         CS_CLIENTMSG_CB,           /* Type */
+                         (CS_VOID*)syb_client_cb    /* Callback Pointer */
+                       ) != CS_SUCCEED)
             goto connect_fail;
 
         if (ct_callback( g_context,                 /* Context */
-                              (CS_CONNECTION*)NULL,      /* Connection */
-                              CS_SET,                    /* Action */
-                              CS_SERVERMSG_CB,           /* Type */
-                              (CS_VOID*)syb_server_cb    /* Callback Pointer */
-                            ) != CS_SUCCEED)
+                         (CS_CONNECTION*)NULL,      /* Connection */
+                         CS_SET,                    /* Action */
+                         CS_SERVERMSG_CB,           /* Type */
+                         (CS_VOID*)syb_server_cb    /* Callback Pointer */
+                       ) != CS_SUCCEED)
             goto connect_fail;
 
         /*
@@ -639,12 +650,12 @@ int cmd_connect( argc, argv )
 #if !defined(_WINDOZE_)
         netio_type = CS_SYNC_IO;
         if (ct_config( g_context,                  /* Context */
-                            CS_SET,                     /* Action */
-                            CS_NETIO,                   /* Property */
-                            (CS_VOID*)&netio_type,      /* Buffer */
-                            CS_UNUSED,                  /* Buffer Length */
-                            NULL                        /* Output Length */
-                         ) != CS_SUCCEED)
+                       CS_SET,                     /* Action */
+                       CS_NETIO,                   /* Property */
+                       (CS_VOID*)&netio_type,      /* Buffer */
+                       CS_UNUSED,                  /* Buffer Length */
+                       NULL                        /* Output Length */
+                     ) != CS_SUCCEED)
             goto connect_fail;
 #endif
 
@@ -705,7 +716,7 @@ int cmd_connect( argc, argv )
                                             (CS_VOID*)cp, /* Buffer */
                                              CS_NULLTERM, /* Buffer Length */
                                              NULL         /* Output Length */
-                             ) != CS_SUCCEED)
+                                           ) != CS_SUCCEED)
                     goto connect_fail;
             }
             else
@@ -826,12 +837,12 @@ int cmd_connect( argc, argv )
     if (hostname != NULL && *hostname != '\0')
     {
         if (ct_con_props( g_connection,            /* Connection */
-                              CS_SET,                  /* Action */
-                              CS_HOSTNAME,             /* Property */
-                              (CS_VOID*)hostname,      /* Buffer */
-                              CS_NULLTERM,             /* Buffer Length */
-                              (CS_INT*)NULL            /* Output Length */
-                             ) != CS_SUCCEED)
+                          CS_SET,                  /* Action */
+                          CS_HOSTNAME,             /* Property */
+                          (CS_VOID*)hostname,      /* Buffer */
+                          CS_NULLTERM,             /* Buffer Length */
+                          (CS_INT*)NULL            /* Output Length */
+                        ) != CS_SUCCEED)
             goto connect_fail;
     }
 
@@ -840,12 +851,12 @@ int cmd_connect( argc, argv )
     {
         i = atoi(packet_size);
         if (ct_con_props( g_connection,            /* Connection */
-                              CS_SET,                  /* Action */
-                              CS_PACKETSIZE,           /* Property */
-                              (CS_VOID*)&i,            /* Buffer */
-                              CS_UNUSED,               /* Buffer Length */
-                              (CS_INT*)NULL            /* Output Length */
-                             ) != CS_SUCCEED)
+                          CS_SET,                  /* Action */
+                          CS_PACKETSIZE,           /* Property */
+                          (CS_VOID*)&i,            /* Buffer */
+                          CS_UNUSED,               /* Buffer Length */
+                          (CS_INT*)NULL            /* Output Length */
+                        ) != CS_SUCCEED)
             goto connect_fail;
     }
 
@@ -854,12 +865,12 @@ int cmd_connect( argc, argv )
     {
         i = CS_TRUE;
         if (ct_con_props( g_connection,            /* Connection */
-                              CS_SET,                  /* Action */
-                              CS_SEC_ENCRYPTION,       /* Property */
-                              (CS_VOID*)&i,            /* Buffer */
-                              CS_UNUSED,               /* Buffer Length */
-                              (CS_INT*)NULL            /* Output Length */
-                             ) != CS_SUCCEED)
+                          CS_SET,                  /* Action */
+                          CS_SEC_ENCRYPTION,       /* Property */
+                          (CS_VOID*)&i,            /* Buffer */
+                          CS_UNUSED,               /* Buffer Length */
+                          (CS_INT*)NULL            /* Output Length */
+                        ) != CS_SUCCEED)
             goto connect_fail;
 
 #if defined (CS_SEC_EXTENDED_ENCRYPTION)
@@ -868,13 +879,13 @@ int cmd_connect( argc, argv )
          * connect to ASE servers with 'net password encryption reqd'
          * configured to 2 (RSA).
         */
-        if (ct_con_props( g_connection,                   /* Connection */
-                              CS_SET,                     /* Action */
-                              CS_SEC_EXTENDED_ENCRYPTION, /* Property */
-                              (CS_VOID*)&i,               /* Buffer */
-                              CS_UNUSED,                  /* Buffer Length */
-                              (CS_INT*)NULL               /* Output Length */
-                             ) != CS_SUCCEED)
+        if (ct_con_props( g_connection,               /* Connection */
+                          CS_SET,                     /* Action */
+                          CS_SEC_EXTENDED_ENCRYPTION, /* Property */
+                          (CS_VOID*)&i,               /* Buffer */
+                          CS_UNUSED,                  /* Buffer Length */
+                          (CS_INT*)NULL               /* Output Length */
+                        ) != CS_SUCCEED)
             goto connect_fail;
 #endif
 
@@ -891,50 +902,50 @@ int cmd_connect( argc, argv )
     /*-- Initialize --*/
     if (cs_locale( g_context,                    /* Context */
                    CS_SET,                       /* Action */
-           locale,                       /* Locale Structure */
+                   locale,                       /* Locale Structure */
                    CS_LC_ALL,                    /* Property */
-           (CS_CHAR*)NULL,               /* Buffer */
+                   (CS_CHAR*)NULL,               /* Buffer */
                    CS_UNUSED,                    /* Buffer Length */
                    (CS_INT*)NULL                 /* Output Length */
-        ) != CS_SUCCEED)
+                 ) != CS_SUCCEED)
         goto connect_fail;
 
     /*-- Language --*/
     if( language != NULL && *language != '\0' )
     {
-        if (cs_locale( g_context,                 /* Context */
-                       CS_SET,                    /* Action */
-                       locale,                    /* Locale Structure */
-               CS_SYB_LANG,               /* Property */
-               (CS_CHAR*)language,        /* Buffer */
-               CS_NULLTERM,               /* Buffer Length */
-               (CS_INT*)NULL              /* Output Length */
-        ) != CS_SUCCEED)
+        if (cs_locale( g_context,                /* Context */
+                       CS_SET,                   /* Action */
+                       locale,                   /* Locale Structure */
+                       CS_SYB_LANG,              /* Property */
+                       (CS_CHAR*)language,       /* Buffer */
+                       CS_NULLTERM,              /* Buffer Length */
+                       (CS_INT*)NULL             /* Output Length */
+                     ) != CS_SUCCEED)
             goto connect_fail;
     }
 
     /*-- Character Set --*/
-    if (charset != NULL && *charset != '\0')      /* sqsh-2.1.6 sanity check */
+    if (charset != NULL && *charset != '\0')     /* sqsh-2.1.6 sanity check */
     {
-        if (cs_locale( g_context,                 /* Context */
-                       CS_SET,                    /* Action */
-                       locale,                    /* Locale Structure */
-               CS_SYB_CHARSET,            /* Property */
-               (CS_CHAR*)charset,         /* Buffer */
-               CS_NULLTERM,               /* Buffer Length */
-               (CS_INT*)NULL              /* Output Length */
-        ) != CS_SUCCEED)
+        if (cs_locale( g_context,                /* Context */
+                       CS_SET,                   /* Action */
+                       locale,                   /* Locale Structure */
+                       CS_SYB_CHARSET,           /* Property */
+                       (CS_CHAR*)charset,        /* Buffer */
+                       CS_NULLTERM,              /* Buffer Length */
+                       (CS_INT*)NULL             /* Output Length */
+                     ) != CS_SUCCEED)
             goto connect_fail;
     }
 
     /*-- Locale Property --*/
-    if (ct_con_props( g_connection,            /* Connection */
-              CS_SET,                  /* Action */
-              CS_LOC_PROP,             /* Property */
-              (CS_VOID*)locale,        /* Buffer */
-              CS_UNUSED,               /* Buffer Length */
-              (CS_INT*)NULL            /* Output Length */
-        ) != CS_SUCCEED)
+    if (ct_con_props( g_connection,              /* Connection */
+                      CS_SET,                    /* Action */
+                      CS_LOC_PROP,               /* Property */
+                      (CS_VOID*)locale,          /* Buffer */
+                      CS_UNUSED,                 /* Buffer Length */
+                      (CS_INT*)NULL              /* Output Length */
+                    ) != CS_SUCCEED)
         goto connect_fail;
 
     /* Handle case where server is defined as host:port */
@@ -953,6 +964,97 @@ int cmd_connect( argc, argv )
                       (CS_INT*)NULL
                     ) != CS_SUCCEED)
         goto connect_fail;
+    }
+#endif
+
+#if defined (DEBUG) && defined (CS_SET_DBG_FILE) && defined (CS_SET_PROTOCOL_FILE)
+    /*
+     * sqsh-2.2.0 - Setup TDS debugging using a logdata file and or a capture file
+     * for tracing TDS packets.
+     */
+    if ( sqsh_debug_show (DEBUG_TDS) )
+    {
+        /*
+         * Note, this requires the CT-lib development libraries to be linked/loaded with sqsh.
+        */
+        env_get (g_env, "debug_tds_logdata",  &debug_tds_logdata);
+        if (debug_tds_logdata != NULL && *debug_tds_logdata != '\0')
+        {
+            if (sqsh_expand( debug_tds_logdata, exp_buf, 0 ) != False)
+            {
+                cp = varbuf_getstr( exp_buf );
+                if (ct_debug ( g_context,             /* Context */
+                               NULL,                  /* Connection */
+                               CS_SET_DBG_FILE,       /* Action */
+                               CS_UNUSED,             /* Flag */
+                               cp,                    /* Buffer value */
+                               strlen(cp)             /* Buffer length */
+                             ) != CS_SUCCEED)
+                    fprintf (stderr, "\\connect: ct_debug - Unable to set CS_SET_DBG_FILE to %s\n", cp);
+                else
+                {
+                    fprintf (stdout, "\\connect: ct_debug - Successfully set CS_SET_DBG_FILE to %s\n", cp);
+                    if (ct_debug ( g_context,         /* Context */
+                                   g_connection,      /* Connection */
+                                   CS_SET_FLAG,       /* Action */
+                                   CS_DBG_ALL,        /* Flag */
+                                   NULL,              /* Buffer value */
+                                   CS_UNUSED          /* Buffer length */
+                                 ) != CS_SUCCEED)
+                        fprintf (stderr, "\\connect: ct_debug - Unable to set flag CS_DBG_ALL\n");
+                    else
+                        fprintf (stdout, "\\connect: ct_debug - Flag CS_DBG_ALL successfully set\n");
+                }
+            }
+            else
+            {
+               fprintf( stderr, "sqsh: Error expanding $debug_tds_logdata: %s\n", sqsh_get_errstr() );
+            }
+        }
+
+        /*
+         * For protocol tracing regular CT-lib libraries will do.
+         * The created trace file can be decoded using Ribo.
+        */
+        env_get (g_env, "debug_tds_capture", &debug_tds_capture);
+        if (debug_tds_capture != NULL && *debug_tds_capture != '\0')
+        {
+            if (sqsh_expand( debug_tds_capture, exp_buf, 0 ) != False)
+            {
+                cp = varbuf_getstr( exp_buf );
+                if (ct_debug ( NULL,                  /* Context */
+                               g_connection,          /* Connection */
+                               CS_SET_PROTOCOL_FILE,  /* Action */
+                               CS_UNUSED,             /* Flag */
+                               cp,                    /* Buffer value */
+                               strlen(cp)             /* Buffer length */
+                             ) != CS_SUCCEED)
+                    fprintf (stderr, "\\connect: ct_debug - Unable to set CS_SET_PROTOCOL_FILE to %s\n", cp);
+                else
+                {
+                    fprintf (stdout, "\\connect: ct_debug - Successfully set CS_SET_PROTOCOL_FILE to %s\n", cp);
+                    if (ct_debug ( NULL,              /* Context */
+                                   g_connection,      /* Connection */
+                                   CS_SET_FLAG,       /* Action */
+                                   CS_DBG_PROTOCOL,   /* Flag */
+                                   NULL,              /* Buffer value */
+                                   CS_UNUSED          /* Buffer length */
+                                 ) != CS_SUCCEED)
+                        fprintf (stderr, "\\connect: ct_debug - Unable to set falg CS_DBG_PROTOCOL\n");
+                    else
+                        fprintf (stdout, "\\connect: ct_debug - Flag CS_DBG_PROTOCOL successfully set\n");
+                }
+            }
+            else
+            {
+               fprintf( stderr, "sqsh: Error expanding $debug_tds_capture: %s\n", sqsh_get_errstr() );
+            }
+        }
+    }
+#elif defined (DEBUG)
+    if ( sqsh_debug_show (DEBUG_TDS) )
+    {
+        fprintf( stderr, "\\connect: ct_debug - TDS debugging is not supported in this version of CT-lib\n" );
     }
 #endif
 
@@ -1026,12 +1128,12 @@ int cmd_connect( argc, argv )
      * that CT-Lib uses a file descriptor as its communication mechanism.
      */
     if (ct_con_props( g_connection,            /* Connection */
-                          CS_GET,                  /* Action */
-                          CS_ENDPOINT,             /* Property */
-                          (CS_VOID*)&ctlib_fd,     /* Buffer */
-                          CS_UNUSED,               /* Buffer Length */
-                          (CS_INT*)NULL            /* Output Length */
-                         ) != CS_SUCCEED)
+                      CS_GET,                  /* Action */
+                      CS_ENDPOINT,             /* Property */
+                      (CS_VOID*)&ctlib_fd,     /* Buffer */
+                      CS_UNUSED,               /* Buffer Length */
+                      (CS_INT*)NULL            /* Output Length */
+                    ) != CS_SUCCEED)
     {
         fprintf( stderr, "\\connect: WARNING: Unable to fetch CT-Lib file\n" );
         fprintf( stderr, "\\connect: descriptor to work around SIGPOLL bug.\n" );
@@ -1071,7 +1173,8 @@ int cmd_connect( argc, argv )
                           CS_TDS_VERSION,         /* Property */
                           (CS_VOID*)&version,     /* Buffer */
                           CS_UNUSED,              /* Buffer Length */
-                          (CS_INT*)NULL ) == CS_SUCCEED)
+                          (CS_INT*)NULL
+                        ) == CS_SUCCEED)
         {
             switch (version) {
                 case CS_TDS_40:
@@ -1196,16 +1299,16 @@ connect_fail:
     }
 
     /*-- Clean up the connection if established --*/
-    if (g_connection != NULL)
+    if (g_connection != NULL && sg_interrupted == False)
     {
-
         /*-- Find out if the we are connected or not --*/
         if (ct_con_props( g_connection,           /* Connection */
                           CS_GET,                 /* Action */
                           CS_CON_STATUS,          /* Property */
                           (CS_VOID*)&con_status,  /* Buffer */
                           CS_UNUSED,              /* Buffer Length */
-                                (CS_INT*)NULL ) != CS_SUCCEED)
+                          (CS_INT*)NULL
+                        ) != CS_SUCCEED)
         {
             DBG(sqsh_debug(DEBUG_ERROR, "connect:   Unable to get con status.\n");)
             con_status = CS_CONSTAT_CONNECTED;
@@ -1228,20 +1331,22 @@ connect_fail:
         ct_con_drop( g_connection );
     }
 
-    if (locale != NULL)
+    if (sg_interrupted == False)
     {
-        DBG(sqsh_debug(DEBUG_ERROR, "connect:   Dropping locale\n");)
-        cs_loc_drop( g_context, locale );
-    }
+        if (locale != NULL)
+        {
+            DBG(sqsh_debug(DEBUG_ERROR, "connect:   Dropping locale\n");)
+            cs_loc_drop( g_context, locale );
+        }
 
-    if (g_context != NULL)
-    {
-        DBG(sqsh_debug(DEBUG_ERROR, "connect:   Dropping context\n");)
-        if (ct_exit( g_context, CS_UNUSED ) != CS_SUCCEED)
-            ct_exit( g_context, CS_FORCE_EXIT );
-        cs_ctx_drop( g_context );
+        if (g_context != NULL)
+        {
+            DBG(sqsh_debug(DEBUG_ERROR, "connect:   Dropping context\n");)
+            if (ct_exit( g_context, CS_UNUSED ) != CS_SUCCEED)
+                ct_exit( g_context, CS_FORCE_EXIT );
+            cs_ctx_drop( g_context );
+        }
     }
-
     g_connection = NULL;
     g_context    = NULL;
     return_code = CMD_FAIL;
@@ -1594,13 +1699,15 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
     if (sg_login == False)
     {
         env_get( g_env, "DSQUERY", &server ) ;
-        /*
+#if defined(CS_TDS_50)
         if (CS_SEVERITY(msg->msgnumber) >= CS_SV_COMM_FAIL ||
             ctx == NULL || con == NULL)
-        */
+#else
+        /* Then we use freetds which uses enum instead of defines */
         if ((CS_SEVERITY(msg->msgnumber) >= CS_SV_COMM_FAIL &&
              CS_SEVERITY(msg->msgnumber) <= CS_SV_FATAL)    ||
             ctx == NULL || con == NULL)
+#endif
         {
             fprintf (stderr, "%s: Aborting on severity %d\n", server, (int) CS_SEVERITY(msg->msgnumber) );
             sqsh_exit(254);
@@ -1939,14 +2046,16 @@ ShowNetAuthCredExp (conn, cmdname)
 #endif
 }
 
+
 /*
- * connect_signal():
+ * connect_run_sigint():
  *
  * This function is called whenever a SIGINT signal is received while processing cmd_connect.
- * Its only real job is to abort the connection attempt and leave sqsh.
+ * Its only real job is to return to the point where the SETJMP function was executed.
  */
-static void connect_signal (int sig, void *user_data )
+static void connect_run_sigint (int sig, void *user_data )
 {
-    sqsh_exit (254);
+    sg_interrupted = True;
+    LONGJMP (sg_jmp_buf, 1);
 }
 

@@ -29,7 +29,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_env.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $";
+static char RCS_Id[] = "$Id: sqsh_env.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -57,14 +57,14 @@ env_t* env_create( hsize )
 	if (hsize < 1)
 	{
 		sqsh_set_error( SQSH_E_BADPARAM, NULL );
-		return False;
+		return NULL;
 	}
 
 	/*-- Attempt to allocate an environment --*/
 	if ((e = (env_t*)malloc(sizeof(env_t))) == NULL)
 	{
 		sqsh_set_error( SQSH_E_NOMEM, NULL );
-		return False;
+		return NULL;
 	}
 
 	/*-- Create the hash table --*/
@@ -72,7 +72,7 @@ env_t* env_create( hsize )
 	{
 		free( e ); 
 		sqsh_set_error( SQSH_E_NOMEM, NULL );
-		return False;
+		return NULL;
 	}
 
 	for (i = 0; i < hsize; i++)
@@ -196,12 +196,16 @@ int env_remove( e, var_name, flags )
 		 */
 		if (e->env_save != NULL && (flags & ENV_F_TRAN) != 0)
 		{
+			DBG(sqsh_debug( DEBUG_ENV, "env_remove: Variable '%s' with value '%s' deleted in TRAN\n",
+				v->var_name , v->var_value);)
 			v->var_sptype = ENV_SP_REMOVE;
 			v->var_nxt    = e->env_save;
 			e->env_save   = v;
 		}
 		else
 		{
+			DBG(sqsh_debug( DEBUG_ENV, "env_remove: Variable '%s' with value '%s' deleted\n",
+				v->var_name , v->var_value);)
 			var_destroy( v );
 		}
 
@@ -297,10 +301,11 @@ int env_put( e, var_name, value, flags )
 				return False;
 			}
 
-
 			new_v->var_sptype = ENV_SP_CHANGE;
 			new_v->var_nxt    = e->env_save;
 			e->env_save       = new_v;
+			DBG(sqsh_debug( DEBUG_ENV, "env_put: Variable '%s' changed from '%s' to '%s' in TRAN\n",
+				v->var_name , v->var_value, value );)
 		}
 
 		/*
@@ -316,6 +321,22 @@ int env_put( e, var_name, value, flags )
 	}
 	else
 	{
+		if (e->env_save != NULL && (flags & ENV_F_TRAN) != 0)
+		{
+			new_v = var_create( var_name, value );
+
+			if (new_v == NULL)
+			{
+				return False;
+			}
+
+			new_v->var_sptype = ENV_SP_NEW;
+			new_v->var_nxt    = e->env_save;
+			e->env_save       = new_v;
+			DBG(sqsh_debug( DEBUG_ENV, "env_put: Variable '%s' with value '%s' added in TRAN\n",
+				var_name , value );)
+		}
+
 		/*
 		 * The variable doesn't exist, so create it and stick it
 		 * into the hash table.
@@ -345,7 +366,7 @@ int env_put( e, var_name, value, flags )
  * if a 'get' validation function exists for the variable, then it is called.
  * Upon success, 1 is returned with value containing the value of var_name,
  * otherwise 0 is returned if the variable doesn't exist, or a -1
- * is retuend if the validation function failed, or some other error condition
+ * is returned if the validation function failed, or some other error condition
  * ocurred.
  */
 int env_nget( e, var_name, value, n )
@@ -357,6 +378,9 @@ int env_nget( e, var_name, value, n )
 	var_t   *v;
 	int     hval;
 	char   *cptr;
+#if defined(DEBUG)
+	char *dbg_var_name;
+#endif
 
 	/*-- Always check your arguments --*/
 	if (e == NULL || var_name == NULL)
@@ -390,15 +414,19 @@ int env_nget( e, var_name, value, n )
 	}
 
 #if defined(DEBUG)
+	dbg_var_name = sqsh_strdup (var_name);
+	if (n >= 0)
+		dbg_var_name[n] = '\0';
 	if (v == NULL) 
 	{
-		sqsh_debug( DEBUG_ENV, "env_nget: Miss on %s, checking environment.\n",
-		            var_name  );
+		sqsh_debug( DEBUG_ENV, "env_nget: Miss on variable '%s', checking OS environment\n",
+			dbg_var_name );
 	}
 	else
 	{
-		sqsh_debug( DEBUG_ENV, "env_nget: Hit on %s.\n", var_name );
+		sqsh_debug( DEBUG_ENV, "env_nget: Hit on variable '%s'\n", dbg_var_name );
 	}
+	free (dbg_var_name);
 #endif /* DEBUG */
 
 	/*
@@ -421,7 +449,7 @@ int env_nget( e, var_name, value, n )
 
 			/*
 			 * If we are only interested in part of a string, then
-			 * we need to need to create a temporary buffer in which
+			 * we need to create a temporary buffer in which
 			 * to place the partial string to pass it to getenv.
 			 */
 			if (n >= 0) 
@@ -505,37 +533,12 @@ int env_nget( e, var_name, value, n )
 	return 1;
 }
 
-int env_print( e )
-	env_t   *e;
-{
-	int      i;
-	var_t   *v;
-
-	if (e == NULL)
-	{
-		sqsh_set_error( SQSH_E_BADPARAM, NULL );
-		return False;
-	}
-
-	for (i = 0; i < e->env_hsize; i++)
-	{
-		for (v = e->env_htable[i]; v != NULL; v = v->var_nxt)
-		{
-			printf("%s = %s\n",
-				v->var_name != NULL  ? v->var_name  : "NULL",
-				v->var_value != NULL ? v->var_value : "NULL" );
-		}
-	}
-
-	sqsh_set_error( SQSH_E_NONE, NULL );
-	return True;
-}
 
 /*
  * env_tran():
  *
  * Create a transaction "save-point" in the environment. After
- * calling env_tran(), subsequnt calls to env_put() or env_remove()
+ * calling env_tran(), subsequent calls to env_put() or env_remove()
  * with a flag of ENV_F_TRAN will cause the resulting change to
  * be logged.  A call to env_rollback() will restore all logged
  * changes to be reversed, and a call to env_commit() ends the
@@ -576,33 +579,34 @@ int env_rollback( e )
 	var_t   *v;
 
 	/*
-	 * Now, blast through our save stack, reseting each variable
+	 * Now, blast through our save stack, resetting each variable
 	 * to its original state.
 	 */
 	while (e->env_save != NULL &&
 			 e->env_save->var_sptype != ENV_SP_START)
 	{
 		v = e->env_save;
-		e->env_save = e->env_save->var_nxt;
+		e->env_save = v->var_nxt;
 
 		switch (v->var_sptype)
 		{
 			case ENV_SP_NEW:
 				DBG(sqsh_debug( DEBUG_ENV, 
-					"env_rollback: Removing '%s'\n", v->var_name );)
+					"env_rollback: Removing variable '%s'\n", v->var_name );)
 				env_remove( e, v->var_name, 0 );
 				break;
 			
 			case ENV_SP_CHANGE:
 				DBG(sqsh_debug( DEBUG_ENV, 
-					"env_rollback: Restoring '%s' to '%s'\n", 
+					"env_rollback: Restoring variable '%s' to '%s'\n", 
 						v->var_name, v->var_value );)
 				env_put( e, v->var_name, v->var_value, 0 );
 				break;
 			
 			case ENV_SP_REMOVE:
 				DBG(sqsh_debug( DEBUG_ENV, 
-					"env_rollback: Adding '%s'\n", v->var_name );)
+					"env_rollback: Adding variable '%s' with value '%s'\n",
+				       		v->var_name, v->var_value );)
 
 				env_set_valid( e, v->var_name, v->var_value, 
 				               v->var_setf, v->var_getf );
@@ -619,10 +623,10 @@ int env_rollback( e )
 	if (e->env_save != NULL)
 	{
 		v = e->env_save;
-		e->env_save = e->env_save->var_nxt;
+		e->env_save = v->var_nxt;
 		var_destroy( v );
 	}
-	DBG(sqsh_debug( DEBUG_ENV, "env_save: Save-point restored\n" );)
+	DBG(sqsh_debug( DEBUG_ENV, "env_rollback: Save-point rolled-back\n" );)
 
 	return True;
 }
@@ -646,11 +650,7 @@ int env_commit( e )
 		e->env_save = v->var_nxt;
 		var_destroy( v );
 	}
-	else
-	{
-		e->env_save = NULL;
-	}
-	DBG(sqsh_debug( DEBUG_ENV, "env_commit: Save-point restored\n" );)
+	DBG(sqsh_debug( DEBUG_ENV, "env_commit: Save-point committed\n" );)
 
 	return True;
 }
@@ -803,6 +803,7 @@ static var_t* var_create( var_name, value )
 	v->var_sptype = ENV_SP_NONE;
 	v->var_setf   = NULL;
 	v->var_getf   = NULL;
+	v->var_nxt    = NULL;
 
 	return v;
 }

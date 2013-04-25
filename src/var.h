@@ -195,9 +195,15 @@ static var_entry_t  sg_var_entry[] = {
     /* sqsh-2.1.9 - New variables */
     { "datefmt",          NULL,          var_set_datefmt,     var_get_datefmt },
     { "timefmt",          NULL,          var_set_timefmt,     var_get_timefmt },
-    /* sqsh-2.2.0 - New variables */
+    /* sqsh-2.2.0 - New or missing variables in global env added */
+    { "autouse",          NULL,          var_set_nullstr,     NULL            },
+    { "debug_tds_logdata",NULL,          var_set_nullstr,     NULL            },
+    { "debug_tds_capture",NULL,          var_set_nullstr,     NULL            },
+    { "histmerge",        "0",           var_set_bool,        NULL            },
     { "readline_histignore", NULL,       var_set_nullstr,     NULL            },
-    { "histmerge",           "0",        var_set_bool,        NULL            },
+    { "script",           NULL,          var_set_nullstr,     NULL            },
+    { "semicolon_hack2",  "0",           var_set_bool,        NULL            },
+    { "tds_version",      NULL,          var_set_nullstr,     NULL            },
 } ;
 
 #endif /* SQSH_INIT */

@@ -40,6 +40,7 @@
 #define DEBUG_ERROR    (1<<12)  /* Debug error handlers */
 #define DEBUG_SIG      (1<<13)  /* Debug signal handlers */
 #define DEBUG_HISTORY  (1<<14)  /* Debug history processing */
+#define DEBUG_TDS      (1<<15)  /* Debug TDS protocol CS communications */
 #define DEBUG_ALL     ~(0)      /* Turn on all debugging */
 
 #if defined(DEBUG)

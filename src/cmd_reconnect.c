@@ -30,7 +30,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_reconnect.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: cmd_reconnect.c,v 1.2 2013/04/04 10:52:35 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -39,25 +39,37 @@ USE(RCS_Id)
  *
  * Re-establishes a connection the database, closing the prior
  * connection.  This allows, essentially, an 'su' for databases.
+ *
+ * sqsh-2.2.0 - Also save the current context and let ct_connect setup
+ * a new context. In case of success we can drop the original context,
+ * otherwise restore the original context.
  */
 int cmd_reconnect( argc, argv )
 	int     argc ;
 	char   *argv[] ;
 {
 	CS_CONNECTION *old_connection;
+	CS_CONTEXT    *old_context;
 
 	old_connection = g_connection;
+	old_context    = g_context;
 	g_connection   = NULL;
+	g_context      = NULL;
 
 	if( cmd_connect( argc, argv ) == CMD_FAIL ) 
 	{
 		g_connection = old_connection ;
+		g_context    = old_context ;
 		return CMD_FAIL ;
 	}
 
 	if (ct_close( old_connection, CS_UNUSED ) != CS_SUCCEED)
   	    ct_close( old_connection, CS_FORCE_CLOSE );
 	ct_con_drop( old_connection );
+
+	if (ct_exit( old_context, CS_UNUSED ) != CS_SUCCEED)
+		ct_exit( old_context, CS_FORCE_EXIT );
+	cs_ctx_drop( old_context );
 
 	return CMD_LEAVEBUF ;
 }

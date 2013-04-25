@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_debug.c,v 1.2 2013/04/04 10:52:36 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: var_debug.c,v 1.3 2013/04/18 11:54:43 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -65,6 +65,7 @@ struct debug_st {
 	{ "SIG",                  DEBUG_SIG     },
 	{ "SIGCHLD",              DEBUG_SIGCLD  },
 	{ "SIGCLD",               DEBUG_SIGCLD  },
+	{ "TDS",                  DEBUG_TDS     },
 } ;
 
 #endif

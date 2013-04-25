@@ -59,13 +59,12 @@ int    env_set_valid _ANSI_ARGS(( env_t*, char*, char*, env_f*, env_f* ));
 int    env_set       _ANSI_ARGS(( env_t*, char*, char* ));
 int    env_put       _ANSI_ARGS(( env_t*, char*, char*, int ));
 int    env_remove    _ANSI_ARGS(( env_t*, char*, int ));
-int    env_del       _ANSI_ARGS(( env_t*, char* ));
-int    env_get       _ANSI_ARGS(( env_t*, char*, char** ));
 int    env_nget      _ANSI_ARGS(( env_t*, char*, char**, int ));
 int    env_tran      _ANSI_ARGS(( env_t* ));
 int    env_commit    _ANSI_ARGS(( env_t* ));
 int    env_rollback  _ANSI_ARGS(( env_t* ));
 int    env_destroy   _ANSI_ARGS(( env_t* ));
+/* int env_get       _ANSI_ARGS(( env_t*, char*, char** )); */
 
 #define env_get(e,k,v)  env_nget(e,k,v,-1)
 
