@@ -40,7 +40,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.14 2013/02/25 09:50:22 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.15 2013/04/04 10:52:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -193,6 +193,7 @@ int cmd_bcp( argc, argv )
     int               have_error    = False;
     CS_BOOL           have_identity = CS_FALSE;
     CS_BOOL           char_convert  = CS_FALSE;
+    CS_BOOL           transit       = CS_FALSE; /* Disable client character conversion */
 
     /*
      * sqsh-2.1.9 - Feature BCP execute an initialization command
@@ -216,7 +217,7 @@ int cmd_bcp( argc, argv )
     env_get( g_env, "hostname",   &hostname );
     env_get( g_env, "packet_size", &packet_size );
 
-    while ((opt = sqsh_getopt( argc, argv, "A:b:I:i:J:m:NP;S:U:Xz:" )) != EOF)
+    while ((opt = sqsh_getopt( argc, argv, "A:b:I:i:J:m:NP;S:TU:Xz:" )) != EOF)
     {
         switch (opt)
         {
@@ -268,6 +269,10 @@ int cmd_bcp( argc, argv )
                 server = sqsh_optarg;
                 break;
 
+            case 'T' :
+                transit = CS_TRUE;
+                break;
+
             case 'U' :
                 username = sqsh_optarg;
                 break;
@@ -296,7 +301,7 @@ int cmd_bcp( argc, argv )
         fprintf(stderr,
            "Use: \\bcp [-A packsetsize] [-b batchsize] [-I interfaces] [-i initcmd]\n"
            "          [-J charset] [-m maxerrors] [-N] [-P password]\n"
-           "          [-S server] [-U username] [-X] [-z language] table_name\n");
+           "          [-S server] [-T] [-U username] [-X] [-z language] table_name\n");
         return CMD_FAIL;
     }
 
@@ -609,8 +614,15 @@ int cmd_bcp( argc, argv )
             goto return_fail;
         }
 #endif
+    }
 
 #if defined (CS_NOCHARSETCNV_REQD)
+    /*
+     * sqsh-2.2.0 - Disable character set conversion on client
+     * when in transit (-T option)
+     */
+    if (transit == CS_TRUE)
+    {
         char_convert = CS_TRUE;
         if (ct_con_props( bcp_con,                    /* Connection */
                           CS_SET,                     /* Action */
@@ -624,8 +636,8 @@ int cmd_bcp( argc, argv )
                 "\\bcp: Unable to set CS_NOCHARSETCONV_REQD for BCP connection\n" );
             goto return_fail;
         }
-#endif
     }
+#endif
 
     /*
      * The following section initializes all locale type information.
@@ -801,17 +813,24 @@ int cmd_bcp( argc, argv )
     }
 
 #if defined (BLK_CONV)
-    char_convert = CS_FALSE;
-    if (blk_props( bcp_desc,                    /* Descriptor */
-                   CS_SET,                      /* Action */
-                   BLK_CONV,                    /* Property */
-                   (CS_VOID*)&char_convert,     /* Buffer */
-                   CS_UNUSED,                   /* Buffer Length*/
-                   (CS_INT*)NULL                /* Output Length */
-                 ) != CS_SUCCEED)
+    /*
+     * sqsh-2.2.0 - Disable character set conversion on client
+     * when in transit (-T option)
+     */
+    if (transit == CS_TRUE)
     {
-        fprintf( stderr, "\\bcp: Unable to set BLK_CONV option to CS_FALSE\n");
-        goto return_fail;
+        char_convert = CS_FALSE;
+        if (blk_props( bcp_desc,                    /* Descriptor */
+                       CS_SET,                      /* Action */
+                       BLK_CONV,                    /* Property */
+                       (CS_VOID*)&char_convert,     /* Buffer */
+                       CS_UNUSED,                   /* Buffer Length*/
+                       (CS_INT*)NULL                /* Output Length */
+                     ) != CS_SUCCEED)
+        {
+            fprintf( stderr, "\\bcp: Unable to set BLK_CONV option to CS_FALSE\n");
+            goto return_fail;
+        }
     }
 #endif
 
