@@ -24,6 +24,7 @@
  */
 #include <stdio.h>
 #include <ctype.h>
+#include <regex.h>
 #include "sqsh_config.h"
 #include "sqsh_env.h"
 #include "sqsh_error.h"
@@ -35,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.6 2013/04/04 10:52:36 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.7 2013/04/18 11:54:43 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -55,6 +56,11 @@ static char*   sqsh_generator      _ANSI_ARGS(( char*, int )) ;
 static int sqsh_readline_addcol   _ANSI_ARGS(( char* )) ;
 static int sqsh_readline_clearcol _ANSI_ARGS(( void  )) ;
 static int DynColnameLoad         _ANSI_ARGS(( char* )) ;
+
+/*
+ * sqsh-2.2.0 - Function prototypes for new feature readline_histignore.
+ */
+static int re_match               _ANSI_ARGS(( char*, char* )) ;
 
 /*
  * If GNU Readline support is compiled in, this data structure is
@@ -272,26 +278,54 @@ char* sqsh_readline( prompt )
         {
             /*
              * sqsh-2.2.0 - If $readline_histignore is set, then do not add the line to
-             * the readline history if it matches an entry in the ':' seperated list.
-             * Use case is to filter out the 'go', '\go', 'GO', quit, etc. statements
-             * from the readline history.
+             * the readline history if it matches the provided regular expression or
+             * equals one of the colon separated list of keywords.
+             * if $readline_histignore starts with RE: then it is considered a regular
+             * expression that is evaluated with function re_match.
+             * Rationale is to filter out the 'go', 'lo', 'mo', quit, etc.
+             * statements from the readline history.
             */
             match = False;
             env_get( g_env, "readline_histignore", &readline_histignore );
             if (readline_histignore != NULL && *readline_histignore != '\0')
             {
-                cp = sqsh_strdup (readline_histignore);
-                for (p1 = cp; p1 != NULL && match == False; p1 = p2)
+                /*
+                 * Duplicate the variable to a work buffer so we
+                 * can modify it. What we want to do is strip of begin
+                 * and end double quotes, if they exists.
+                */
+                readline_histignore = sqsh_strdup (readline_histignore);
+                cp = readline_histignore;
+                if ( cp != NULL && *cp == '"' && *(cp+strlen(cp)-1) == '"' )
                 {
-                    if ((p2 = strchr(p1, ':')) != NULL)
-                        *p2++ = '\0';
-                    if (strcmp (line, p1) == 0)
+                    *(cp+strlen(cp)-1) = '\0';
+                    cp = readline_histignore + 1;
+                }
+
+                if ( cp != NULL && strncmp (cp, "RE:", 3) == 0 )
+                {
+                    /*
+                     * readline_histignore contains an extended regular expression
+                     * if the string starts with RE:
+                    */
+                    cp = cp + 3;
+                    if (re_match (cp, line) == 0)
                         match = True;
                 }
-                if (cp != NULL)
-                    free (cp);
+                else
+                {
+                    for (p1 = cp; p1 != NULL && match == False; p1 = p2)
+                    {
+                        if ( (p2 = strchr(p1, ':')) != NULL )
+                            *p2++ = '\0';
+                        if ( strcmp (line, p1) == 0 )
+                            match = True;
+                    }
+                }
+                if ( readline_histignore != NULL )
+                    free (readline_histignore);
             }
-            if (match == False)
+            if ( match == False )
                 add_history( line );
         }
 
@@ -1284,6 +1318,29 @@ static int DynColnameLoad (objname)
         sqsh_readline_clearcol();
 
     return ( ret );
+}
+
+
+/*
+ * sqsh-2.2.0 - Function re_match.
+ *
+ * Match string against the extended regular expression in
+ * pattern, treating errors as no match.
+ *
+ * Return 0 for match, not 0 for no match.
+*/
+static int
+re_match (char *pattern, char *string)
+{
+    regex_t  re;
+    int      status;
+
+
+    if ((status = regcomp (&re, pattern, REG_EXTENDED|REG_NOSUB|REG_ICASE) != 0))
+        return (status);
+    status = regexec (&re, string, (size_t) 0, NULL, 0);
+    regfree (&re);
+    return (status);
 }
 
 #endif  /* USE_READLINE */

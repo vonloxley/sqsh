@@ -44,7 +44,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_job.c,v 1.5 2012/03/14 09:17:51 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_job.c,v 1.6 2013/04/04 10:52:36 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -53,7 +53,7 @@ static job_t*     job_alloc         _ANSI_ARGS((jobset_t*));
 static int        job_free          _ANSI_ARGS((job_t*));
 static job_id_t   jobset_wait_all   _ANSI_ARGS((jobset_t*, int*, int));
 static int        jobset_parse      _ANSI_ARGS((jobset_t*, job_t*, char*, 
-                                                varbuf_t*, int));
+						varbuf_t*, int));
 static job_t*     jobset_get        _ANSI_ARGS((jobset_t*, job_id_t));
 static void       jobset_run_sigint _ANSI_ARGS((int, void*));
 static int        jobset_get_cmd    _ANSI_ARGS((jobset_t*, char*, cmd_t**));
@@ -120,9 +120,8 @@ jobset_t* jobset_create( hsize )
 	if( (js->js_sigcld = sigcld_create()) == NULL ) {
 		free( js->js_jobs );
 		free( js );
-		sqsh_set_error( sqsh_get_error(), "sigcld_create: %s",
-		                sqsh_get_errstr() );
-	 	return NULL;
+		sqsh_set_error( sqsh_get_error(), "sigcld_create: %s", sqsh_get_errstr() );
+		return NULL;
 	}
 
 	/*-- Initialize our command structure --*/
@@ -185,14 +184,14 @@ static int jobset_get_cmd( js, cmd_line, cmd )
 		return 0;
 
 	DBG(sqsh_debug( DEBUG_JOB, "jobset_get_cmd: Testing '%s'\n",
-	                varbuf_getstr(sg_cmd_buf) );)
+			varbuf_getstr(sg_cmd_buf) );)
 	
 	/*
 	 * Try to grab the first token from the command line.  If there
 	 * is any error while tokenizing, then we will assume that this
 	 * isn't a command.
 	 */
- 	if( sqsh_tok( varbuf_getstr( sg_cmd_buf ), &tok, 0 ) == False )
+	if( sqsh_tok( varbuf_getstr( sg_cmd_buf ), &tok, 0 ) == False )
 		return 0;
 
 	/*
@@ -202,7 +201,7 @@ static int jobset_get_cmd( js, cmd_line, cmd )
 	 * command.
 	 */
 	if( tok->tok_type != SQSH_T_WORD || 
-	    (*cmd = cmdset_get(g_cmdset, sqsh_tok_value(tok))) == NULL )
+		(*cmd = cmdset_get(g_cmdset, sqsh_tok_value(tok))) == NULL )
 		return 0;
 
 	return 1;
@@ -237,7 +236,7 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 #endif /* USE_AIX_FIX */
 	varbuf_t    *while_buf;
 #if defined(USE_READLINE)
-        char        *expand_tilde;         /* sqsh-2.1.8 - Tilde expansion */
+	char        *expand_tilde;         /* sqsh-2.1.8 - Tilde expansion */
 #endif
 
 	/*-- Check the arguments --*/
@@ -318,8 +317,7 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 		 */
 		if (sqsh_expand( cmd_line, sg_cmd_buf, EXP_COLUMNS ) == False)
 		{
-			sqsh_set_error( sqsh_get_error(), "sqsh_expand: %s", 
-								 sqsh_get_errstr() );
+			sqsh_set_error( sqsh_get_error(), "sqsh_expand: %s", sqsh_get_errstr() );
 			return -1;
 		}
 
@@ -393,8 +391,7 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 		if (args_add(job->job_args, "\\while" ) == False ||
 			args_add(job->job_args, varbuf_getstr(while_buf)) == False)
 		{
-			sqsh_set_error( sqsh_get_error(), "args_add: %s", 
-				sqsh_get_errstr() );
+			sqsh_set_error( sqsh_get_error(), "args_add: %s", sqsh_get_errstr() );
 			goto jobset_abort;
 		}
 	}
@@ -468,9 +465,9 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 		/*
 		 * Link the new job into our hash table.
 		 */
-	 	hval = job->job_id % js->js_hsize;
-	 	job->job_nxt = js->js_jobs[hval];
-	 	js->js_jobs[hval] = job;
+		hval = job->job_id % js->js_hsize;
+		job->job_nxt = js->js_jobs[hval];
+		js->js_jobs[hval] = job;
 
 		/*-- And return it --*/
 		return job->job_id;
@@ -503,14 +500,12 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 		{
 
 			sig_install( SIGPIPE, SIG_H_POLL, (void*)NULL, 0 );
-			*exit_status = cmd->cmd_ptr( args_argc(job->job_args), 
-												  args_argv(job->job_args) );
+			*exit_status = cmd->cmd_ptr( args_argc(job->job_args), args_argv(job->job_args) );
 
 		}
 		else
 		{
-			*exit_status = cmd->cmd_ptr( args_argc(job->job_args), 
-												  args_argv(job->job_args) );
+			*exit_status = cmd->cmd_ptr( args_argc(job->job_args), args_argv(job->job_args) );
 		}
 	}
 
@@ -539,14 +534,14 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 	 * Lastly, destroy the job structure that we allocated.  It almost
 	 * makes you wonder why it was created at all.
 	 */
- 	job_free( job );
+	job_free( job );
 
 	/*
 	 * Note, reguardless of the exit status of the command, we return 0
 	 * (i.e. the command was called succesfully reguarldess of whether
 	 * or not the job performed its task. 
 	 */
- 	sqsh_set_error( SQSH_E_NONE, NULL );
+	sqsh_set_error( SQSH_E_NONE, NULL );
 	return 0;
 
 jobset_abort:
@@ -608,9 +603,7 @@ job_id_t jobset_wait( js, job_id, exit_status, block_type )
 	pid_t       pid;
 
 	/*-- Always check your parameters --*/
-	if( js == NULL || exit_status == NULL || 
-	    (block_type != JOB_BLOCK && block_type != JOB_NONBLOCK) ) {
-
+	if( js == NULL || exit_status == NULL || (block_type != JOB_BLOCK && block_type != JOB_NONBLOCK) ) {
 		sqsh_set_error( SQSH_E_BADPARAM, NULL );
 		return -1;
 	}
@@ -621,7 +614,7 @@ job_id_t jobset_wait( js, job_id, exit_status, block_type )
 	/*-- Find out if the job exists --*/
 	/* (sqsh-2.1.7 - Bug fix for bucket calculation) --*/
 	for( j = js->js_jobs[job_id % js->js_hsize];
-		  j != NULL && j->job_id != job_id ; j = j->job_nxt );
+		j != NULL && j->job_id != job_id ; j = j->job_nxt );
 
 	/*-- If we can't, error --*/
 	if( j == NULL ) {
@@ -662,9 +655,9 @@ job_id_t jobset_wait( js, job_id, exit_status, block_type )
 	 * If we have reached this point, then the job has completed so
 	 * it is just a matter of recording the exit status and returning.
 	 */
- 	j->job_flags  |= JOB_DONE;
+	j->job_flags  |= JOB_DONE;
 	j->job_end     = time(NULL);
- 	j->job_status  = *exit_status;
+	j->job_status  = *exit_status;
 
 	/*
 	 * Propagate any errors back to the caller.
@@ -678,10 +671,10 @@ job_id_t jobset_wait( js, job_id, exit_status, block_type )
 		sqsh_set_error( sqsh_get_error(), "sigcld_wait: %s", sqsh_get_errstr() );
 	}
 	else {
-	 	sqsh_set_error( SQSH_E_NONE, NULL );
+		sqsh_set_error( SQSH_E_NONE, NULL );
 	}
 
- 	return j->job_id;
+	return j->job_id;
 }
 
 int jobset_end( js, job_id )
@@ -704,8 +697,8 @@ int jobset_end( js, job_id )
 	/*-- Search for the job --*/
 	j_prv = NULL;
 	for( j = js->js_jobs[hval]; j != NULL && j->job_id != job_id;
-	     j = j->job_nxt )
-  		j_prv = j;
+		j = j->job_nxt )
+		j_prv = j;
 
 	if( j == NULL ) {
 		sqsh_set_error( SQSH_E_EXIST, "Invalid job_id %d", job_id );
@@ -720,31 +713,28 @@ int jobset_end( js, job_id )
 
 		/*-- Kill the job --*/
 		if( kill( j->job_pid, SIGTERM ) == -1 ) {
-			sqsh_set_error( errno, "Unable to SIGTERM pid %d: %s", j->job_pid,
-			                strerror( errno ) );
-		 	return False;
+			sqsh_set_error( errno, "Unable to SIGTERM pid %d: %s", j->job_pid, strerror( errno ) );
+			return False;
 		}
 
 		/*-- Wait for it to die. --*/
-		if( sigcld_wait( js->js_sigcld, j->job_pid, &exit_status,
-		                 SIGCLD_BLOCK ) == -1 ) {
-	 		sqsh_set_error( sqsh_get_error(), "sigcld_wait: %s",
-	 		                sqsh_get_errstr() );
-		 	return False;
+		if( sigcld_wait( js->js_sigcld, j->job_pid, &exit_status, SIGCLD_BLOCK ) == -1 ) {
+			sqsh_set_error( sqsh_get_error(), "sigcld_wait: %s", sqsh_get_errstr() );
+			return False;
 		}
 	}
 
 	/*
 	 * Finally unlink it from the list of jobs that are running.
 	 */
- 	if( j_prv != NULL )
- 		j_prv->job_nxt = j->job_nxt;
+	if( j_prv != NULL )
+		j_prv->job_nxt = j->job_nxt;
 	else
 		js->js_jobs[hval] = j->job_nxt;
 
- 	job_free( j );
- 	sqsh_set_error( SQSH_E_NONE, NULL );
- 	return True;
+	job_free( j );
+	sqsh_set_error( SQSH_E_NONE, NULL );
+	return True;
 }
 
 
@@ -885,8 +875,7 @@ int jobset_destroy( js )
 				 * child process is going down.
 				 */
 				kill( j->job_pid, SIGTERM );
-				sigcld_wait( js->js_sigcld, j->job_pid, &exit_status,
-				             SIGCLD_BLOCK );
+				sigcld_wait( js->js_sigcld, j->job_pid, &exit_status, SIGCLD_BLOCK );
 			}
 
 			job_free( j );
@@ -947,7 +936,7 @@ static job_id_t jobset_wait_all( js, exit_status, block_type )
 	 * then return 0.
 	 */
 	if( pid == 0 ) {
- 		sqsh_set_error( SQSH_E_NONE, NULL );
+		sqsh_set_error( SQSH_E_NONE, NULL );
 		return 0;
 	}
 
@@ -958,9 +947,9 @@ static job_id_t jobset_wait_all( js, exit_status, block_type )
 	for( i = 0; i < js->js_hsize; i++ ) {
 
 		for( j = js->js_jobs[i]; j != NULL && j->job_pid != pid;
-		     j = j->job_nxt );
+			j = j->job_nxt );
 
-	  	if( j != NULL ) {
+		if( j != NULL ) {
 
 			/*
 			 * If we have reached this point, then the job has completed so
@@ -980,8 +969,8 @@ static job_id_t jobset_wait_all( js, exit_status, block_type )
 	 * for a pid that we don't have registered as belonging to a job.
 	 * Hmmm...what to do?
 	 */
- 	sqsh_set_error( SQSH_E_EXIST, "Received SIGCHLD for unknown pid!" );
- 	return -1;
+	sqsh_set_error( SQSH_E_EXIST, "Received SIGCHLD for unknown pid!" );
+	return -1;
 }
 
 /*
@@ -1013,7 +1002,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 	char              *pipe_ptr = NULL ; /* Location of | */
 	char              *cp;
 	/* sqsh-2.1.6 - New variables */
-	varbuf_t	  *exp_buf;
+	varbuf_t	*exp_buf;
 
 
 	/*
@@ -1030,7 +1019,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 	 */
 	cp = cmd_line;
 	while( (bg_ptr = sqsh_strchr( cp, '&' )) != NULL &&
-	       bg_ptr != cmd_line && *(bg_ptr - 1) == '>' )
+		bg_ptr != cmd_line && *(bg_ptr - 1) == '>' )
 		cp = bg_ptr + 1;
 	
 	/*
@@ -1072,11 +1061,10 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 			if( tmp_dir == NULL || *tmp_dir == '\0' )
 				tmp_dir = SQSH_TMP;
 			else /* sqsh-2.1.6 feature - Expand tmp_dir variable */
-		       	{
+			{
 				if ((exp_buf = varbuf_create( 512 )) == NULL)
 				{
-					sqsh_set_error( sqsh_get_error(),"varbuf: %s",
-							sqsh_get_errstr() );
+					sqsh_set_error( sqsh_get_error(), "varbuf: %s", sqsh_get_errstr() );
 					return False;
 				}
 				if (sqsh_expand( tmp_dir, exp_buf, 0 ) == False)
@@ -1086,9 +1074,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 			}
 
 			/*-- Create the defer file --*/
-			sprintf( defer_path, "%s/sqsh-dfr.%d-%d", 
-			         tmp_dir, (int) getpid(), job->job_id );
-
+			sprintf( defer_path, "%s/sqsh-dfr.%d-%d", tmp_dir, (int) getpid(), job->job_id );
 			varbuf_destroy( exp_buf ); /* sqsh-2.1.6 feature */
 			
 			/*-- Let the job structure know where it is --*/
@@ -1099,8 +1085,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 
 			/*-- Now, open the file --*/
 			if( (defer_fd = sqsh_open(defer_path,O_CREAT|O_WRONLY|O_TRUNC,0600)) == -1 ) {
-				sqsh_set_error( sqsh_get_error(), "Unable to open %s: %s", 
-				                defer_path, sqsh_get_errstr() );
+				sqsh_set_error( sqsh_get_error(), "Unable to open %s: %s", defer_path, sqsh_get_errstr() );
 				return False;
 			}
 
@@ -1109,9 +1094,8 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 			 * stdout and stderr.
 			 */
 			if( sqsh_dup2( defer_fd, fileno(stdout) ) == -1 ||
-			    sqsh_dup2( defer_fd, fileno(stderr) ) == -1 ) {
-				sqsh_set_error( sqsh_get_error(), "sqsh_dup2: %s",
-									 sqsh_get_errstr() );
+				sqsh_dup2( defer_fd, fileno(stderr) ) == -1 ) {
+				sqsh_set_error( sqsh_get_error(), "sqsh_dup2: %s", sqsh_get_errstr() );
 				sqsh_close( defer_fd );
 				return False;
 			}
@@ -1159,8 +1143,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 		if( (fd = sqsh_popen( pipe_ptr+1, "w", NULL, NULL )) == -1 )
 		{
 			env_set( g_internal_env, "?", "-255" );
-			sqsh_set_error(sqsh_get_error(), "sqsh_popen: %s",
-			               sqsh_get_errstr());
+			sqsh_set_error( sqsh_get_error(), "sqsh_popen: %s", sqsh_get_errstr());
 			return False;
 		}
 
@@ -1169,8 +1152,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 		 * created to our stdout.
 		 */
 		if( sqsh_dup2( fd, fileno(stdout) ) == -1 ) {
-			sqsh_set_error( sqsh_get_error(), "sqsh_dup2: %s",
-								 sqsh_get_errstr() );
+			sqsh_set_error( sqsh_get_error(), "sqsh_dup2: %s", sqsh_get_errstr() );
 			sqsh_close( fd );
 			return False;
 		}
@@ -1214,8 +1196,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 				 * the file descriptor to.
 				 */
 				if( sqsh_tok( NULL, &tok, tok_flags ) == False ) {
-					sqsh_set_error( sqsh_get_error(), "sqsh_tok: %s",
-					                sqsh_get_errstr() );
+					sqsh_set_error( sqsh_get_error(), "sqsh_tok: %s", sqsh_get_errstr() );
 					return False;
 				}
 
@@ -1238,9 +1219,9 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 					flag = O_WRONLY | O_CREAT | O_TRUNC;
 
 				/*-- Now, open the file --*/
-				if( (fd = sqsh_open( sqsh_tok_value(tok), flag, 0 )) == -1 ) {
-					sqsh_set_error( sqsh_get_error(), "Unable to open %s: %s",
-										 sqsh_tok_value(tok), sqsh_get_errstr() );
+				cp = sqsh_tok_value(tok);
+				if( (fd = sqsh_open( cp, flag, 0 )) == -1 ) {
+					sqsh_set_error( sqsh_get_error(), "Unable to open %s: %s", cp, sqsh_get_errstr() );
 					return False;
 				}
 
@@ -1249,8 +1230,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 				 * to the newly opened file and close the file.
 				 */
 				if( sqsh_dup2( fd, tok->tok_fd_left ) == -1 ) {
-					sqsh_set_error( sqsh_get_error(), "sqsh_dup2: %s",
-										 sqsh_get_errstr() );
+					sqsh_set_error( sqsh_get_error(), "sqsh_dup2: %s", sqsh_get_errstr() );
 					return False;
 				}
 				sqsh_close( fd );
@@ -1263,8 +1243,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 				 * in from.
 				 */
 				if( sqsh_tok( NULL, &tok, tok_flags ) == False ) {
-					sqsh_set_error( sqsh_get_error(), "sqsh_tok: %s",
-					                sqsh_get_errstr() );
+					sqsh_set_error( sqsh_get_error(), "sqsh_tok: %s", sqsh_get_errstr() );
 					return False;
 				}
 
@@ -1278,15 +1257,14 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 				}
 
 				/*-- Now, open the file --*/
-				if( (fd = sqsh_open( sqsh_tok_value(tok), O_RDONLY, 0 )) == -1 ) {
-					sqsh_set_error( sqsh_get_error(), "%s: %s", sqsh_tok_value(tok),
-										 sqsh_get_errstr() );
+				cp = sqsh_tok_value(tok);
+				if( (fd = sqsh_open( cp, O_RDONLY, 0 )) == -1 ) {
+					sqsh_set_error( sqsh_get_error(), "%s: %s", cp, sqsh_get_errstr() );
 					return False;
 				}
 
 				if( (sqsh_dup2( fd, fileno(stdin) )) == -1 ) {
-					sqsh_set_error( sqsh_get_error(), "%s: %s", sqsh_tok_value(tok),
-										 sqsh_get_errstr() );
+					sqsh_set_error( sqsh_get_error(), "%s: %s", cp, sqsh_get_errstr() );
 					return False;
 				}
 				sqsh_close( fd );
@@ -1298,8 +1276,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 				 * dirty work.
 				 */
 				if( sqsh_dup2( tok->tok_fd_right, tok->tok_fd_left ) == -1 ) {
-					sqsh_set_error( sqsh_get_error(), "sqsh_dup2: %s",
-										 sqsh_get_errstr() );
+					sqsh_set_error( sqsh_get_error(), "sqsh_dup2: %s", sqsh_get_errstr() );
 					return False;
 				}
 
@@ -1329,8 +1306,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 				{
 					if (args_add(job->job_args, sqsh_tok_value( tok )) == False)
 					{
-						sqsh_set_error( sqsh_get_error(), "args_add: %s",
-											 sqsh_get_errstr() );
+						sqsh_set_error( sqsh_get_error(), "args_add: %s", sqsh_get_errstr() );
 						return False;
 					}
 				}
@@ -1373,12 +1349,12 @@ static job_t* jobset_get( js, job_id )
 
 	/*-- Search for the job --*/
 	for( j = js->js_jobs[job_id % js->js_hsize];
-	     j != NULL && j->job_id != job_id; j = j->job_nxt );
+		j != NULL && j->job_id != job_id; j = j->job_nxt );
 
 	/*-- ESTUPID --*/
-  	if( j == NULL ) {
-  		sqsh_set_error( SQSH_E_EXIST, NULL );
-  		return NULL;
+	if( j == NULL ) {
+		sqsh_set_error( SQSH_E_EXIST, NULL );
+		return NULL;
 	}
 
 	return j;
@@ -1479,14 +1455,14 @@ static int jobset_global_init()
 		 */
 		if( sg_cmd_buf == NULL ) {
 			if( (sg_cmd_buf = varbuf_create( 128 )) == NULL ) {
-				sqsh_set_error( sqsh_get_error(),"varbuf: %s",sqsh_get_errstr() );
+				sqsh_set_error( sqsh_get_error(), "varbuf: %s", sqsh_get_errstr() );
 				return False;
 			}
 		}
 
 		if( sg_alias_buf == NULL ) {
 			if( (sg_alias_buf = varbuf_create( 128 )) == NULL ) {
-				sqsh_set_error( sqsh_get_error(),"varbuf: %s",sqsh_get_errstr() );
+				sqsh_set_error( sqsh_get_error(), "varbuf: %s", sqsh_get_errstr() );
 				return False;
 			}
 		}
@@ -1495,7 +1471,7 @@ static int jobset_global_init()
 		{
 			if ((sg_while_buf = varbuf_create( 128 )) == NULL)
 			{
-				sqsh_set_error( sqsh_get_error(),"varbuf: %s",sqsh_get_errstr() );
+				sqsh_set_error( sqsh_get_error(), "varbuf: %s", sqsh_get_errstr() );
 				return False;
 			}
 		}

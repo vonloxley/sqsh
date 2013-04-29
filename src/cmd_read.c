@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_read.c,v 1.3 2004/11/04 14:44:54 mpeppler Exp $";
+static char RCS_Id[] = "$Id: cmd_read.c,v 1.4 2004/11/05 13:01:14 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -82,7 +82,7 @@ int cmd_read( argc, argv )
     }
 
     /*
-     * There should only be on more argument left on the command line,
+     * There should only be one more argument left on the command line,
      * so if there are more, or if an error was found above, then
      * print out a usage message.
      */
@@ -93,7 +93,7 @@ int cmd_read( argc, argv )
 
     var_name = argv[sqsh_optind];
 
-    if (hide_output == True)
+    if ( hide_output == True && isatty(fileno(stdin)) )
     {
         r = sqsh_getinput( "", input, sizeof(input), 0  );
         if (r < 0)
@@ -107,46 +107,10 @@ int cmd_read( argc, argv )
     }
     else
     {
-		/* If stdin is a tty then simply read from stdin.
-		   If stdin is NOT a tty (e.g. redirected via < )
-		   then open the tty for reading, and then close it again.
-		*/
-        if(sqsh_stdin_isatty()) {
-            if (fgets( input, sizeof(input), stdin ) == NULL)
-            {
-                fprintf( stderr, "\\read: %s\n", strerror(errno) );
-                return CMD_FAIL;
-            }
-        } else {
-	    char *tty_name;
-	    FILE *fin;
-
-	    tty_name = ctermid(NULL);
-	    if (tty_name == NULL) {
-		sqsh_set_error( SQSH_E_EXIST, 
-				"cmd_read: Unable to determine controlling tty" );
-		return CMD_FAIL;
-	    }
-	    
-	    fin = fopen("/dev/tty", "r");
-	    if (!fin) {
-                fprintf( stderr, "\\read: %s\n", strerror(errno) );
-                return CMD_FAIL;
-	    }
-            if (fgets( input, sizeof(input), fin ) == NULL)
-            {
-                fprintf( stderr, "\\read: %s\n", strerror(errno) );
-		fclose(fin);
-                return CMD_FAIL;
-            }
-	    fclose(fin);
-        }
-
-        str = strchr( input, '\n' );
-
-        if (str != NULL)
+        if (fgets( input, sizeof(input), stdin ) == NULL)
         {
-            str = '\0';
+            fprintf( stderr, "\\read: %s\n", strerror(errno) );
+            return CMD_FAIL;
         }
     }
 
