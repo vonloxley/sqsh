@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.7 2013/04/18 11:54:43 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.8 2013/04/29 15:48:33 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -60,7 +60,7 @@ static int DynColnameLoad         _ANSI_ARGS(( char* )) ;
 /*
  * sqsh-2.2.0 - Function prototypes for new feature readline_histignore.
  */
-static int re_match               _ANSI_ARGS(( char*, char* )) ;
+static int regex_match               _ANSI_ARGS(( char*, char* )) ;
 
 /*
  * If GNU Readline support is compiled in, this data structure is
@@ -281,7 +281,7 @@ char* sqsh_readline( prompt )
              * the readline history if it matches the provided regular expression or
              * equals one of the colon separated list of keywords.
              * if $readline_histignore starts with RE: then it is considered a regular
-             * expression that is evaluated with function re_match.
+             * expression that is evaluated with function regex_match.
              * Rationale is to filter out the 'go', 'lo', 'mo', quit, etc.
              * statements from the readline history.
             */
@@ -309,7 +309,7 @@ char* sqsh_readline( prompt )
                      * if the string starts with RE:
                     */
                     cp = cp + 3;
-                    if (re_match (cp, line) == 0)
+                    if (regex_match (cp, line) == 0)
                         match = True;
                 }
                 else
@@ -1322,7 +1322,7 @@ static int DynColnameLoad (objname)
 
 
 /*
- * sqsh-2.2.0 - Function re_match.
+ * sqsh-2.2.0 - Function regex_match.
  *
  * Match string against the extended regular expression in
  * pattern, treating errors as no match.
@@ -1330,7 +1330,7 @@ static int DynColnameLoad (objname)
  * Return 0 for match, not 0 for no match.
 */
 static int
-re_match (char *pattern, char *string)
+regex_match (char *pattern, char *string)
 {
     regex_t  re;
     int      status;
