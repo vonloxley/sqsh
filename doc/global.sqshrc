@@ -1,4 +1,4 @@
-# $Id: global.sqshrc,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $
+# $Id: global.sqshrc,v 1.1.1.1 2004/04/07 12:35:01 chunkm0nkey Exp $
 #
 # sqshrc - Global sqshrc initialization file. This file is
 #          installed as part of sqsh to act as a global
@@ -9,8 +9,12 @@
 # $semicolon_hack : This turns on the ability to use a semicolon as
 #             a sort of in-line go.  It is kind of hacky but seems
 #             to work pretty well.
+# $semicolon_hack2: This turns on the ability to use multiple
+#             semicolons as command and batch terminator on one line
+#             of input
 #
 \set semicolon_hack=on
+\set semicolon_hack2=off
 
 #
 # $prompt :   The value of this variable is expanded each time the
@@ -51,6 +55,7 @@
 # you can do "\alias \go='\go !* | more'".
 # 
 \alias mo='\go !* | more'
+\alias lo='\go !* -w1024 | less -S'
 
 #
 # The following alias's create a more 'isql-like' environment.

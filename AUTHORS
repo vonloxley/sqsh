@@ -1,6 +1,6 @@
-$Id: AUTHORS,v 1.3 2012/05/02 11:12:26 mwesdorp Exp $
+$Id: AUTHORS,v 1.4 2013/02/25 11:04:50 mwesdorp Exp $
 
-Sqsh was written by Scott C. Gray. Scott did all the work through
+Sqsh was originally written by Scott C. Gray. Scott did all the work through
 release 2.1.
 
 Sqsh is currently maintained by Michael Peppler (mpeppler@peppler.org) 
@@ -8,6 +8,7 @@ with the principal aim to keep sqsh's features and behavior in sync with
 Sybase's capabilities as new features are added to ASE.
 
 Sqsh is also maintained by Martin Wesdorp (mwesdorp@users.sourceforge.net)
-Releases 2.1.6, 2.1.7, 2.1.8 and 2.1.9 includes a lot of code contributed
+Releases 2.1.6 up to 2.2.0 includes a lot of code contributed and bug fixes
 by Martin like color prompts, better kerberos support, better timeout handling,
-etc.
+etc. For each of these versions there is a CHANGE description in the doc
+directory available.

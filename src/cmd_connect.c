@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.28 2013/04/18 11:54:43 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.29 2013/04/25 14:09:47 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -508,7 +508,7 @@ int cmd_connect( argc, argv )
          * If we don't have a password to use (i.e. the $password isn't set
          * or -P was not supplied), then ask the user for one.
          */
-        if (g_password_set == False)
+	else if (g_password_set == False)
         {
             len = sqsh_getinput( "Password: ", passbuf, sizeof(passbuf), 0);
 

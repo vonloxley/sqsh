@@ -4,7 +4,7 @@
 <head>
 <title>sqsh</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<link rev="made" href="mailto:rurban@x-ray.at" />
+<link rev="made" href="mailto:root@localhost" />
 </head>
 
 <body style="background-color: white">
@@ -127,7 +127,7 @@
 <p>
 </p>
 <h1><a name="name">NAME</a></h1>
-<p>sqsh - Interactive database shell (version 2.1.9)</p>
+<p>sqsh - Interactive database shell (version 2.2.0)</p>
 <p>
 </p>
 <hr />
@@ -383,7 +383,7 @@ application name can be retrieved from the server using the column
 may also be turned on via the <strong>$statistics</strong> variable, or by supplying the <strong>-p</strong>
 flag to the <strong>\go</strong> command.</p>
 </dd>
-<dt><strong><a name="p_password" class="item">-P [password]</a></strong></dt>
+<dt><strong><a name="p_password" class="item">-P [password | -]</a></strong></dt>
 
 <dd>
 <p>The Sybase <em>password</em> for <em>username</em> required to connect to <em>server</em>
@@ -1237,11 +1237,11 @@ when invoked.</p>
 
 <dd>
 <p>Expands to positional arguments to the function. ${0} is the name of the
-function being invoked, ${1} is the first argument, ${2} the second and so-on,
-up to argument <em>N</em>. Note that, unlike most shells, sqsh requires that function
-arguments be referred to using the special curly brace syntax (${1}, rather than
-$1). The reason for this is that $1 is a valid MONEY value and using the curly
-braces gets rid of this ambiguity.</p>
+function or the script file being invoked, ${1} is the first argument,
+${2} the second and so-on, up to argument <em>N</em>. Note that, unlike most shells,
+sqsh requires that function arguments be referred to using the special curly
+brace syntax (${1}, rather than $1). The reason for this is that $1 is a valid
+MONEY value and using the curly braces gets rid of this ambiguity.</p>
 </dd>
 <dt><strong><a name="_" class="item">$?</a></strong></dt>
 
@@ -1676,7 +1676,7 @@ not change between subsequent executions.</p>
 </dd>
 </dl>
 </dd>
-<dt><strong><a name="bcp_bcp_options_table" class="item">\bcp [bcp_options] table</a></strong></dt>
+<dt><strong><a name="bcp_bcp_options_table_slicenumber_partition_name" class="item">\bcp [bcp_options] table[:slicenumber|:partition name]</a></strong></dt>
 
 <dd>
 <p>The <strong>\bcp</strong> commands acts as a sort of enhanced <strong>\go</strong> command that redirects
@@ -1757,6 +1757,12 @@ being supplied within the result set.</p>
 <p>The name of the Sybase <em>server</em> to connect, this defaults to <strong>$DSQUERY</strong> if not
 supplied.</p>
 </dd>
+<dt><strong><a name="t" class="item">-T</a></strong></dt>
+
+<dd>
+<p>Transfer the data in transit without performing character set conversion
+at the client side.</p>
+</dd>
 <dt><strong><a name="u_user2" class="item">-U user</a></strong></dt>
 
 <dd>
@@ -1774,14 +1780,17 @@ client-side encryption.</p>
 <dd>
 <p>Specifies the language setting to use.</p>
 </dd>
-<dt><strong><a name="table" class="item">table</a></strong></dt>
+<dt><strong><a name="table_slicenumber_partition_name" class="item">table[:slicenumber|:partition name]</a></strong></dt>
 
 <dd>
 <p>As with regular <strong>bcp</strong>, <em>table</em> may be either a fully or partially specified
 table name in the destination server. Note that since a new database connection
 is established during the bcp processes that the database context of the
 connection may not be the same as the current context, so it is usually safest
-to fully specify the table name in the form database.owner.table.</p>
+to fully specify the table name in the form database.owner.table.
+For partitioned tables you may supply a slicenumber or a partition name
+(separate table name and partition with a colon (:)) to bcp the data into the
+specified partition.</p>
 </dd>
 </dl>
 </dd>
@@ -2181,14 +2190,15 @@ as return value to the shell upon exit of <em>sqsh</em>. (0 &lt;= x &lt;= 255).<
 <p>Causes all nested read-eval-print loops to abort processing, causing <em>sqsh</em> to
 exit with an exit value of 254 (see section <strong>EXIT STATUS</strong>).</p>
 </dd>
-<dt><strong><a name="read_a_n_h_var_name" class="item">\read [-a] [-n] [-h] var_name</a></strong></dt>
+<dt><strong><a name="read_a_n_h_var_name_filename" class="item">\read [-a] [-n] [-h] var_name [&lt; filename]</a></strong></dt>
 
 <dd>
 <p>Reads a line of input from the user, placing the text of the line in the
 variable <em>var_name</em>. If the <strong>-n</strong> is used, then the trailing new-line is left
 on the line of text, and if <strong>-a</strong> is supplied, then the text of the line is
 appended to the existing value of <em>var_name</em>. The <strong>-h</strong> flag turns off echoing
-of typed characters back to the user.</p>
+of typed characters back to the user. It is also possible to read the contents
+of a file using the <em>\&lt;</em> file redirection notation.</p>
 </dd>
 <dt><strong><a name="sleep_seconds" class="item">\sleep seconds</a></strong></dt>
 
@@ -2229,11 +2239,10 @@ variable.</p>
 
 <dd>
 <p>Locks the current session until the correct password is typed. By default
-<strong>\lock</strong> attempts to use the UNIX password (from /etc/passwd) associated with
-the user running <em>sqsh</em>, however if the <strong>$lock</strong> variable is set then the
-contents of that is used for validation instead.</p>
-<p>Note, on systems using Shadow Passwords (in which even the encrypted password is
-unavailable), <strong>\lock</strong> will only work using the <strong>$lock</strong> variable.</p>
+<strong>\lock</strong> attempts to use the UNIX password (from /etc/passwd or /etc/shadow)
+associated with the user running <em>sqsh</em> (if sqsh is linked with the crypt
+library), however if the <strong>$lock</strong> variable is set then the contents of that is
+used for validation instead.</p>
 </dd>
 </dl>
 <p>
@@ -2320,7 +2329,22 @@ it will not be interpreted. This includes multiple quotes. For example:</p>
     1&gt; select &quot;This is a multiple line
     2&gt; quote; it is smart!&quot; ;</pre>
 <p>In the above example, only the second semicolon (the one at the end of the line)
-will be interpreted.</p>
+will be interpreted.
+The variable <strong>$semicolon_cmd</strong> is a string that contains the command that will
+be substituted by the semicolon which is <strong>\go</strong> by default. But you can change
+that to <strong>\bcp</strong> for example and execute:</p>
+<pre>
+    1&gt; select * from pubs2..titles; -S... tempdb..titles</pre>
+<p>In sqsh-2.2.0 you can also set variable <strong>$semicolon_hack2</strong> to allow multiple
+commands on one line to be fired by a semicolon. If this option is set you
+cannot use the construct above to pass additional parameters to the <strong>\go</strong>
+command. But of course you can change <strong>$semicolon_cmd</strong> to your needs as this
+command will be used to execute SQL batches.</p>
+<pre>
+    echo &quot;exec sp_who;exec sp_helpdb;\echo Done;&quot; | sqsh -S... -U... -P...</pre>
+<p>In this example the semicolon acts as a <strong>\go</strong> command to a SQL buffer and as
+a command separator for sqsh commands that will be executed in sequence.
+Note that <strong>$semicolon_hack2</strong> takes precedence over <strong>$semicolon_hack</strong>.</p>
 <p>
 </p>
 <hr />
@@ -2754,8 +2778,25 @@ Monday as the first day of the first week.</p>
 be used to control the amount of debugging output displayed. <strong>$debug</strong> may be
 set to a pipe (|) delimited (logical OR) set of the following words to turn on
 various pieces of debugging: <strong>ALIAS</strong>, <strong>AVL</strong>, <strong>BCP</strong>, <strong>DISPLAY</strong>, <strong>ENV</strong>,
-<strong>ERROR</strong>, <strong>EXPAND</strong>, <strong>FD</strong>, <strong>JOB</strong>, <strong>READLINE</strong> (abbr. <strong>RL</strong>), <strong>RPC</strong>,
-<strong>SCREEN</strong>, <strong>SIG</strong>, <strong>SIGCHLD</strong> (or <strong>SIGCLD</strong>) or <strong>ALL</strong>.</p>
+<strong>ERROR</strong>, <strong>EXPAND</strong>, <strong>FD</strong>, <strong>HISTORY</strong> (abbr. <strong>HIST</strong>), <strong>JOB</strong>,
+<strong>READLINE</strong> (abbr. <strong>RL</strong>), <strong>RPC</strong>, <strong>SCREEN</strong>, <strong>SIG</strong>, <strong>SIGCHLD</strong> (or <strong>SIGCLD</strong>),
+<strong>TDS</strong> or <strong>ALL</strong>. Can also be set through the <em>-l</em> startup option.</p>
+</dd>
+<dt><strong><a name="debug_tds_capture" class="item">debug_tds_capture (string)</a></strong></dt>
+
+<dd>
+<p>When <strong>TDS</strong> debugging is enabled and this variable is defined with a valid file
+name, a debugging trace will be logged into this file that can be analyzed with
+Ribo. You might need the devlib versions of the OpenClient library to link with
+sqsh to be able to use this option. See for more information the ct_debug
+function in the Sybase SDK documentation.</p>
+</dd>
+<dt><strong><a name="debug_tds_logdata" class="item">debug_tds_logdata (string)</a></strong></dt>
+
+<dd>
+<p>When <strong>TDS</strong> debugging is enabled and this variable is defined with a valid
+filename, a debugging log will be written by OpenClient with all possible
+debugging info (CS_DBG_ALL). See also option above.</p>
 </dd>
 <dt><strong><a name="defer_bg" class="item">defer_bg (boolean)</a></strong></dt>
 
@@ -2863,6 +2904,16 @@ it defaults to something like /usr/local/lib/sqsh/help.</p>
 greater than 0, then the history will be automatically saved to <strong>$history</strong>
 after <strong>$hist_auto_save</strong> modifications of the history buffers. When the value is
 0 (default), then no automatic history save will be performed.</p>
+</dd>
+<dt><strong><a name="histmerge" class="item">histmerge (boolean)</a></strong></dt>
+
+<dd>
+<p>When this option is on, sqsh will merge the contents of the history on disk
+with the history in memory before writing the history back to disk. This is
+to prevent data loss in the history file when other sqsh sessions have also
+written to the same history file on disk. This option is off by default which
+will just overwrite the existing history file when you exit sqsh or the
+history is being automatically saved because of <strong>$hist_auto_save</strong> being set.</p>
 </dd>
 <dt><strong><a name="histnum" class="item">histnum (int)</a></strong></dt>
 
@@ -3085,7 +3136,7 @@ The following messages will be displayed and sqsh exits with value 255 when the
 <p>Controls the maximum amount of data that will be displayed (in any display mode)
 in a single column. This setting will automatically truncate the output of
 particularly large data types (such as TEXT) to the value supplied. The default
-setting is 8192 bytes (8KB).</p>
+setting is 32768 bytes (32KB).</p>
 </dd>
 <dt><strong><a name="newline_go" class="item">newline_go (boolean)</a></strong></dt>
 
@@ -3159,6 +3210,23 @@ line option.</p>
 setting is /usr/local/etc/sqshrc (unless overridden by the --prefix option when
 sqsh was compiled) followed by <em>$HOME/.sqshrc</em>).</p>
 </dd>
+<dt><strong><a name="readline_histignore" class="item">readline_histignore (string)</a></strong></dt>
+
+<dd>
+<p>If readline support has been compiled into <em>sqsh</em>, you can control which
+commands or statements on the command line will be filtered from the readline
+history file specified by <strong>$readline_history</strong>. It is a colon (:) separated
+string or a string containing a regular expression that is identified by &quot;RE:&quot;.
+For example:</p>
+<pre>
+  \set readline_histignore='go:lo:mo:exit:quit:vi:!!:GO'
+  or
+  \set readline_histignore='&quot;RE:^[glm]o$|^cd |^exit$|^quit$|^vi$&quot;'</pre>
+<p>The regular expression in the second example starts with <em>RE:</em> and it is
+recommended to supply the string between quotes and double quotes to prevent
+expansion and display problems due to the pipe characters. The regular
+expression is evaluated case insensitive.</p>
+</dd>
 <dt><strong><a name="readline_history" class="item">readline_history (string)</a></strong></dt>
 
 <dd>
@@ -3224,7 +3292,13 @@ defaults to the string '<strong>\go</strong>'.</p>
 <dd>
 <p>Toggles on the ability to use a ';' as an in-line command terminator. This
 feature is not recommended and is only in here because enough users complained.
-See section <strong>COMMANDS, In-Line Go</strong>.</p>
+See section <strong>COMMANDS, In-Line \go</strong>.</p>
+</dd>
+<dt><strong><a name="semicolon_hack2" class="item">semicolon_hack2 (boolean)</a></strong></dt>
+
+<dd>
+<p>Toggles on the ability to use multiple ';' as an in-line command terminator.
+See section <strong>COMMANDS, In-Line \go</strong>.</p>
 </dd>
 <dt><strong><a name="session" class="item">session (string)</a></strong></dt>
 
@@ -3244,7 +3318,7 @@ variables.</p>
 <dd>
 <p>Setting <strong>$statistics</strong> to 1 causes timing statistics to be displayed upon the
 successful execution of every batch of SQL. This variable may also be set via
-the <strong>-t</strong> command line flag, or by supplying <strong>-t</strong> to the <strong>\go</strong> command.
+the <strong>-p</strong> command line flag, or by supplying <strong>-p</strong> to the <strong>\go</strong> command.
 <strong>$statistics</strong> defaults to 0.</p>
 </dd>
 <dt><strong><a name="style" class="item">style (string)</a></strong></dt>

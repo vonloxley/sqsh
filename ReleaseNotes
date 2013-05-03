@@ -1,14 +1,10 @@
-$Id: ReleaseNotes,v 1.6 2009/08/09 15:47:50 mpeppler Exp $
+$Id: ReleaseNotes,v 1.7 2012/05/02 11:35:26 mwesdorp Exp $
 
 Release Notes
 
-sqsh 2.1.8
+sqsh 2.x.y
 
-Please read doc/CHANGES-2.1.8 for a detailed list of changes in this release.
-
-sqsh 2.1.7
-
-Please read doc/CHANGES-2.1.7 for a detailed list of changes in this release.
+Please read doc/CHANGES-2.x.y for a detailed list of changes in this release.
 
 sqsh 2.1.6
 

@@ -33,7 +33,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_history.c,v 1.8 2013/04/18 11:54:43 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_history.c,v 1.9 2013/04/25 14:09:47 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -516,7 +516,7 @@ int history_save( h, save_file )
 {
     hisbuf_t   *hb ;
     FILE       *fptr ;
-    int        saved_mask;
+    mode_t      saved_mask;
     char       *histmerge;
     history_t  *x;
 
@@ -545,7 +545,7 @@ int history_save( h, save_file )
 
     /*-- Open the file to save to --*/
     /* fix for 1105398 */
-    saved_mask = umask(0066);
+    saved_mask = umask( (mode_t) 0066);
     if( (fptr = fopen( save_file, "w" )) == NULL ) {
         sqsh_set_error( errno, "%s: %s", save_file, strerror( errno ) ) ;
         umask(saved_mask);
