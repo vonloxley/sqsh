@@ -1,0 +1,524 @@
+                             What is new or fixed in version sqsh-2.2.0
+
+
+                               New features, enhancements, bug fixes:
+
+1 - Feature      - You can now define a variable $readline_histignore with a colon separated
+                   list of keywords, or a regular expression, that readline should ignore and
+                   not store in the readline history list/file. So if you define for example:
+
+    \set readline_histignore='go:lo:mo:exit:quit:vi:!!:GO'
+                   or
+    \set readline_histignore='"RE:^[glm]o$|^cd |^exit$|^quit$|^vi$"'
+
+                   then these words, when typed on a line by itself, will not be stored in the
+                   readline history list and cannot by retrieved with ^P, ^N or cursor up, cursor
+                   down keys (in emacs mode, k and j in vi mode). This will reduce the number
+                   of key strokes to type when you want to retrieve a previous entered command
+                   line. Also the last word of the previous command line will be available
+                   under the Meta-_ key in readline. So when you type:
+
+    1> select count(*) from master..sysdatabases
+    2> go
+
+                   You only have to type arrow up, or ^P only once to retrieve the previous
+                   select statement again, otherwise the "go" command would be displayed
+                   first. Second, the Meta-_ key would contain the string master..sysdatabases
+                   so you do not have to completely retype the table name. Otherwise the meta
+                   character would contain the keyword "go".
+
+    1> select name from <Meta-_>
+
+                   would be sufficient to get:
+
+    1> select name from master..sysdatabases
+
+                   By default the variable $readline_histignore is NULL and all words typed
+                   on input will be stored in the readline history. (Depending on
+                   $readline_histsize which is 100 by default). Note that when you want to use
+                   a regular expression, the string must begin with RE: and the string must be
+                   embedded in single quotes and double quotes to prevent early expansion
+                   of the string during variable assignment and printing problems if you
+                   \echo $readline_histignore because of the pipe characters. The regular
+                   expression is evaluated case insensitive, so uppercase GO would also
+                   be ignored. See the GNU regex manual for more information on regular
+                   expressions.
+
+
+
+2 - Feature      - The \bcp command accepts a slicenumber or a partition name to bcp into
+                   if the table is partitioned. For example, if you have a semantically list
+                   partitioned table on year and a partition name py2013 exists:
+
+    $> sqsh -SPROD -Uadmin_prod -PadminPRDpwd -Dproddb
+    PROD.admin_prod.proddb.1> select * from material where year=2013
+    PROD.admin_prod.proddb.2> \bcp -SDTA -Uadmin_dta -PadminDTApwd
+                              -i"truncate table tstdb..material py2013" tstdb..material:py2013
+
+                   Or when you have a round robin partitioned table and you want to
+                   load data into partition slice number 2:
+
+    PROD.admin_prod.proddb.1> select * from cust
+    PROD.admin_prod.proddb.2> \bcp -SDTA -Uadmin_dta -PadminDTApwd tstdb..cust:2
+
+                   There is also a new option to the \bcp command, -T, that will disable
+                   character set conversion by the client when data transfer from source
+                   to target is in progress. When you receive character set conversion
+                   errors, you might try this transit option to solve these errors. Otherwise
+                   you might set the sqsh and/or \bcp charset parameter identical to the
+                   character set of the database server(s), using the -J parameter.
+                   As an example sqsh is started using the utf8 character set and connects to
+                   an iso_1 database server:
+
+    [mwesdorp@localhost ~]$ sqsh -SJUPITER -Jutf8
+    JUPITER.sa.master.1> cd pubs2
+    JUPITER.sa.pubs2.1> select * into tempdb..titles from titles where 1=2;
+    (0 rows affected)
+    JUPITER.sa.pubs2.1> select * from titles
+    JUPITER.sa.pubs2.2> \bcp tempdb..titles
+    Msg 4847, Level 16, State 1
+    Server 'JUPITER', Line 1
+    BCP insert operation is disabled when data size is changing between client and server character sets.
+    Please use BCP's -Y option to invoke client-side conversion.
+
+    Command has been aborted.
+
+    Open Client Message
+    Layer 1, Origin 3, Severity 0, Number 14
+    blk_init(): blk layer: CT library error: Failed when CT_Lib routine ct_results() called.
+    \bcp: Unable to initialize bulk copy on table 'tempdb..titles'
+    Open Client Message
+    Layer 1, Origin 1, Severity 1, Number 155
+    ct_send_data(): user api layer: external error:
+    This routine cannot be called when the command structure is idle.
+
+
+    JUPITER.sa.pubs2.2> \bcp -T tempdb..titles
+
+    Starting copy...
+    Batch successfully bulk-copied to SQL Server
+
+    18 rows copied.
+    Clock Time (sec.): Total = 0.0183  Avg = 0.0010 (983.98 rows per sec.)
+
+                   The first BCP operations fails, while the second BCP operation using the -T
+                   option succeeds. The data is just passed on in transit without any
+                   character set conversion necessary as both the source and target servers use
+                   the same character set.
+
+
+
+3 - Feature      - Implementation of semicolon_hack2 to allow for multiple semicolons on one
+                   line of input. The semicolons will be used as command separator and act as
+                   a \go command for regular SQL statements. So now you can do for example:
+
+    echo "cd master;select name from sysdatabases;select name from syslogins;\echo Done;" | \
+    sqsh -SDTA -Lsemicolon_hack2=On
+
+                   When you have both semicolon_hack and semicolon_hack2 enabled, the second
+                   one will take precedence. When hack2 is enabled, semicolon_hack may be
+                   disabled. Semicolon_hack2 will also use $semicolon_cmd to be executed
+                   when a SQL buffer is available for processing.
+                   Note that the 'cd' command in this example will execute a use database
+                   command. The function is available in the sqshrc-2.2.0 example file in the
+                   doc directory.
+
+
+4 - Feature      - When saving the history buffers, first a merge will be performed with
+                   the existing history file if variable histmerge=On, to prevent the loss of
+                   history buffers saved by another sqsh session. It happened to me too many
+                   times that I had one sqsh session open to do some real work and another
+                   session to monitor server status with sp_who, sp_lock, sp_showplan, etc.
+                   When I then quit the first session followed by quitting the second session,
+                   I then would end up with only a bunch of sp_who, sp_lock statements in
+                   my history file as the second sqsh session would have completely overwritten
+                   the history file again.
+                   As usual this new feature is off by default, so you have to explicitly
+                   enable it by specifying \set histmerge=On or set it in in the .sqshrc file.
+                   It is also recommended to use histunique=On when you enable histmerge.
+
+                   Note that this can also lead to strange side effects if you have the
+                   hist_auto_save option on and another user is logged in with the same
+                   Unix/Linux account and is also using sqsh. This is often the case when multiple
+                   DBA's ssh into the same sybase account on the database server hostmachine.
+                   If your session automatically saves the history buffers after a configured
+                   number of changes, then your history may all of a sudden contains the
+                   SQL executed by your colleagues as well, as the history of both sessions will
+                   be merged eventually. But after all, basically the same might happen with the
+                   bash history file in that kind of situation.
+
+
+
+5 - Feature      - You can create a TDS trace file and a protocol log file that can be translated
+                   with Ribo. When sqsh is build with DEBUG enabled in the Makefile and you enable
+                   debugging for TDS with the -lTDS startup flag or execute \set debug=TDS followed
+                   by a \reconnect , and the variables debug_tds_logdata and/or debug_tds_capture
+                   are set to specify a filename, then CT-library will write extensive logging
+                   information.
+                   The TDS capture file can be translated with Ribo. To be able to create
+                   debug_tds_logdata, sqsh must dynamically link to the Sybase devlib libraries
+                   (Add $SYBASE/$SYBASE_OCS/devlib in front of $LD_LIBRARY_PATH),
+                   or have been statically linked with these libraries.
+                   Note, this option is for administrators who wants to debug Client-Server
+                   communication. See Sybase documentation on ct_debug for more information.
+                   This features makes use of the ct_debug call that is available from
+                   OpenClient and SDK version 12.5.1.
+
+
+
+6 - Enhancement  - The \connect (and also \reconnect) command installs a SIGINT signal handler
+                   in sqsh-2.2.0. This will prevent memory faults and core dumps when you type
+                   ^C during \connect or \reconnect.
+                   Also when typing ^C during \reconnect will properly return to the original
+                   session. This is handy when the server you are trying to connect to does not
+                   respond in a timely manner and you do not want to wait for a login timeout.
+
+
+
+7 - Enhancement  - The use of the $datetime variable is improved in a number of locations
+                   to strip of [] which is used as a filter to hide %S (seconds) when
+                   smalldatetime datatypes are used in result set processing. Also %u for
+                   milliseconds will be replaced by "000" were appropriate. A minor bug is fixed
+                   in the display routine using the $datetime variable if %u was used. The
+                   final result skipped the first character after %u in the format definition.
+
+
+
+8 - Enhancement  - New debug choices added for HISTORY (or HIST for short) and TDS.
+                   When debugging the ENV subsystem, the printed messages of variable names
+                   is improved as it sometimes printed a whole line of a script that contained
+                   a variable and that variable was being expanded. In order to use debugging
+                   you have to uncomment DEF_DEBUG in the Makefile and start sqsh using the
+                   -l parameter or set the $debug variable.
+
+
+
+9 - Enhancement  - Hide password processing is improved during sqsh startup. First, the whole
+                   argument list is searched for -P parameters and only the last one will be used.
+                   In previous versions each -P parameter resulted in the startup of a child
+                   process that wrote to a pipe and the parent process re-executed itself in order
+                   to read from the pipe and hide it's parameter list from the OS process list.
+                   Normally speaking you would only supply the -P parameter once, but in theory
+                   you can supply the -P parameter many times on the command line, but only
+                   the last one will count.
+                   Now only one child process is created (fork) that writes the password to
+                   a pipe and the parent process will now wait for the child to finish with a
+                   call to waitpid() before it continues to re-execute itself and read from the
+                   pipe. This will prevent <defunct> child processes that were not properly
+                   administered as finished by the parent process in previous versions of sqsh.
+
+
+
+10 - Bug fix     - When you exit from sqsh, sqsh will now perform a normal disconnect from the
+                   server you are connected to, and only if that fails it uses a CS_FORCE_CLOSE
+                   call to ct_close. The same is true for ct_exit which will use a CS_FORCE_EXIT
+                   only if a normal ct_exit fails. By doing this, sqsh will properly notify the
+                   server that it is disconnecting, by sending a LOGOUT TDS token.
+                   Previous versions only performed a CS_FORCE_CLOSE disconnect, which resulted
+                   in not sending a LOGOUT token. I noticed with previous sqsh versions for example,
+                   that SAP Sybase IQ 15.4 prints error messages in the server logfile when a
+                   session disconnects using the CS_FORCE_CLOSE flag to the ct_close call.
+
+
+
+11 - Bug fix     - The \reconnect command will also save the context prior to - and restore
+                   the context after a \reconnect failure, as it already did with the connection
+                   information. In previous sqsh versions the context was left in an undefined
+                   state when a \reconnect to a server failed and the original connection was
+                   restored.  That left the connection basically useless and you had to quit sqsh
+                   altogether in that situation. Now you can successfully go on with the original
+                   session.
+
+
+
+12 - Bug fix     - Fixed an encryption bug with the \lock command. The \lock command is used to
+                   lock the current sqsh session. Normally speaking a user who is using sqsh in
+                   a xterm in a X-Windows environment, would lock the screen to disable
+                   unauthorized access when the user stepped away from the computer. But when
+                   you start sqsh from a console, you can use the \lock command just to do that.
+                   You can assign a password to the variable $lock, that must be typed to
+                   unlock a sqsh session that was locked. But you can also use the UNIX password
+                   from the login if sqsh was linked with the -lcrypt library.
+                   The \lock command will then use the password from /etc/password or
+                   /etc/shadow. However, the method to encrypt the typed password to be able to
+                   compare it with the stored password was in error. As a consequence the
+                   encrypted passwords never matched and thus the session could never be unlocked
+                   and it could only be killed.
+                   Note that /etc/password and/or /etc/shadow need to be readable by sqsh in
+                   order to read the encrypted password.
+
+
+
+13 - Bug fix     - Sqsh stores all its variables in a global environment (g_env) that is basically
+                   a kind of hash table. In some situations sqsh can start a transactional save-point
+                   on this global environment, which means that all changes can be logged and
+                   depending on results can be committed or rolled back. So changes to the variable
+                   list can be an addition of a new variable, deletion of an existing variable or a
+                   modification of the value of a variable. When a variable is queried then sqsh first
+                   searches its global environment, and if the variable does not exist there, then
+                   it goes to the OS environment to try to obtain the variable from there.
+                   When you start sqsh and do not specify a servername with the -S parameter then
+                   sqsh will try to obtain the contents of the DSQUERY variable. As this variable does
+                   not initially exist in the global environment, it is obtained from the OS
+                   environment.
+                   When you then tried to \reconnect to another server using \reconnect -S<newserver>
+                   then sqsh would create a new global environment variable named DSQUERY within a
+                   g_env transaction. When the connection attempt failed, the transaction would be
+                   rolled back and the DSQUERY variable should be deleted from the internal
+                   environment, so that subsequent DSQUERY searches would go to the OS environment
+                   again. However, due to some missing code, the addition of a new variable to g_env
+                   was not logged and thus not deleted during the roll back.
+                   When the connection attempt failed, then the global DSQUERY variable still
+                   contained the name <newserver>. Subsequent DSQUERY lookups would result
+                   in <newserver> instead of the contents of the OS environment variable DSQUERY.
+                   This would then specify the wrong servername in your prompt for example.
+
+                   When adding new variables during an active save-point, the variable will
+                   now be added to the internal log and when the save-point is rolled-back,
+                   the variable will now be properly deleted.
+                   In sqsh-2.2.0 a number of variables that were initially missing in the global
+                   environment are defined there now from the start. This diminishes the probability
+                   of strange behavior when sqsh looks up a variable and find it accidentally in the
+                   OS environment. These variables are:
+
+                     autouse, debug_tds_logdata, debug_tds_capture, histmerge, readline_histignore,
+                     script, semicolon_hack2, tds_version.
+
+
+
+14 - Bug fix     - When sqsh was started with the -i parameter to specify a script file,
+                   the filename was stored in the ${0} global internal environment, but was
+                   never retrieved from there when expanding ${0}. Instead, expanding ${0}
+                   resulted in retrieving the name of the sqsh program name from another internal
+                   program structure. This is fixed now so that ${0} inside a script file will
+                   correctly expand to the script file name or to the function name when sqsh
+                   is executing a named function.
+
+
+
+15 - Bug fix     - Usage message of \do is improved.
+                   Usage message of \hist-load is fixed.
+                   Usage message of \hist-save is fixed.
+
+
+
+16 - Bug fix     - Using the \read command to assign a value to a variable by redirecting from
+                   an input file from the sqshrc or session file was broken. This is now fixed.
+                   The corresponding Sourceforge bug report is 1392951.
+                   You can now use the following construct in a session (or sqshrc) file:
+
+    \if [ ( "$DSQUERY" = "NEPTUNE" -o "$DSQUERY" = "JUPITER" ) -a "$username" = "sa" ]
+        \read password < $HOME/.sqsh/sa_universe.pwd
+    \fi
+                   So you can connect with: sqsh -SNEPTUNE -Usa for example and the connect
+                   procedure will execute the session file and set the correct password from
+                   the file.
+                   Note that you must supply the full pathname to the input file, otherwise
+                   sqsh would try to locate the file in the current directory. That brings me to
+                   the next fix in this area: When sqsh was unable to open the file because it
+                   does not exist, then sqsh would output: "sqsh: No error".
+                   That had to do with the fact that a call to a function to set the error message
+                   also used another function call to produce the filename, and that call intervened
+                   with the error administration by setting the error code back to zero and thus
+                   the \read command was not able to produce the correct error string anymore. Do
+                   still follow me? Well, nevertheless, that is also fixed now and correct error
+                   messages will be produced with redirected files (both > and <). For example,
+                   suppose we want to write to an existing file in /tmp but we do not have
+                   permissions to write to that file:
+
+    [101] JUPITER.sa.tempdb.1> sp_who
+    [101] JUPITER.sa.tempdb.2> go > /tmp/file_owned_by_root
+    sqsh: Unable to open /tmp/file_owned_by_root: sqsh_open: Permission denied
+
+                   Older sqsh versions would produce the "sqsh: No error" message.
+
+
+17 - Code fix    - Solved a couple of compiler warnings that were generated when using gcc -Wall.
+                   Most of them are regarding unused variables, type cast problems, uninitialized
+                   variables, etc. See below for a description of the changes per source file.
+
+
+
+                              All modified source files in release 2.2.0
+
+sqsh-2.2.0/src/cmd_bcp.c
+    Implementation of feature 2 - Bcp into partitioned tables using a partition name or slice
+       number. New -T option to disable local character set conversion at the client and just transfer
+    the data in transit from source to target server.
+
+sqsh-2.2.0/src/cmd_buf.c
+    Code fix 17 - Solved a number of compiler warnings.
+  cmd_buf.c: In function ‘cmd_buf_show’:
+  cmd_buf.c:421: warning: field width should have type ‘int’, but argument 2 has type ‘long int’
+  cmd_buf.c:421: warning: field precision should have type ‘int’, but argument 3 has type ‘long int’
+  cmd_buf.c: In function ‘cmd_buf_edit’:
+  cmd_buf.c:548: warning: implicit declaration of function ‘sqsh_exit’
+  cmd_buf.c: At top level:
+
+sqsh-2.2.0/src/cmd_connect.c
+    Implementation of feature 5 and enhancement 6 - Implement a SIGINT signal handler and provide
+        for TDS debugging.
+
+sqsh-2.2.0/src/cmd_do.c
+    Implementation of bug fix 15 - Improve \do usage information. Also a regular ct_close is
+        performed before a CS_CLOSE_FORCE is attempted.
+
+sqsh-2.2.0/src/cmd_for.c
+    Code fix, removed unused variable exit_status.
+  cmd_for.c: In function ‘cmd_for’:
+  cmd_for.c:53: warning: unused variable ‘exit_status’
+
+sqsh-2.2.0/src/cmd_history.c
+    Improve display of datetime occurrences in history list (\h -i).
+    Improve usage information string on \hist-save and \hist-load.
+    Solved some compiler warnings:
+  cmd_history.c: In function ‘cmd_history’:
+  cmd_history.c:142: warning: field width should have type ‘int’, but argument 3 has type ‘long int’
+  cmd_history.c:142: warning: field precision should have type ‘int’, but argument 4 has type ‘long int’
+  cmd_history.c:145: warning: field width should have type ‘int’, but argument 2 has type ‘size_t’
+  cmd_history.c:145: warning: field width should have type ‘int’, but argument 4 has type ‘long int’
+  cmd_history.c:145: warning: field precision should have type ‘int’, but argument 5 has type ‘long int’
+  cmd_history.c: At top level:
+
+sqsh-2.2.0/src/cmd_if.c
+    Solved a compiler warning by removing variable 'ret':
+  cmd_if.c: In function ‘cmd_if_exec’:
+  cmd_if.c:183: warning: unused variable ‘ret’
+
+sqsh-2.2.0/src/cmd_input.c
+    Implementation of feature 3 - semicolon_hack2 to allow multiple semicolons on the same line
+        of input.
+
+sqsh-2.2.0/src/cmd_jobs.c
+    Solved a compiler warning regarding type casting.
+
+sqsh-2.2.0/src/cmd_lock.c
+    Implemented a fix for the \lock command when libcrypt is used to compare the password
+    just typed by the user with the stored password in /etc/password or /etc/shadow.
+
+sqsh-2.2.0/src/cmd_loop.c
+    Just a small code fix.
+
+sqsh-2.2.0/src/cmd_misc.c
+    Solved a couple of compiler warnings:
+  cmd_misc.c: In function ‘cmd_display’:
+  cmd_misc.c:94: warning: field width should have type ‘int’, but argument 4 has type ‘long int’
+  cmd_misc.c:94: warning: field precision should have type ‘int’, but argument 5 has type ‘long int’
+  cmd_misc.c: At top level:
+
+sqsh-2.2.0/src/cmd_read.c
+    Implementation of bugfix 16. Assigning a value to a variable using the \read command and reading
+    from a file using redirection from file to stdin, for example:
+      \read variable <$HOME/.sqsh/varvalue
+
+sqsh-2.2.0/src/cmd_reconnect.c
+    Save context beside connection info and restore the context in case of connection failure
+      to the original context. This will leave the existing connection available.
+
+sqsh-2.2.0/src/cmd_reset.c
+    Solved a compiler warning. See also sqsh_readline.h.
+  cmd_reset.c: In function ‘cmd_clear’:
+  cmd_reset.c:54: warning: implicit declaration of function ‘_rl_clear_screen’
+  cmd_reset.c: At top level:
+
+sqsh-2.2.0/src/dsp_conv.c
+    Solved a compiler warning and a minor bugfix when displaying %u formatted data in
+    datetime datatypes for milliseconds.
+  dsp_conv.c: In function ‘dsp_datetime_len’:
+  dsp_conv.c:357: warning: too many arguments for format
+  dsp_conv.c: At top level:
+
+sqsh-2.2.0/src/dsp_desc.c
+    Solved two compiler warnings.
+  dsp_desc.c: In function ‘dsp_desc_fetch’:
+  dsp_desc.c:501: warning: operation on ‘p’ may be undefined
+  dsp_desc.c: At top level:
+  dsp_desc.c:619: warning: ‘dsp_display_fmt’ defined but not used
+
+sqsh-2.2.0/src/dsp_x.c
+    Solved a couple of compiler warnings.
+  dsp_x.c: In function ‘dsp_x_init’:
+  dsp_x.c:295: warning: implicit declaration of function ‘sqsh_exit’
+  dsp_x.c:298: warning: implicit declaration of function ‘sqsh_expand’
+  dsp_x.c:273: warning: unused variable ‘orig_width’
+  dsp_x.c:272: warning: unused variable ‘text_width’
+  dsp_x.c:268: warning: unused variable ‘s_cancel’
+  dsp_x.c:254: warning: unused variable ‘i’
+  dsp_x.c: In function ‘dsp_x_input_cb’:
+  dsp_x.c:443: warning: unused variable ‘number’
+  dsp_x.c:442: warning: unused variable ‘cp’
+  dsp_x.c:438: warning: unused variable ‘len’
+  dsp_x.c: At top level:
+
+sqsh-2.2.0/src/sqsh_config.h
+    Changed version name to sqsh-2.2.0
+
+sqsh-2.2.0/src/sqsh_debug.c
+    Added a new function to test if a debug level is enabled or not.
+
+sqsh-2.2.0/src/sqsh_debug.h
+    Defined debugging levels HISTORY and TDS
+
+sqsh-2.2.0/src/sqsh_env.c
+    Bug fix 13 implementation. Newly created variables will also be logged
+    when a save-point is defined. These variables will then be deleted when
+    the save-point is rolled back. Improved debugging information.
+
+sqsh-2.2.0/src/sqsh_env.h
+    Remove unused function declarations.
+
+sqsh-2.2.0/src/sqsh_expand.c
+    When variable ${?} is expanded it will be retrieved from the correct
+    global internal environment.
+
+sqsh-2.2.0/src/sqsh_history.c
+    Implementation of feature 4 regarding the histmerge option.
+      Also fixed some compiler warnings.
+  sqsh_history.c: In function ‘history_save’:
+  sqsh_history.c:525: warning: implicit declaration of function ‘umask’
+  sqsh_history.c: In function ‘hist_auto_save’:
+  sqsh_history.c:891: warning: implicit declaration of function ‘sqsh_expand’
+  sqsh_history.c: At top level:
+
+sqsh-2.2.0/src/sqsh_init.c
+    Predefine the keyword_refresh global internal variable to improve variable
+    lookup.
+    Use a normal ct_close and ct_exit before attempting a FORCE close or exit.
+    With cleanup during exit also destroy the global internal variable environment.
+
+sqsh-2.2.0/src/sqsh_job.c
+    Fixed a problem with error messages generated in conjunction with the use of
+    redirected file names (<file or >file). See bugfix 16.
+    Fixed a compiler warning by adding an additional include file:
+  sqsh_job.c: In function ‘jobset_run’:
+  sqsh_job.c:437: warning: implicit declaration of function ‘sqsh_exit’
+  sqsh_job.c: At top level:
+
+sqsh-2.2.0/src/sqsh_main.c
+    Improved password handling in -P option. Store script name when using -i
+      in the appropriate place for later retrieval.
+
+  sqsh_main.c: In function ‘main’:
+  sqsh_main.c:526: warning: suggest parentheses around assignment used as truth value
+  sqsh_main.c:866: warning: control reaches end of non-void function
+  sqsh_main.c: At top level:
+
+sqsh-2.2.0/src/sqsh_readline.c
+    Implementation of feature 1 to use variable $readline_histignore to specify a number
+    of keywords that should not be added to the readline history.
+    Furthermore solved a couple of compiler warnings regarding typecasts in toupper and
+    tolower functions.
+  sqsh_readline.c: In function ‘sqsh_readline_init’:
+  sqsh_readline.c:129: warning: implicit declaration of function ‘sqsh_exit’
+  sqsh_readline.c: At top level:
+
+sqsh-2.2.0/src/sqsh_readline.h
+    Function _rl_clear_screen declared.
+
+sqsh-2.2.0/src/var_debug.c
+    Added HISTORY (short HIST) and TDS as new debugging areas which can be specified
+    with -l or assigned to the $debug variable. Note that sqsh must be build with
+    DEBUG enabled in the src/Makefile.
+
+sqsh-2.2.0/src/var.h
+    Added new and missing variables to the global general environment. (g_env).
