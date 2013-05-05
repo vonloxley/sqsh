@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "sqsh 1"
-.TH sqsh 1 "2013-05-03" "2.2.0" "sqsh-2.2.0"
+.TH sqsh 1 "2013-05-05" "2.2.0" "sqsh-2.2.0"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -1471,14 +1471,20 @@ Given the size and complexity of sqsh (just look at the length of this man
 page), it is amazing how few database manipulation commands that there actually
 are. The following are commands that affect or use the current database
 connection:
-.IP "\econnect [\-c] [\-D db] [\-S srv] [\-U user] [\-P pass] [\-I ifile] [\-K keytab] [\-R server_principal] [\-n] [\-N appname] [\-Q query_timeout] [\-T login_timeout] [\-V [bcdimoqru]] [\-X] [\-Z [secmech|default|none]]" 4
-.IX Item "connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-Z [secmech|default|none]]"
+.IP "\econnect [\-A packet size] [\-c] [\-D db] [\-G tds version} [\-S srv] [\-U user] [\-P pass] [\-I ifile] [\-J charset] [\-K keytab] [\-R server_principal] [\-n] [\-N appname] [\-Q query_timeout] [\-T login_timeout] [\-V [bcdimoqru]] [\-X] [\-z language] [\-Z [secmech|default|none]]" 4
+.IX Item "connect [-A packet size] [-c] [-D db] [-G tds version} [-S srv] [-U user] [-P pass] [-I ifile] [-J charset] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-z language] [-Z [secmech|default|none]]"
 This command is used primarily for internal use to establish a connection to a
 database. If a connection is already established it has no effect, however if a
 connection has not been established and \fB\f(CB$password\fB\fR has not been supplied, then
 the password is requested and a connection is established. \fB\econnect\fR accepts
 the following parameters:
 .RS 4
+.IP "\-A" 4
+.IX Item "-A"
+Specifies the size of the network \s-1TDS\s0 packets used to communicate with the \s-1SQL\s0
+server. This value must be between 512 and 8192, and be a multiple of 512. Check
+your \s-1SQL\s0 Server configuration to determine supported packet sizes. This value
+may also be specified at run-time using the \f(CW$packet_size\fR variable.
 .IP "\-c" 4
 .IX Item "-c"
 By default, the \fB\econnect\fR command uses the contents of \fB\f(CB$database\fB\fR to
@@ -1493,6 +1499,10 @@ Causes \fB\econnect\fR to attempt to automatically switch the database context t
 .Sp
 Using this flag is identical to setting the \fB\f(CB$database\fB\fR variable prior to
 establishing the connection.
+.IP "\-G tds version" 4
+.IX Item "-G tds version"
+Set the \s-1TDS\s0 version to use. See the global startup parameter \-G for more
+information on \s-1TDS\s0 version.
 .IP "\-S srv" 4
 .IX Item "-S srv"
 The name of the Sybase \fIserver\fR to connect, this defaults to \fB\f(CB$DSQUERY\fB\fR if not
@@ -1508,6 +1518,9 @@ The \fIpassword\fR for \fIuser\fR required to connect to \fIserver\fR. This defa
 .IP "\-I ifile" 4
 .IX Item "-I ifile"
 The full path of an alternate Sybase \fIinterfaces\fR file to use.
+.IP "\-J charset" 4
+.IX Item "-J charset"
+The name of the client character set to communicate with the server.
 .IP "\-K keytab_file" 4
 .IX Item "-K keytab_file"
 Used for \s-1DCE\s0 user authentication.
@@ -1540,6 +1553,11 @@ encryption (if supported). If either \s-1SQL\s0 Server does not recognize this o
 or if the version of CT-Lib used to compile \fIsqsh\fR does not support this
 option, then it will be ignored. This option may also be set using the
 \&\fB\f(CB$encryption\fB\fR environment variable.
+.IP "\-z language" 4
+.IX Item "-z language"
+Specifies an alternate language to display sqsh prompts and messages. Without
+the \-z flag, the server's default language will be used. This may also be set
+using the \f(CW$language\fR variable.
 .IP "\-Z [secmech|default|none]" 4
 .IX Item "-Z [secmech|default|none]"
 Specifies the security mechanism to use for user authentication. For example
@@ -1547,8 +1565,8 @@ csfkrb5 for Kerberos support.
 .RE
 .RS 4
 .RE
-.IP "\ereconnect [\-c] [\-D db] [\-S srv] [\-U user] [\-P pass] [\-I ifile] [\-K keytab] [\-R server_principal] [\-n] [\-N appname] [\-Q query_timeout] [\-T login_timeout] [\-V [bcdimoqru]] [\-X] [\-Z [secmech|default|noe]]" 4
-.IX Item "reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-Z [secmech|default|noe]]"
+.IP "\ereconnect [\-A packet size] [\-c] [\-D db] [\-G tds version} [\-S srv] [\-U user] [\-P pass] [\-I ifile] [\-J charset] [\-K keytab] [\-R server_principal] [\-n] [\-N appname] [\-Q query_timeout] [\-T login_timeout] [\-V [bcdimoqru]] [\-X] [\-z language] [\-Z [secmech|default|none]]" 4
+.IX Item "reconnect [-A packet size] [-c] [-D db] [-G tds version} [-S srv] [-U user] [-P pass] [-I ifile] [-J charset] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-z language] [-Z [secmech|default|none]]"
 The \fB\ereconnect\fR command may be used to force a reconnection to the database
 using a new username, server name, or password (if desired). If this command
 fails, the current connection remains (if there is any), however if it succeeds

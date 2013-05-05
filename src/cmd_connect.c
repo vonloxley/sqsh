@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.29 2013/04/25 14:09:47 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.30 2013/05/03 11:19:38 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -151,8 +151,6 @@ int cmd_connect( argc, argv )
     char      *password ;
     char      *server ;
     char      *interfaces ;
-    char      *colsep ;
-    char      *width ;
     char      *packet_size ;
     char      *autouse ;
     char      *session ;
@@ -190,9 +188,12 @@ int cmd_connect( argc, argv )
     CS_INT    SybTimeOut;
     CS_BOOL   NetAuthRequired;
     varbuf_t  *exp_buf = NULL;
-    /* sqsh-2.2.0 - New variables */
+
+    /* sqsh-2.2.0 - New variables for TDS debugging with ct_debug() */
+#if defined (DEBUG) && defined (CS_SET_DBG_FILE) && defined (CS_SET_PROTOCOL_FILE)
     char      *debug_tds_logdata;
     char      *debug_tds_capture;
+#endif
 
 #if defined(CTLIB_SIGPOLL_BUG) && defined(F_SETOWN)
     int       ctlib_fd;
@@ -227,11 +228,19 @@ int cmd_connect( argc, argv )
     /*
      * Parse the command line options.
      * sqsh-2.1.6 - New options added and case evaluation neatly ordered.
+     * sqsh-2.2.0 - -J option added. -I requires an optarg.
      */
-    while ((c = sqsh_getopt( argc, argv, "cD:I;K:n:N:P;Q:R:S:T:U:V;XZ;" )) != EOF)
+    while ((c = sqsh_getopt( argc, argv, "A:cD:G:I:J:K:n:N:P;Q:R:S:T:U:V;XZ;z:" )) != EOF)
     {
         switch( c )
         {
+            case 'A' : /* sqsh-2.2.0 - Option added */
+                if (env_put( g_env, "packet_size", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -A: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break;
             case 'c' :
                 preserve_context = False ;
                 break ;
@@ -242,10 +251,24 @@ int cmd_connect( argc, argv )
                     have_error = True;
                 }
                 break;
+            case 'G' : /* sqsh-2.2.0 - Option added */
+                if (env_put( g_env, "tds_version", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -G: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break;
             case 'I' :
                 if (env_put( g_env, "interfaces", sqsh_optarg, ENV_F_TRAN ) == False)
                 {
                     fprintf( stderr, "\\connect: -I: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
+            case 'J' : /* sqsh-2.2.0 - Option added */
+                if (env_put( g_env, "charset", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -J: %s\n", sqsh_get_errstr() );
                     have_error = True;
                 }
                 break ;
@@ -335,6 +358,13 @@ int cmd_connect( argc, argv )
                     have_error = True;
                 }
                 break ;
+            case 'z' : /* sqsh-2.2.0 - Option added */
+                if (env_put( g_env, "language", sqsh_optarg, ENV_F_TRAN ) == False)
+                {
+                    fprintf( stderr, "\\connect: -z: %s\n", sqsh_get_errstr() );
+                    have_error = True;
+                }
+                break ;
             case 'Z' : /* sqsh-2.1.6 */
                 if (sqsh_optarg == NULL || *sqsh_optarg == '\0')
                     return_code = env_put( g_env, "secmech", "default", ENV_F_TRAN);
@@ -355,17 +385,17 @@ int cmd_connect( argc, argv )
     }
 
     /*
-     * If there are any options left on the end of the line, then
-     * we have an error.
+     * If there are any options left on the end of the line, then we have an error.
      * sqsh-2.1.6 - New options added to the list.
+     * sqsh-2.2.0 - -J charset added to the list.
      */
     if( have_error || sqsh_optind != argc )
     {
         fprintf( stderr,
-            "Use: \\connect [-c] [-I interfaces] [-U username] [-P pwd] [-S server]\n"
-            "               [-D database ] [-N appname] [-n {on|off}] [-Q query_timeout]\n"
-            "               [-T login_timeout] [-K keytab_file] [-R principal]\n"
-            "               [-V [bcdimoqru]] [-X] [-Z [secmech|default|none]]\n"
+            "Use: \\connect [-A packet size] [-c] [-I interfaces] [-U username] [-P pwd] [-S server]\n"
+            "       [-D database ] [-G tds version] [-J charset] [-N appname] [-n {on|off}]\n"
+            "       [-Q query_timeout] [-T login_timeout] [-K keytab_file] [-R principal]\n"
+            "       [-V [bcdimoqru]] [-X] [-z language] [-Z [secmech|default|none]]\n"
         ) ;
 
         env_rollback( g_env );
@@ -381,8 +411,6 @@ int cmd_connect( argc, argv )
     env_get( g_env, "username", &username ) ;
     env_get( g_env, "DSQUERY",  &server ) ;
     env_get( g_env, "interfaces", &interfaces ) ;
-    env_get( g_env, "width", &width ) ;
-    env_get( g_env, "colsep", &colsep ) ;
     env_get( g_env, "packet_size", &packet_size ) ;
     env_get( g_env, "autouse", &autouse ) ;
     env_get( g_env, "database", &database ) ;
@@ -988,12 +1016,13 @@ int cmd_connect( argc, argv )
                                CS_SET_DBG_FILE,       /* Action */
                                CS_UNUSED,             /* Flag */
                                cp,                    /* Buffer value */
-                               strlen(cp)             /* Buffer length */
+                               CS_NULLTERM            /* String '\0' terminated */
                              ) != CS_SUCCEED)
                     fprintf (stderr, "\\connect: ct_debug - Unable to set CS_SET_DBG_FILE to %s\n", cp);
                 else
                 {
                     fprintf (stdout, "\\connect: ct_debug - Successfully set CS_SET_DBG_FILE to %s\n", cp);
+
                     if (ct_debug ( g_context,         /* Context */
                                    g_connection,      /* Connection */
                                    CS_SET_FLAG,       /* Action */
@@ -1027,7 +1056,7 @@ int cmd_connect( argc, argv )
                                CS_SET_PROTOCOL_FILE,  /* Action */
                                CS_UNUSED,             /* Flag */
                                cp,                    /* Buffer value */
-                               strlen(cp)             /* Buffer length */
+                               CS_NULLTERM            /* String '\0' terminated */
                              ) != CS_SUCCEED)
                     fprintf (stderr, "\\connect: ct_debug - Unable to set CS_SET_PROTOCOL_FILE to %s\n", cp);
                 else

@@ -339,6 +339,20 @@
 
 
 
+18 - Enhancement - Last minute change: Added "-J charset", "-A packet_size", "-G tds_version",
+                   and "-z language" options to the \connect and \reconnect commands. You can
+                   now do "\reconnect -Jutf8" to change the client charset from the default
+                   to utf8 without totally stopping and starting sqsh with the -J parameter, for
+                   example.
+
+
+This new version of sqsh has been compiled, linked and tested on Linux Ubuntu 10.04 LTS 32 bit,
+CentOs 5.9 and 6.4 64 bit, Cygwin on Windows 7, Solaris 10 x86_64 32 and 64 bit and AIX 5.3L 64
+bits with Sybase OpenClient 15.7, 15.5, 15.0, 12.5.4 and 12.5.1 and freetds 0.83 and 0.91.
+I hope you will enjoy this new version of sqsh as much as I liked developing it.
+Cheers, Martin W.
+
+
                               All modified source files in release 2.2.0
 
 sqsh-2.2.0/src/cmd_bcp.c
@@ -357,7 +371,8 @@ sqsh-2.2.0/src/cmd_buf.c
 
 sqsh-2.2.0/src/cmd_connect.c
     Implementation of feature 5 and enhancement 6 - Implement a SIGINT signal handler and provide
-        for TDS debugging.
+        for TDS debugging. Enhancement 18, added -J, -A, -G and -z options to the \connect and
+        \reconnect commands.
 
 sqsh-2.2.0/src/cmd_do.c
     Implementation of bug fix 15 - Improve \do usage information. Also a regular ct_close is

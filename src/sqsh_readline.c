@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.8 2013/04/29 15:48:33 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.9 2013/05/03 13:02:46 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -60,7 +60,7 @@ static int DynColnameLoad         _ANSI_ARGS(( char* )) ;
 /*
  * sqsh-2.2.0 - Function prototypes for new feature readline_histignore.
  */
-static int regex_match               _ANSI_ARGS(( char*, char* )) ;
+static int regex_match            _ANSI_ARGS(( char*, char* )) ;
 
 /*
  * If GNU Readline support is compiled in, this data structure is
@@ -1329,8 +1329,9 @@ static int DynColnameLoad (objname)
  *
  * Return 0 for match, not 0 for no match.
 */
-static int
-regex_match (char *pattern, char *string)
+static int regex_match (pattern, string)
+    char *pattern;
+    char *string;
 {
     regex_t  re;
     int      status;

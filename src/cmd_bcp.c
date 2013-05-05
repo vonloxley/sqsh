@@ -40,7 +40,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.15 2013/04/04 10:52:35 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.16 2013/04/26 09:16:34 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -192,8 +192,10 @@ int cmd_bcp( argc, argv )
     int               batchsize     = -1;   /* Copy all rows in one batch */
     int               have_error    = False;
     CS_BOOL           have_identity = CS_FALSE;
-    CS_BOOL           char_convert  = CS_FALSE;
+#if defined (CS_NOCHARSETCNV_REQD) && defined (BLK_CONV)
+    CS_BOOL           char_convert  = CS_FALSE; /* Used with -T option (transit) */
     CS_BOOL           transit       = CS_FALSE; /* Disable client character conversion */
+#endif
 
     /*
      * sqsh-2.1.9 - Feature BCP execute an initialization command
@@ -270,7 +272,12 @@ int cmd_bcp( argc, argv )
                 break;
 
             case 'T' :
+#if defined (CS_NOCHARSETCNV_REQD) && defined (BLK_CONV)
                 transit = CS_TRUE;
+#else
+                    fprintf(stderr, "\\bcp: -T: Transit option is not supported by bulkcopy library\n");
+                    fprintf(stderr, "\\bcp: -T: Parameter will be ignored\n");
+#endif
                 break;
 
             case 'U' :
@@ -616,10 +623,10 @@ int cmd_bcp( argc, argv )
 #endif
     }
 
-#if defined (CS_NOCHARSETCNV_REQD)
+#if defined (CS_NOCHARSETCNV_REQD) && defined (BLK_CONV)
     /*
-     * sqsh-2.2.0 - Disable character set conversion on client
-     * when in transit (-T option)
+     * sqsh-2.2.0 - Disable character set conversion by client
+     * when in transit bulk transfer is requested (-T option)
      */
     if (transit == CS_TRUE)
     {
@@ -812,10 +819,10 @@ int cmd_bcp( argc, argv )
         }
     }
 
-#if defined (BLK_CONV)
+#if defined (CS_NOCHARSETCNV_REQD) && defined (BLK_CONV)
     /*
-     * sqsh-2.2.0 - Disable character set conversion on client
-     * when in transit (-T option)
+     * sqsh-2.2.0 - Disable character set conversion by client
+     * when in transit bulk transfer is requested (-T option)
      */
     if (transit == CS_TRUE)
     {

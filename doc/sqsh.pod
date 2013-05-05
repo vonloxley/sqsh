@@ -1368,7 +1368,7 @@ connection:
 
 =over 4
 
-=item \connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-Z [secmech|default|none]]
+=item \connect [-A packet size] [-c] [-D db] [-G tds version} [-S srv] [-U user] [-P pass] [-I ifile] [-J charset] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-z language] [-Z [secmech|default|none]]
 
 This command is used primarily for internal use to establish a connection to a
 database. If a connection is already established it has no effect, however if a
@@ -1377,6 +1377,13 @@ the password is requested and a connection is established. B<\connect> accepts
 the following parameters:
 
 =over 4
+
+=item -A
+
+Specifies the size of the network TDS packets used to communicate with the SQL
+server. This value must be between 512 and 8192, and be a multiple of 512. Check
+your SQL Server configuration to determine supported packet sizes. This value
+may also be specified at run-time using the $packet_size variable.
 
 =item -c
 
@@ -1393,6 +1400,11 @@ I<db> after establishing the connection.
 
 Using this flag is identical to setting the B<$database> variable prior to
 establishing the connection.
+
+=item -G tds version
+
+Set the TDS version to use. See the global startup parameter -G for more
+information on TDS version.
 
 =item -S srv
 
@@ -1412,6 +1424,10 @@ B<$password> if not supplied.
 =item -I ifile
 
 The full path of an alternate Sybase I<interfaces> file to use.
+
+=item -J charset
+
+The name of the client character set to communicate with the server.
 
 =item -K keytab_file
 
@@ -1453,6 +1469,12 @@ or if the version of CT-Lib used to compile I<sqsh> does not support this
 option, then it will be ignored. This option may also be set using the
 B<$encryption> environment variable.
 
+=item -z language
+
+Specifies an alternate language to display sqsh prompts and messages. Without
+the -z flag, the server's default language will be used. This may also be set
+using the $language variable.
+
 =item -Z [secmech|default|none]
 
 Specifies the security mechanism to use for user authentication. For example
@@ -1460,7 +1482,7 @@ csfkrb5 for Kerberos support.
 
 =back
 
-=item \reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-Z [secmech|default|noe]]
+=item \reconnect [-A packet size] [-c] [-D db] [-G tds version} [-S srv] [-U user] [-P pass] [-I ifile] [-J charset] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-z language] [-Z [secmech|default|none]]
 
 The B<\reconnect> command may be used to force a reconnection to the database
 using a new username, server name, or password (if desired). If this command

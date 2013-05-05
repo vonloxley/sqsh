@@ -1453,7 +1453,7 @@ page), it is amazing how few database manipulation commands that there actually
 are. The following are commands that affect or use the current database
 connection:</p>
 <dl>
-<dt><strong><a name="connect_c_d_db_s_srv_u_user_p_pass_i_ifile_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_bcdimoqru_x_z_secmech_default_none" class="item">\connect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-Z [secmech|default|none]]</a></strong></dt>
+<dt><strong><a name="connect_a_packet_size_c_d_db_g_tds_version_s_srv_u_user_p_pass_i_ifile_j_charset_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_bcdimoqru_x_z_language_z_secmech_default_none" class="item">\connect [-A packet size] [-c] [-D db] [-G tds version} [-S srv] [-U user] [-P pass] [-I ifile] [-J charset] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-z language] [-Z [secmech|default|none]]</a></strong></dt>
 
 <dd>
 <p>This command is used primarily for internal use to establish a connection to a
@@ -1462,6 +1462,14 @@ connection has not been established and <strong>$password</strong> has not been 
 the password is requested and a connection is established. <strong>\connect</strong> accepts
 the following parameters:</p>
 <dl>
+<dt><strong><a name="a" class="item">-A</a></strong></dt>
+
+<dd>
+<p>Specifies the size of the network TDS packets used to communicate with the SQL
+server. This value must be between 512 and 8192, and be a multiple of 512. Check
+your SQL Server configuration to determine supported packet sizes. This value
+may also be specified at run-time using the $packet_size variable.</p>
+</dd>
 <dt><strong><a name="c" class="item">-c</a></strong></dt>
 
 <dd>
@@ -1478,6 +1486,12 @@ default database context of login is used instead.</p>
 <em>db</em> after establishing the connection.</p>
 <p>Using this flag is identical to setting the <strong>$database</strong> variable prior to
 establishing the connection.</p>
+</dd>
+<dt><strong><a name="g_tds_version2" class="item">-G tds version</a></strong></dt>
+
+<dd>
+<p>Set the TDS version to use. See the global startup parameter -G for more
+information on TDS version.</p>
 </dd>
 <dt><strong><a name="s_srv" class="item">-S srv</a></strong></dt>
 
@@ -1501,6 +1515,11 @@ variable if not supplied.</p>
 
 <dd>
 <p>The full path of an alternate Sybase <em>interfaces</em> file to use.</p>
+</dd>
+<dt><strong><a name="j_charset2" class="item">-J charset</a></strong></dt>
+
+<dd>
+<p>The name of the client character set to communicate with the server.</p>
 </dd>
 <dt><strong><a name="k_keytab_file2" class="item">-K keytab_file</a></strong></dt>
 
@@ -1549,6 +1568,13 @@ or if the version of CT-Lib used to compile <em>sqsh</em> does not support this
 option, then it will be ignored. This option may also be set using the
 <strong>$encryption</strong> environment variable.</p>
 </dd>
+<dt><strong><a name="z_language2" class="item">-z language</a></strong></dt>
+
+<dd>
+<p>Specifies an alternate language to display sqsh prompts and messages. Without
+the -z flag, the server's default language will be used. This may also be set
+using the $language variable.</p>
+</dd>
 <dt><strong><a name="z_secmech_default_none3" class="item">-Z [secmech|default|none]</a></strong></dt>
 
 <dd>
@@ -1557,7 +1583,7 @@ csfkrb5 for Kerberos support.</p>
 </dd>
 </dl>
 </dd>
-<dt><strong><a name="reconnect_c_d_db_s_srv_u_user_p_pass_i_ifile_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_bcdimoqru_x_z_secmech_default_noe" class="item">\reconnect [-c] [-D db] [-S srv] [-U user] [-P pass] [-I ifile] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-Z [secmech|default|noe]]</a></strong></dt>
+<dt><strong><a name="reconnect_a_packet_size_c_d_db_g_tds_version_s_srv_u_user_p_pass_i_ifile_j_charset_k_keytab_r_server_principal_n_n_appname_q_query_timeout_t_login_timeout_v_bcdimoqru_x_z_language_z_secmech_default_none" class="item">\reconnect [-A packet size] [-c] [-D db] [-G tds version} [-S srv] [-U user] [-P pass] [-I ifile] [-J charset] [-K keytab] [-R server_principal] [-n] [-N appname] [-Q query_timeout] [-T login_timeout] [-V [bcdimoqru]] [-X] [-z language] [-Z [secmech|default|none]]</a></strong></dt>
 
 <dd>
 <p>The <strong>\reconnect</strong> command may be used to force a reconnection to the database
@@ -1724,7 +1750,7 @@ if you need to truncate the target table first. For example:</p>
 <dd>
 <p>The full path of an alternate Sybase <em>interfaces</em> file to use.</p>
 </dd>
-<dt><strong><a name="j_charset2" class="item">-J charset</a></strong></dt>
+<dt><strong><a name="j_charset3" class="item">-J charset</a></strong></dt>
 
 <dd>
 <p>Specifies the default <em>charset</em> used to communicate with the SQL Server. This
@@ -1775,7 +1801,7 @@ variable if not supplied.</p>
 <p>Causes password negotiation with the destination server to be performed using
 client-side encryption.</p>
 </dd>
-<dt><strong><a name="z_language2" class="item">-z language</a></strong></dt>
+<dt><strong><a name="z_language3" class="item">-z language</a></strong></dt>
 
 <dd>
 <p>Specifies the language setting to use.</p>
