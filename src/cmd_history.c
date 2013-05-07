@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_history.c,v 1.6 2013/04/04 10:52:35 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: cmd_history.c,v 1.7 2013/04/18 11:54:43 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -220,13 +220,13 @@ int cmd_hist_load( argc, argv )
 
 		if (exp_buf == NULL)
 		{
-			fprintf( stderr, "sqsh_exit: %s\n", sqsh_get_errstr() );
+			fprintf( stderr, "\\hist-load: %s\n", sqsh_get_errstr() );
 		}
 		else
 		{
 			if (sqsh_expand( history, exp_buf, 0 ) == False)
 			{
-				fprintf( stderr, "sqsh_exit: Error expanding $history: %s\n",
+				fprintf( stderr, "\\hist-load: Error expanding $history: %s\n",
 					sqsh_get_errstr() );
 			}
 			else
@@ -286,13 +286,13 @@ int cmd_hist_save( argc, argv )
 
 		if (exp_buf == NULL)
 		{
-			fprintf( stderr, "sqsh_exit: %s\n", sqsh_get_errstr() );
+			fprintf( stderr, "\\hist-save: %s\n", sqsh_get_errstr() );
 		}
 		else
 		{
 			if (sqsh_expand( history, exp_buf, 0 ) == False)
 			{
-				fprintf( stderr, "sqsh_exit: Error expanding $history: %s\n",
+				fprintf( stderr, "\\hist-save: Error expanding $history: %s\n",
 					sqsh_get_errstr() );
 			}
 			else

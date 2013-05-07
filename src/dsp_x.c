@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_x.c,v 1.6 2010/02/08 13:25:48 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_x.c,v 1.7 2013/04/04 10:52:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -273,7 +273,7 @@ static int dsp_x_init( fd, width, height )
 	char        *argv[1];
 	char        *cp;
 	char        *xwin_title = NULL;
-	varbuf_t    *exp_buf;
+	varbuf_t    *exp_buf    = NULL;
 
 	/*
 	 * At this point we are in the child process, the rest is pretty
@@ -417,7 +417,8 @@ static int dsp_x_init( fd, width, height )
  		      NULL);
 	XtMainLoop();
 
-	varbuf_destroy( exp_buf );
+	if (exp_buf != NULL)
+		varbuf_destroy( exp_buf );
 	exit(0);
 }
 
@@ -519,7 +520,7 @@ static int dsp_x_init( fd, width, height )
    int          argc;
    char        *argv[1];
    char        *xwin_title = NULL;
-   varbuf_t    *exp_buf;
+   varbuf_t    *exp_buf    = NULL;
 
    XFontStruct  *font = NULL; /* Font for text widget */
 
@@ -635,7 +636,8 @@ static int dsp_x_init( fd, width, height )
 	XtRealizeWidget( w_top );
 	XtMainLoop();
 
-	varbuf_destroy( exp_buf );
+	if (exp_buf != NULL)
+		varbuf_destroy( exp_buf );
 	exit(0);
 }
 

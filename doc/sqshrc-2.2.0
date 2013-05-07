@@ -27,11 +27,9 @@
 \set keyword_file='$HOME/.sqsh/sqsh_words'
 \set keyword_query="\\
   select name from sysobjects \\
-  where type in ('U','V','P','S') \\
-  union \\
+  where type in ('U','V','P','S') at isolation 0 \\
   select name from sybsystemprocs..sysobjects \\
-  where type='P' \\
-  order by name"
+  where type='P' at isolation 0"
 \set login_timeout=60
 
 #

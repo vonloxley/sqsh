@@ -44,7 +44,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_init.c,v 1.4 2013/04/04 10:52:36 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_init.c,v 1.5 2013/04/25 14:09:47 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -79,7 +79,6 @@ int sqsh_init()
 	 */
 	if( (g_sqlbuf = varbuf_create( 1024 )) == NULL ) {
 		sqsh_set_error( sqsh_get_error(), "varbuf_create: %s", sqsh_get_errstr());
-		varbuf_destroy( g_sqlbuf ) ;
 		return False ;
 	}
 

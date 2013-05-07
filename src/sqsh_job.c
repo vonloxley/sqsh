@@ -44,7 +44,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_job.c,v 1.6 2013/04/04 10:52:36 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_job.c,v 1.7 2013/04/29 15:48:33 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -1002,7 +1002,7 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 	char              *pipe_ptr = NULL ; /* Location of | */
 	char              *cp;
 	/* sqsh-2.1.6 - New variables */
-	varbuf_t	*exp_buf;
+	varbuf_t	  *exp_buf  = NULL ;
 
 
 	/*
@@ -1075,7 +1075,8 @@ static int jobset_parse( js, job, cmd_line, while_buf, tok_flags )
 
 			/*-- Create the defer file --*/
 			sprintf( defer_path, "%s/sqsh-dfr.%d-%d", tmp_dir, (int) getpid(), job->job_id );
-			varbuf_destroy( exp_buf ); /* sqsh-2.1.6 feature */
+			if ( exp_buf != NULL )
+				varbuf_destroy( exp_buf ); /* sqsh-2.1.6 feature */
 			
 			/*-- Let the job structure know where it is --*/
 			if( (job->job_output = sqsh_strdup( defer_path )) == NULL ) {
