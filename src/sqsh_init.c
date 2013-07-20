@@ -32,6 +32,10 @@
 #include "sqsh_readline.h"
 #include "sqsh_stdin.h"
 #include "sqsh_init.h"
+#include "config.h"
+#if defined(HAVE_LOCALE_H)
+#include <locale.h>
+#endif
 /*
  * The following defines the tables which are used to inialize the
  * variable global variables.
@@ -44,7 +48,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_init.c,v 1.5 2013/04/25 14:09:47 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_init.c,v 1.6 2013/05/07 21:18:02 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -64,8 +68,16 @@ int sqsh_init()
 	char      *histsize ;
 	varbuf_t  *expand_buf ;
 
+
 	/*
-	 * g_connection: This variable is initiazed to NULL.  It is the responsibility 
+	 * sqsh-2.3 : Initialize locale to the default of C.
+	 */
+#if defined(HAVE_SETLOCALE)
+	setlocale ( LC_ALL, "C" );
+#endif
+
+	/*
+	 * g_connection: This variable is initiazed to NULL.  It is the responsibility
 	 *           of a user function to actually perform the connection to
 	 *           set it.  This allows sqsh to be started without actually
 	 *           connecting to the database.
@@ -97,7 +109,7 @@ int sqsh_init()
 	 */
 	if ((g_funcset = funcset_create()) == NULL)
 	{
-		sqsh_set_error( sqsh_get_error(), 
+		sqsh_set_error( sqsh_get_error(),
 			"cmdset_create: %s", sqsh_get_errstr());
 		return False;
 	}
@@ -108,7 +120,7 @@ int sqsh_init()
 	 */
 	for( i = 0; i < (sizeof(sg_cmd_entry) / sizeof(cmd_entry_t)); i++ ) {
 
-		if( cmdset_add( g_cmdset, 
+		if( cmdset_add( g_cmdset,
 							 sg_cmd_entry[i].ce_name,
 							 sg_cmd_entry[i].ce_func ) == False ) {
 			sqsh_set_error( sqsh_get_error(), "cmdset_add: %s",
@@ -127,7 +139,7 @@ int sqsh_init()
 	}
 
 	for( i = 0; i < (sizeof(sg_alias_entry) / sizeof(alias_entry_t)); i++ ) {
-		if( alias_add( g_alias, 
+		if( alias_add( g_alias,
 		               sg_alias_entry[i].ae_name,
 		               sg_alias_entry[i].ae_body ) == False ) {
 			sqsh_set_error( sqsh_get_error(), "alias_add: %s: %s",
@@ -187,9 +199,9 @@ int sqsh_init()
 			 * environment.  This, more-or-less, emulates the behaviour as
 			 * if you had typed it in from the command line.
 			 */
-			if( sqsh_expand( sg_var_entry[i].ve_value, expand_buf, 
+			if( sqsh_expand( sg_var_entry[i].ve_value, expand_buf,
 			                 EXP_STRIPESC ) == False ){
-				sqsh_set_error( sqsh_get_error(), "%s: %s", 
+				sqsh_set_error( sqsh_get_error(), "%s: %s",
 									 sg_var_entry[i].ve_value, sqsh_get_errstr());
 				return False ;
 			}
@@ -200,7 +212,7 @@ int sqsh_init()
 					varbuf_getstr(expand_buf), /* Default value */
 					sg_var_entry[i].ve_set,    /* Settor function */
 					sg_var_entry[i].ve_get ) == False ) {
-				sqsh_set_error( sqsh_get_error(), "env_set_valid: %s", 
+				sqsh_set_error( sqsh_get_error(), "env_set_valid: %s",
 									 sqsh_get_errstr() ) ;
 				return False ;
 			}
@@ -211,7 +223,7 @@ int sqsh_init()
 					NULL,                      /* NULL value */
 					sg_var_entry[i].ve_set,    /* Settor function */
 					sg_var_entry[i].ve_get ) == False ) {
-				sqsh_set_error( sqsh_get_error(), "env_set_valid: %s", 
+				sqsh_set_error( sqsh_get_error(), "env_set_valid: %s",
 									 sqsh_get_errstr() ) ;
 				return False ;
 			}
@@ -231,7 +243,7 @@ int sqsh_init()
 	 * Allocate our global set of sub-processes.
 	 */
 	if( (g_jobset = jobset_create( 47 )) == NULL ) {
-		sqsh_set_error( sqsh_get_error(), "jobset_create: %s", 
+		sqsh_set_error( sqsh_get_error(), "jobset_create: %s",
 							 sqsh_get_errstr() ) ;
 	 	return False ;
 	}
@@ -246,7 +258,7 @@ int sqsh_init()
 		i = 10 ;
 
 	if( (g_history = history_create( i )) == NULL ) {
-		sqsh_set_error( sqsh_get_error(), "history_create: %s", 
+		sqsh_set_error( sqsh_get_error(), "history_create: %s",
 							 sqsh_get_errstr() ) ;
 	 	return False ;
 	}
@@ -340,7 +352,7 @@ void sqsh_exit( exit_status )
 		 * This is due to the fact that the callback handler did not return
 		 * to CS/CT-Library.
 		 */
-		if (exit_status != 254) 
+		if (exit_status != 254)
 			cs_ctx_drop( g_context );
 		g_context = NULL;
 	}

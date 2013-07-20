@@ -52,7 +52,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_input.c,v 1.7 2012/03/29 16:25:46 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_input.c,v 1.8 2013/04/25 14:09:47 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -63,6 +63,8 @@ static int     input_read        _ANSI_ARGS(( varbuf_t*, int ));
 #if defined(USE_READLINE)
 static int     DynKeywordLoad    _ANSI_ARGS(( void )); /* sqsh-2.1.8 - Feature dynamic keyword load */
 #endif
+/* sqsh-2.3 - Check if we currently are in a C style comment in the SQL buffer */
+static int     csc_buffer        _ANSI_ARGS(( varbuf_t* ));
 
 /*
  * The following macro is used to determine if a line of input is
@@ -365,8 +367,8 @@ int cmd_input()
          */
         env_get( g_env, "semicolon_hack",  &semicolon_hack );
         env_get( g_env, "semicolon_hack2", &semicolon_hack2 );
-        if ( (strchr( str, ';') != NULL && (ch = input_strchr( g_sqlbuf, str, ';' )) != NULL) && 
-              ((semicolon_hack != NULL && *semicolon_hack == '1' && !is_cmd) || 
+        if ( (strchr( str, ';') != NULL && (ch = input_strchr( g_sqlbuf, str, ';' )) != NULL) &&
+              ((semicolon_hack != NULL && *semicolon_hack == '1' && !is_cmd) ||
                  (semicolon_hack2 != NULL && *semicolon_hack2 == '1'))
            )
         {
@@ -871,8 +873,12 @@ static int input_read( output_buf, interactive )
              * table name, [_0-9A-Za-z].  If we hit a comment, then we
              * simply ignore this line, without even incrementing the
              * line number.
+             * sqsh-2.3 - Only ignore sqsh # comments if the current
+             * SQL buffer did not start a C style comment construct,
+             * that is not closed so far, and if we are not inside a
+             * single or double quotes string.
              */
-            if (IS_COMMENT(str))
+            if (IS_COMMENT(str) && csc_buffer( g_sqlbuf ) == 0)
             {
                 if (is_continued)
                 {
@@ -1070,6 +1076,120 @@ static char* input_strchr( varbuf, str, c )
     if( *cptr == c )
         return cptr;
     return NULL;
+}
+
+/*
+ * csc_buffer():
+ *
+ * sqsh-2.3 - Blast through the SQL buffer that is created up
+ *            till now and see if we are in a quoted or double
+ *            quoted string or in a C style comment.
+ *            Return the value of the quote_type that reflects the
+ *            current situation. (0 means not in quotes or comments)
+ */
+static int csc_buffer( varbuf )
+    varbuf_t   *varbuf;
+{
+#define   QUOTE_NONE            0
+#define   QUOTE_SINGLE          1
+#define   QUOTE_DOUBLE          2
+#define   QUOTE_COMMENT         3
+
+    char   *cptr;
+    int     quote_type      = QUOTE_NONE;
+    int     csclevel        = 0;
+
+
+    if ( (cptr = varbuf_getstr(varbuf)) == NULL )
+        return QUOTE_NONE;
+
+    /*-- Blast through varbuf --*/
+    for (; *cptr != '\0'; ++cptr)
+    {
+        /*
+         * First step over any escape characters and the character
+         * that is escaped by \\ itself, but still do a sanity
+         * check on end of string altogether.
+         */
+        if (*cptr == '\\' && *(cptr + 1) == '\\')
+        {
+            cptr += 3;
+            if (*cptr == '\0' || *(cptr - 1) == '\0')
+                 break;
+        }
+
+        switch (quote_type)
+        {
+            case QUOTE_NONE:
+                switch (*cptr)
+                {
+                    case '\'':
+                        quote_type = QUOTE_SINGLE;
+                        break;
+                    case '\"':
+                        quote_type = QUOTE_DOUBLE;
+                        break;
+                    case '/' :
+                        if (*(cptr + 1) == '*')
+                        {
+                            quote_type = QUOTE_COMMENT;
+                            ++csclevel;
+                            ++cptr;
+                        }
+                        break;
+                    case '-': /* -- comment till end of end line */
+                        if (*(cptr + 1) == '-')
+                        {
+                            while (*cptr != '\n' && *cptr != '\0')
+                                ++cptr;
+
+                            if (*cptr == '\0')
+                                --cptr;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                break;
+
+            case QUOTE_COMMENT:
+                /*
+                 * C style comments in SQL may be nested, but do not
+                 * take quoting or -- comments in account anymore.
+                 * This is according to isql behavior.
+                 */
+                if (*cptr == '/' && *(cptr + 1) == '*')
+                {
+                    ++cptr;
+                    ++csclevel;
+                }
+                else if (*cptr == '*' && *(cptr + 1) == '/')
+                {
+                    ++cptr;
+                    if (--csclevel == 0)
+                        quote_type = QUOTE_NONE;
+                }
+                break;
+
+            case QUOTE_SINGLE:
+                if (*cptr == '\'')
+                {
+                    quote_type = QUOTE_NONE;
+                }
+                break;
+
+            case QUOTE_DOUBLE:
+                if (*cptr == '\"')
+                {
+                    quote_type = QUOTE_NONE;
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+    return quote_type;
 }
 
 /*

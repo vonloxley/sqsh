@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.30 2013/05/03 11:19:38 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.31 2013/05/05 19:50:43 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -1247,8 +1247,6 @@ int cmd_connect( argc, argv )
     /*-- If autouse has been set, use it --*/
     if (autouse != NULL && *autouse != '\0')
     {
-    CS_INT ret = CS_SUCCEED;
-
         if (ct_cmd_alloc( g_connection, &cmd ) != CS_SUCCEED)
             goto connect_succeed;
 
@@ -1271,12 +1269,8 @@ int cmd_connect( argc, argv )
             goto connect_succeed;
         }
 
-        while (ct_results( cmd, &result_type ) != CS_END_RESULTS) {
-        if(result_type == CS_CMD_FAIL)
-        ret = CS_FAIL;
-    }
+        while (ct_results( cmd, &result_type ) != CS_END_RESULTS);
         ct_cmd_drop( cmd );
-
     }
 
 connect_succeed:

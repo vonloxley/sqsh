@@ -29,10 +29,11 @@
 #include "sqsh_error.h"
 #include "sqsh_stdin.h"
 #include "var.h"
+#include "sqsh_global.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_misc.c,v 1.1.1.1 2001/10/23 20:31:06 gray Exp $" ;
+static char RCS_Id[] = "$Id: var_misc.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -124,7 +125,7 @@ int var_set_esc( env, var_name, var_value )
 		if( *src == '\\' ) {
 			++src ;
 			switch( *src ) {
-				case 'n' : 
+				case 'n' :
 					*dst++ = '\n' ;
 					break ;
 				case 'f' :
@@ -218,7 +219,7 @@ int var_set_bool( env, var_name, var_value )
 		return True ;
 
 	/*-- Map True or Yes to 1 --*/
-	if( strcasecmp( *var_value, "True" ) == 0 || 
+	if( strcasecmp( *var_value, "True" ) == 0 ||
 		 strcasecmp( *var_value, "Yes" ) == 0 ||
 		 strcasecmp( *var_value, "On" ) == 0 ) {
 		*var_value = "1" ;
@@ -226,7 +227,7 @@ int var_set_bool( env, var_name, var_value )
 	}
 
 	/*-- Map False or No to 0 --*/
-	if( strcasecmp( *var_value, "False" ) == 0 || 
+	if( strcasecmp( *var_value, "False" ) == 0 ||
 		 strcasecmp( *var_value, "No" ) == 0 ||
 		 strcasecmp( *var_value, "Off" ) == 0 ) {
 		*var_value = "0" ;
@@ -330,7 +331,7 @@ int var_set_add( env, var_name, var_value )
 
 	if( !isdigit((int)*value) )
 		n = value + 1 ;
-	else 
+	else
 		n = value ;
 
 	/*-- Check the digits --*/
@@ -411,3 +412,63 @@ int var_set_path_r( env, var_name, var_value )
 
 	return True;
 }
+
+/*
+ * var_set_lconv() - sqsh-2.3
+ *
+ * Validation function for setting variable localeconv (1/0, True/False, Yes/No)
+ * When set to true, initialize variable g_lconv to localeconv(), NULL otherwise.
+ * Returns True if validation succeed, False otherwise.
+ */
+int var_set_lconv( env, var_name, var_value )
+	env_t    *env ;
+	char     *var_name ;
+	char     **var_value ;
+{
+	/*
+	 * Perform simple validations.
+	 */
+	if( var_value == NULL || *var_value == NULL || **var_value == '\0' ) {
+		sqsh_set_error( SQSH_E_INVAL, "Invalid boolean value" ) ;
+		return False ;
+	}
+
+	/*-- Map True or Yes to 1 --*/
+	if( strcasecmp( *var_value, "True" ) == 0 ||
+	    strcasecmp( *var_value, "Yes" )  == 0 ||
+	    strcasecmp( *var_value, "On" )   == 0 ) {
+		*var_value = "1" ;
+	}
+	/*-- Map False or No to 0 --*/
+	else if( strcasecmp( *var_value, "False" ) == 0 ||
+		 strcasecmp( *var_value, "No" )    == 0 ||
+		 strcasecmp( *var_value, "Off" )   == 0 ) {
+		*var_value = "0" ;
+	}
+
+	if( strcmp( *var_value, "1" ) == 0 )
+	{
+#if defined(HAVE_SETLOCALE) && defined(HAVE_LOCALECONV)
+		setlocale ( LC_ALL, "" );
+		g_lconv = localeconv();
+		return True;
+#else
+		g_lconv = NULL;
+		*var_value = "0" ;
+		sqsh_set_error( SQSH_E_INVAL, "setlocale() and/or localeconv() not available" ) ;
+		return False;
+#endif
+	}
+	else if( strcmp( *var_value, "0" ) == 0 )
+	{
+#if defined(HAVE_SETLOCALE)
+		setlocale ( LC_ALL, "C" );
+#endif
+		g_lconv = NULL;
+		return True;
+	}
+
+	sqsh_set_error( SQSH_E_INVAL, "Invalid boolean value" ) ;
+	return False ;
+}
+

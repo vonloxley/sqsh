@@ -62,6 +62,7 @@ int var_set_bcp_trim        _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_maxlen          _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_datefmt         _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_timefmt         _ANSI_ARGS(( env_t*, char*, char** )) ;
+int var_set_lconv           _ANSI_ARGS(( env_t*, char*, char** )) ;
 
 /*-- Retrieval validation functions --*/
 int var_get_date            _ANSI_ARGS(( env_t*, char*, char** )) ;
@@ -204,6 +205,8 @@ static var_entry_t  sg_var_entry[] = {
     { "script",           NULL,          var_set_nullstr,     NULL            },
     { "semicolon_hack2",  "0",           var_set_bool,        NULL            },
     { "tds_version",      NULL,          var_set_nullstr,     NULL            },
+    /* sqsh-2.3 - New variable */
+    { "localeconv",       "0",           var_set_lconv,       NULL            },
 } ;
 
 #endif /* SQSH_INIT */

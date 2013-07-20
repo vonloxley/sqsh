@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_meta.c,v 1.2 2004/04/10 00:10:31 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_meta.c,v 1.3 2004/04/11 15:14:32 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -370,6 +370,18 @@ static CS_CHAR* dsp_meta_status( s, fmt )
 
         strcat( fmt, "CS_RETURN" );
     }
+#if defined(CS_RETURN_CANBENULL)
+    if (s & CS_RETURN_CANBENULL)
+    {
+        if (need_comma)
+        {
+            strcat(fmt, "," );
+        }
+        need_comma = CS_TRUE;
+
+        strcat( fmt, "CS_RETURN_CANBENULL" );
+    }
+#endif
     if (s & CS_TIMESTAMP)
     {
         if (need_comma)
@@ -532,14 +544,6 @@ static CS_CHAR* dsp_meta_datatype( t )
             return "CS_DATETIME_TYPE";
         case CS_DATETIME4_TYPE:
             return "CS_DATETIME4_TYPE";
-#if defined(CS_DATE_TYPE)
-	    case CS_DATE_TYPE:
-		    return "CS_DATE_TYPE";
-#endif
-#if defined(CS_TIME_TYPE)
-	    case CS_TIME_TYPE:
-		    return "CS_TIME_TYPE";
-#endif
         case CS_MONEY_TYPE:
             return "CS_MONEY_TYPE";
         case CS_MONEY4_TYPE:
@@ -562,6 +566,54 @@ static CS_CHAR* dsp_meta_datatype( t )
             return "CS_VOID_TYPE";
         case CS_USHORT_TYPE:
             return "CS_USHORT_TYPE";
+#if defined(CS_UNICHAR_TYPE)
+	case CS_UNICHAR_TYPE:
+	    return "CS_UNICHAR_TYPE";
+#endif
+#if defined(CS_BLOB_TYPE)
+	case CS_BLOB_TYPE:
+	    return "CS_BLOB_TYPE";
+#endif
+#if defined(CS_DATE_TYPE)
+	case CS_DATE_TYPE:
+	    return "CS_DATE_TYPE";
+#endif
+#if defined(CS_TIME_TYPE)
+	case CS_TIME_TYPE:
+	    return "CS_TIME_TYPE";
+#endif
+#if defined(CS_UNITEXT_TYPE)
+	case CS_UNITEXT_TYPE:
+	    return "CS_UNITEXT_TYPE";
+#endif
+#if defined(CS_BIGINT_TYPE)
+	case CS_BIGINT_TYPE:
+	    return "CS_BIGINT_TYPE";
+#endif
+#if defined(CS_USMALLINT_TYPE)
+	case CS_USMALLINT_TYPE:
+	    return "CS_USMALLINT_TYPE";
+#endif
+#if defined(CS_UINT_TYPE)
+	case CS_UINT_TYPE:
+	    return "CS_UINT_TYPE";
+#endif
+#if defined(CS_UBIGINT_TYPE)
+	case CS_UBIGINT_TYPE:
+	    return "CS_UBIGINT_TYPE";
+#endif
+#if defined(CS_XML_TYPE)
+	case CS_XML_TYPE:
+	    return "CS_XML_TYPE";
+#endif
+#if defined(CS_BIGDATETIME_TYPE)
+	case CS_BIGDATETIME_TYPE:
+	    return "CS_BIGDATETIME_TYPE";
+#endif
+#if defined(CS_BIGTIME_TYPE)
+	case CS_BIGTIME_TYPE:
+	    return "CS_BIGTIME_TYPE";
+#endif
         default:
             break;
     }

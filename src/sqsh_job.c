@@ -44,7 +44,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_job.c,v 1.7 2013/04/29 15:48:33 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_job.c,v 1.8 2013/05/07 21:18:02 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -1349,7 +1349,7 @@ static job_t* jobset_get( js, job_id )
 	hval = job_id % js->js_hsize;
 
 	/*-- Search for the job --*/
-	for( j = js->js_jobs[job_id % js->js_hsize];
+	for( j = js->js_jobs[hval];
 		j != NULL && j->job_id != job_id; j = j->job_nxt );
 
 	/*-- ESTUPID --*/

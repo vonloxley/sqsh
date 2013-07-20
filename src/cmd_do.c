@@ -51,8 +51,8 @@ static int     cmd_do_exec           _ANSI_ARGS(( CS_CONNECTION*, char*,
                                                   char* ));
 
 /*
-** sg_jmp_buf: The following buffer is used to contain the location 
-**             to which this module will return upon receipt of a 
+** sg_jmp_buf: The following buffer is used to contain the location
+**             to which this module will return upon receipt of a
 **             SIGINT. It is only used while waiting on input from the
 **             user.
 */
@@ -86,9 +86,9 @@ int cmd_do( argc, argv )
 	*/
 	env_tran( g_env );
 
-	while ((ch = sqsh_getopt( argc, argv, "S:U:P:D:n" )) != EOF) 
+	while ((ch = sqsh_getopt( argc, argv, "S:U:P:D:n" )) != EOF)
 	{
-		switch (ch) 
+		switch (ch)
 		{
 			case 'n' :
 				do_connection = False;
@@ -107,7 +107,7 @@ int cmd_do( argc, argv )
 				ret = env_put( g_env, "database", sqsh_optarg, ENV_F_TRAN );
 				break;
 			default :
-			       	ret = False;
+				ret = False;
 		}
 
 		if (ret != True)
@@ -121,9 +121,9 @@ int cmd_do( argc, argv )
 	** If there are any errors on the command line, or there are
 	** any options left over then we have an error.
 	*/
-	if( (argc - sqsh_optind) > 0 || have_error == True) 
+	if( (argc - sqsh_optind) > 0 || have_error == True)
 	{
-		fprintf( stderr, 
+		fprintf( stderr,
 			"Use: \\do [-n] [-S server] [-U user] [-P pass] [-D db]\n"
 			"        -n   Do not establish new connection (cannot issue SQL)\n"
 			"        -S   Perform do-loop on specified server\n"
@@ -194,7 +194,7 @@ int cmd_do( argc, argv )
 			return(CMD_FAIL);
 		}
 
-		if (sqsh_expand( varbuf_getstr( g_sqlbuf ), expand_buf, 
+		if (sqsh_expand( varbuf_getstr( g_sqlbuf ), expand_buf,
 			(EXP_STRIPESC|EXP_COMMENT|EXP_COLUMNS) ) == False)
 		{
 			fprintf( stderr, "\\do: Expansion failure: %s\n",
@@ -223,7 +223,7 @@ int cmd_do( argc, argv )
 	orig_conn   = g_connection;
 
 	/*
-	** And replace then with new copies.  Note that setting 
+	** And replace then with new copies.  Note that setting
 	** g_connection to NULL will cause a new connection to be
 	** established for us by \connect.
 	*/
@@ -240,7 +240,7 @@ int cmd_do( argc, argv )
 	if (do_connection == True)
 	{
 		g_connection = NULL;
-		if (jobset_run( g_jobset, "\\connect", &exit_status ) == -1) 
+		if (jobset_run( g_jobset, "\\connect", &exit_status ) == -1)
 		{
 			fprintf( stderr, "\\do: Connect failed\n" );
 			ret = exit_status;
@@ -252,7 +252,7 @@ int cmd_do( argc, argv )
 		ret = cmd_do_exec( orig_conn, sql, varbuf_getstr(do_buf) );
 	}
 
-	if (do_connection == True && 
+	if (do_connection == True &&
 		g_connection != NULL)
 	{
 		if (ct_close( g_connection, CS_UNUSED ) != CS_SUCCEED)
@@ -330,7 +330,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 	/*
 	** Suck in the results.
 	*/
-	while ((retcode = ct_results( cmd, &result_type )) 
+	while ((retcode = ct_results( cmd, &result_type ))
 		== CS_SUCCEED)
 	{
 		/*
@@ -385,7 +385,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 
 				/*
 				** Save away the column description in the global table
-				** of column descriptions (these will be referenced 
+				** of column descriptions (these will be referenced
 				** during expansion of the sqlbuf.
 				*/
 				g_do_cols[g_do_ncols] = desc;
@@ -400,8 +400,8 @@ static int cmd_do_exec( conn, sql, dobuf )
 					** For each row we fetch back, we want to execute
 					** the dobuf.
 					*/
-					if ((ret = cmd_input()) == CMD_FAIL || 
-						ret == CMD_ABORT       || 
+					if ((ret = cmd_input()) == CMD_FAIL ||
+						ret == CMD_ABORT       ||
 						ret == CMD_INTERRUPTED ||
 						ret == CMD_BREAK       ||
 						ret == CMD_RETURN)
@@ -602,7 +602,7 @@ int cmd_body_input( buf )
 		if (*cp == '\\')
 		{
 			++cp;
-			for(i = 0; i < (sizeof(cmd)-1) && *cp != '\0' && 
+			for(i = 0; i < (sizeof(cmd)-1) && *cp != '\0' &&
 				isalpha((int)*cp); ++i, ++cp)
 			{
 				cmd[i] = *cp;
@@ -628,9 +628,10 @@ int cmd_body_input( buf )
 				prompt_indent[i] = '\0';
 				env_put( g_env, "prompt_indent", prompt_indent, ENV_F_TRAN );
 			}
-			else if ((strcmp( cmd, "do" ) == 0) ||
-				strcmp( cmd, "func" ) == 0 ||
-				strcmp( cmd, "while" ) == 0)
+			else if ( strcmp( cmd, "do" )    == 0  ||
+				  strcmp( cmd, "for" )   == 0  || /* sqsh-2.3 - Improvement suggested by Niki Hansche */
+				  strcmp( cmd, "func" )  == 0  ||
+				  strcmp( cmd, "while" ) == 0)
 			{
 				/*
 				** If we hit another \do statement, then we want to
@@ -673,7 +674,7 @@ static void cmd_do_sigint_cancel( sig, user_data )
 {
 	if (user_data != NULL)
 	{
-		ct_cancel( (CS_CONNECTION*)user_data, (CS_COMMAND*)NULL, 
+		ct_cancel( (CS_CONNECTION*)user_data, (CS_COMMAND*)NULL,
 			CS_CANCEL_ATTN );
 	}
 	sg_canceled = True;

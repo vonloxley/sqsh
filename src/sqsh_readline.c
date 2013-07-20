@@ -33,10 +33,11 @@
 #include "sqsh_init.h"
 #include "sqsh_readline.h"
 #include "sqsh_stdin.h"
+#include "sqsh_varbuf.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.9 2013/05/03 13:02:46 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.10 2013/05/05 19:50:43 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -76,6 +77,12 @@ static keyword_t     *sg_keyword_start = NULL ;
 static keyword_t     *sg_keyword_end   = NULL ;
 static keyword_t     *sg_colname_start = NULL ;
 static keyword_t     *sg_colname_end   = NULL ;
+
+/*
+ * sqsh-2.3 - Variable sg_rl_string points to varbuf buffer
+ *            to prevent data overflows.
+*/
+static varbuf_t      *sg_rl_string     = NULL ;
 
 #endif /* USE_READLINE */
 
@@ -138,8 +145,7 @@ int sqsh_readline_init()
         if (sqsh_expand (readline_history, exp_buf, 0) != False)
           read_history( varbuf_getstr(exp_buf) );
         else
-            fprintf( stderr, "sqsh: Error expanding $readline_history: %s\n",
-                sqsh_get_errstr() );
+            fprintf( stderr, "sqsh: Error expanding $readline_history: %s\n", sqsh_get_errstr() );
         varbuf_destroy (exp_buf);
     }
 
@@ -162,6 +168,14 @@ int sqsh_readline_init()
      * when keyword_dynamic is enabled.
      */
     rl_completer_word_break_characters = " \t\n\"\\'`><=;|&{(";
+
+    /*
+     * sqsh-2.3 - Initialize variable sg_rl_string.
+     */
+    if( (sg_rl_string = varbuf_create (16384)) == NULL ) {
+        sqsh_set_error( sqsh_get_error(), "sg_rl_string: %s", sqsh_get_errstr() ) ;
+        return False ;
+    }
 
 #endif /* USE_READLINE */
 
@@ -203,6 +217,15 @@ int sqsh_readline_exit()
                 sqsh_get_errstr() );
         varbuf_destroy (exp_buf);
     }
+
+    /*
+     * sqsh-2.3 - Cleanup sg_rl_string.
+     */
+    if( sg_rl_string != NULL) {
+        varbuf_destroy ( sg_rl_string );
+        sg_rl_string = NULL;
+    }
+
 #endif /* USE_READLINE */
 
     return True;
@@ -217,9 +240,10 @@ int sqsh_readline_exit()
 char* sqsh_readline( prompt )
     char *prompt;
 {
-    static char str[4096];
-    char *line;
+    static char str[16384];
+
 #if defined(USE_READLINE)
+    char *line;
     char *cp;
     /* sqsh-2.1.6 - New variable */
     char *ignoreeof = NULL;
@@ -229,119 +253,122 @@ char* sqsh_readline( prompt )
     int  match;
 
 
-    /* sqsh-2.1.6 feature - Expand color prompt */
-    prompt = expand_color_prompt (prompt, True);
-    if (prompt != NULL)
+    sqsh_set_error( SQSH_E_NONE, NULL );
+    if (prompt == NULL)
     {
-        /*
-         * sqsh-2.1.6 feature - Obtain environment variable ignoreeof. This will
-         * indicate if we have to ignore ^D yes or no.
-        */
-        env_get( g_env, "ignoreeof", &ignoreeof );
-        if (ignoreeof == NULL || *ignoreeof == '0')
-        {
-            /*
-             *               Standard behaviour:
-             * Since we have no way of capturing any real error conditions
-             * from readline, if it returns NULL we just have to assume
-             * that we have hit EOF, and not some error condition.  From what
-             * we can tell from the readline library, there is no way to
-             * differentiate the two.
-            */
-            if ((line = readline( prompt )) == NULL)
-            {
-                sqsh_set_error( SQSH_E_NONE, NULL );
-                return NULL;
-            }
-        }
-        else
-        {
-            /*
-            ** If ignoreeof is defined True, continue with readline
-            ** as long as NULL is returned (accidentally C-d pressed).
-            */
-            while ((line = readline( prompt )) == NULL) {
-                fprintf (stdout, "\nUse \"exit\" or \"quit\" to leave the sqsh shell.\n");
-                fflush  (stdout);
-            }
-        }
-
-
-        /*
-         * Attempt to find out if there is anything in this line except
-         * for white-space.  If there isn't then don't save it to the
-         * history.
-         */
-        for (cp = line; *cp != '\0' && isspace((int)*cp); ++cp);
-
-        if (*cp != '\0')
-        {
-            /*
-             * sqsh-2.2.0 - If $readline_histignore is set, then do not add the line to
-             * the readline history if it matches the provided regular expression or
-             * equals one of the colon separated list of keywords.
-             * if $readline_histignore starts with RE: then it is considered a regular
-             * expression that is evaluated with function regex_match.
-             * Rationale is to filter out the 'go', 'lo', 'mo', quit, etc.
-             * statements from the readline history.
-            */
-            match = False;
-            env_get( g_env, "readline_histignore", &readline_histignore );
-            if (readline_histignore != NULL && *readline_histignore != '\0')
-            {
-                /*
-                 * Duplicate the variable to a work buffer so we
-                 * can modify it. What we want to do is strip of begin
-                 * and end double quotes, if they exists.
-                */
-                readline_histignore = sqsh_strdup (readline_histignore);
-                cp = readline_histignore;
-                if ( cp != NULL && *cp == '"' && *(cp+strlen(cp)-1) == '"' )
-                {
-                    *(cp+strlen(cp)-1) = '\0';
-                    cp = readline_histignore + 1;
-                }
-
-                if ( cp != NULL && strncmp (cp, "RE:", 3) == 0 )
-                {
-                    /*
-                     * readline_histignore contains an extended regular expression
-                     * if the string starts with RE:
-                    */
-                    cp = cp + 3;
-                    if (regex_match (cp, line) == 0)
-                        match = True;
-                }
-                else
-                {
-                    for (p1 = cp; p1 != NULL && match == False; p1 = p2)
-                    {
-                        if ( (p2 = strchr(p1, ':')) != NULL )
-                            *p2++ = '\0';
-                        if ( strcmp (line, p1) == 0 )
-                            match = True;
-                    }
-                }
-                if ( readline_histignore != NULL )
-                    free (readline_histignore);
-            }
-            if ( match == False )
-                add_history( line );
-        }
-
-        /*
-         * Since readline mallocs line every time and doesn't append a
-         * newline, we make a copy of the current line, adding the newline
-         * and free the readline copy.
-         */
-        sqsh_set_error( SQSH_E_NONE, NULL );
-        sprintf( str, "%s\n", line );
-        free( line );
-
-        return str;
+        return ( sqsh_stdin_fgets( str, sizeof( str ) ) );
     }
 
-#endif
+    /* sqsh-2.1.6 feature - Expand color prompt */
+    prompt = expand_color_prompt (prompt, True);
+
+    /*
+     * sqsh-2.1.6 feature - Obtain environment variable ignoreeof. This will
+     * indicate if we have to ignore ^D yes or no.
+    */
+    env_get( g_env, "ignoreeof", &ignoreeof );
+    if (ignoreeof == NULL || *ignoreeof == '0')
+    {
+        /*
+         *               Standard behaviour:
+         * Since we have no way of capturing any real error conditions
+         * from readline, if it returns NULL we just have to assume
+         * that we have hit EOF, and not some error condition.  From what
+         * we can tell from the readline library, there is no way to
+         * differentiate the two.
+        */
+        if ((line = readline( prompt )) == NULL)
+        {
+            return NULL;
+        }
+    }
+    else
+    {
+        /*
+        ** If ignoreeof is defined True, continue with readline
+        ** as long as NULL is returned (accidentally C-d pressed).
+        */
+        while ((line = readline( prompt )) == NULL) {
+            fprintf (stdout, "\nUse \"exit\" or \"quit\" to leave the sqsh shell.\n");
+            fflush  (stdout);
+        }
+    }
+
+    /*
+     * Attempt to find out if there is anything in this line except
+     * for white-space.  If there isn't then don't save it to the
+     * history.
+     */
+    for (cp = line; *cp != '\0' && isspace((int)*cp); ++cp);
+
+    if (*cp != '\0')
+    {
+        /*
+         * sqsh-2.2.0 - If $readline_histignore is set, then do not add the line to
+         * the readline history if it matches the provided regular expression or
+         * equals one of the colon separated list of keywords.
+         * if $readline_histignore starts with RE: then it is considered a regular
+         * expression that is evaluated with function regex_match.
+         * Rationale is to filter out the 'go', 'lo', 'mo', quit, etc.
+         * statements from the readline history.
+        */
+        match = False;
+        env_get( g_env, "readline_histignore", &readline_histignore );
+        if (readline_histignore != NULL && *readline_histignore != '\0')
+        {
+            /*
+             * Duplicate the variable to a work buffer so we
+             * can modify it. What we want to do is strip of begin
+             * and end double quotes, if they exists.
+            */
+            readline_histignore = sqsh_strdup (readline_histignore);
+            cp = readline_histignore;
+            if ( cp != NULL && *cp == '"' && *(cp+strlen(cp)-1) == '"' )
+            {
+                *(cp+strlen(cp)-1) = '\0';
+                cp = readline_histignore + 1;
+            }
+
+            if ( cp != NULL && strncmp (cp, "RE:", 3) == 0 )
+            {
+                /*
+                 * readline_histignore contains an extended regular expression
+                 * if the string starts with RE:
+                */
+                cp = cp + 3;
+                if (regex_match (cp, line) == 0)
+                    match = True;
+            }
+            else
+            {
+                for (p1 = cp; p1 != NULL && match == False; p1 = p2)
+                {
+                    if ( (p2 = strchr(p1, ':')) != NULL )
+                        *p2++ = '\0';
+                    if ( strcmp (line, p1) == 0 )
+                        match = True;
+                }
+            }
+            if ( readline_histignore != NULL )
+                free (readline_histignore);
+        }
+        if ( match == False )
+            add_history( line );
+    }
+
+    /*
+     * Since readline mallocs line every time and doesn't append a
+     * newline, we make a copy of the current line, adding the newline
+     * and free the readline copy.
+     * sqsh-2.3 - Use a flexible buffer instead of an array to store
+     * the line. This is to prevent data overflows.
+     */
+    varbuf_strcpy ( sg_rl_string, line );
+    varbuf_strcat ( sg_rl_string, "\n" );
+    free( line );
+    return (varbuf_getstr( sg_rl_string ));
+
+#else /* USE_READLINE */
 
     /*
      * If the user supplied a prompt, then print it out. Otherwise
@@ -357,15 +384,10 @@ char* sqsh_readline( prompt )
      * Keep trying to read a line until we hit feof(stdin), or while
      * we are getting interrupted by signal handlers.
      */
-    line = sqsh_stdin_fgets(str, sizeof( str ));
+    return ( sqsh_stdin_fgets( str, sizeof( str )));
 
-    if (line == NULL)
-    {
-        return(NULL);
-    }
+#endif
 
-    sqsh_set_error( SQSH_E_NONE, NULL );
-    return line;
 }
 
 /*

@@ -81,4 +81,11 @@
  */
 #undef SYSV_SIGNALS
 
+/*
+ * sqsh-2.3 : Test availability of locale
+ */
+#undef HAVE_LOCALE_H
+#undef HAVE_LOCALECONV
+#undef HAVE_SETLOCALE
+
 #endif

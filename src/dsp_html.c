@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_html.c,v 1.1.1.1 2004/04/07 12:35:02 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: dsp_html.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -125,7 +125,7 @@ int dsp_html( output, cmd, flags )
 			case CS_STATUS_RESULT:
 				if (in_table == CS_TRUE)
 				{
-					dsp_fputs( "</table>\n", output );
+					dsp_fputs( "</tbody>\n</table>\n", output );
 					in_table = CS_FALSE;
 				}
 
@@ -197,7 +197,7 @@ int dsp_html( output, cmd, flags )
 
 				if (in_table == CS_TRUE)
 				{
-					dsp_fputs( "</table>\n", output );
+					dsp_fputs( "</tbody>\n</table>\n", output );
 				}
 
 				if (rows_affected != CS_NO_COUNT && !(flags & DSP_F_NOFOOTERS))
@@ -230,7 +230,7 @@ int dsp_html( output, cmd, flags )
 				if (select_desc == NULL)
 					goto dsp_fail;
 				
-				dsp_fputs( "\n<table border>\n", output );
+				dsp_fputs( "\n<table class=\"sqshtable\" border=\"1\">\n", output );
 				in_table = CS_TRUE;
 				
 				/*
@@ -241,7 +241,7 @@ int dsp_html( output, cmd, flags )
 					if (g_dsp_interrupted)
 						goto dsp_interrupted;
 					
-					dsp_fputs( "<tr>\n", output );
+					dsp_fputs( "<thead>\n<tr>\n", output );
 					for (i = 0; i < select_desc->d_ncols; i++)
 					{
 						col = &select_desc->d_cols[i];
@@ -257,7 +257,7 @@ int dsp_html( output, cmd, flags )
 						}
 						dsp_fputs( "</th>\n", output );
 					}
-					dsp_fputs( "</tr>\n", output );
+					dsp_fputs( "</tr>\n</thead>\n", output );
 				}
 
 				if (g_dsp_interrupted)
@@ -272,18 +272,18 @@ int dsp_html( output, cmd, flags )
 					if (g_dsp_interrupted)
 						goto dsp_interrupted;
 
-					dsp_fputs( "<tr>\n", output );
+					dsp_fputs( "<tbody>\n<tr>\n", output );
 					for (i = 0; i < select_desc->d_ncols; i++)
 					{
 						col = &select_desc->d_cols[i];
 
 						if (col->c_justification == DSP_JUST_RIGHT)
 						{
-							dsp_fputs( "   <td align=right>", output );
+							dsp_fputs( "   <td style=\"text-align: right;\">", output );
 						}
 						else
 						{
-							dsp_fputs( "   <td align=left>", output );
+							dsp_fputs( "   <td style=\"text-align: left;\">", output );
 						}
 
 						if (col->c_nullind == -1)
@@ -297,7 +297,7 @@ int dsp_html( output, cmd, flags )
 
 						dsp_fputs( "</td>\n", output );
 					}
-					dsp_fputs( "</tr>\n", output );
+					dsp_fputs( "</tr>\n</tbody>\n", output );
 
 					if (g_dsp_interrupted)
 						goto dsp_interrupted;
@@ -434,7 +434,7 @@ static CS_INT dsp_comp_prrow_one( output, sel_desc, com_desc )
 	dsp_col_t    *sel_col;
 	dsp_col_t    *com_col;
 
-	dsp_fputs( "<tr>\n", output );
+	dsp_fputs( "<thead>\n<tr>\n", output );
 	for (i = 0; i < sel_desc->d_ncols; i++)
 	{
 		dsp_fputs( "   <th>", output );
@@ -462,9 +462,9 @@ static CS_INT dsp_comp_prrow_one( output, sel_desc, com_desc )
 
 		dsp_fputs( "</th>", output );
 	}
-	dsp_fputs( "</tr>\n", output );
+	dsp_fputs( "</tr>\n</thead>\n", output );
 
-	dsp_fputs( "<tr>\n", output );
+	dsp_fputs( "<tbody>\n<tr>\n", output );
 	for (i = 0; i < sel_desc->d_ncols; i++)
 	{
 		/*-- Handy Pointer --*/
@@ -472,11 +472,11 @@ static CS_INT dsp_comp_prrow_one( output, sel_desc, com_desc )
 
 		if (sel_col->c_justification == DSP_JUST_RIGHT)
 		{
-			dsp_fputs( "   <td align=right>", output );
+			dsp_fputs( "   <td style=\"text-align: right;\">", output );
 		}
 		else
 		{
-			dsp_fputs( "   <td align=left>", output );
+			dsp_fputs( "   <td style=\"text-align: left;\">", output );
 		}
 
 		/*
@@ -503,7 +503,7 @@ static CS_INT dsp_comp_prrow_one( output, sel_desc, com_desc )
 			dsp_fputs( "<br>", output );
 		}
 	}
-	dsp_fputs( "</tr>\n", output );
+	dsp_fputs( "</tr>\n</tbody>\n", output );
 
 	return count;
 }

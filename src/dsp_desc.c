@@ -32,13 +32,14 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.9 2013/02/19 18:06:42 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.10 2013/04/04 10:52:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
 /*-- Local Prototypes --*/
 static CS_INT dsp_dlen           _ANSI_ARGS(( CS_DATAFMT* ));
 static CS_INT dsp_just           _ANSI_ARGS(( CS_INT ));
+static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
 
 /*
  * This is almost entirely cheesy.  Since CT-Lib does a crappy job
@@ -49,23 +50,48 @@ static CS_INT dsp_just           _ANSI_ARGS(( CS_INT ));
  * do the dirty work.
  * sqsh-2.1.8: Add CS_BINARY_TYPE and CS_IMAGE_TYPE to the list.
  *               Fix bugreport 3079678.
+ * sqsh-2.3  : Added missing data types to the list (CS_UNITEXT_TYPE,
+ *              CS_BIGINT_TYPE,CS_USMALLINT_TYPE,CS_UINT_TYPE,CS_UBIGINT_TYPE)
  */
-#define LET_CTLIB_CONV(t) \
-    (((t) == CS_CHAR_TYPE)      || \
-     ((t) == CS_TEXT_TYPE)      || \
-     ((t) == CS_TINYINT_TYPE)   || \
-     ((t) == CS_SMALLINT_TYPE)  || \
-     ((t) == CS_INT_TYPE)       || \
-     ((t) == CS_BIT_TYPE)       || \
-     ((t) == CS_NUMERIC_TYPE)   || \
-     ((t) == CS_DECIMAL_TYPE)   || \
-     ((t) == CS_VARCHAR_TYPE)   || \
-     ((t) == CS_LONGCHAR_TYPE)  || \
-     ((t) == CS_LONGBINARY_TYPE)|| \
-     ((t) == CS_VARBINARY_TYPE) || \
-     ((t) == CS_BINARY_TYPE)    || \
-     ((t) == CS_IMAGE_TYPE)     || \
-     ((t) == CS_UNICHAR_TYPE))
+#if defined(CS_UNITEXT_TYPE) && defined(CS_BIGINT_TYPE) && defined(CS_USMALLINT_TYPE) && defined(CS_UINT_TYPE) && defined(CS_UBIGINT_TYPE)
+#define LET_CTLIB_CONV(t) ( \
+        ((t) == CS_CHAR_TYPE)       \
+     || ((t) == CS_BINARY_TYPE)     \
+     || ((t) == CS_LONGCHAR_TYPE)   \
+     || ((t) == CS_LONGBINARY_TYPE) \
+     || ((t) == CS_TEXT_TYPE)       \
+     || ((t) == CS_IMAGE_TYPE)      \
+     || ((t) == CS_TINYINT_TYPE)    \
+     || ((t) == CS_SMALLINT_TYPE)   \
+     || ((t) == CS_INT_TYPE)        \
+     || ((t) == CS_BIT_TYPE)        \
+     || ((t) == CS_VARCHAR_TYPE)    \
+     || ((t) == CS_VARBINARY_TYPE)  \
+     || ((t) == CS_UNICHAR_TYPE)    \
+     || ((t) == CS_UNITEXT_TYPE)    \
+     || ((t) == CS_BIGINT_TYPE)     \
+     || ((t) == CS_USMALLINT_TYPE)  \
+     || ((t) == CS_UINT_TYPE)       \
+     || ((t) == CS_UBIGINT_TYPE)    \
+    )
+#else
+#define LET_CTLIB_CONV(t) ( \
+        ((t) == CS_CHAR_TYPE)       \
+     || ((t) == CS_BINARY_TYPE)     \
+     || ((t) == CS_LONGCHAR_TYPE)   \
+     || ((t) == CS_LONGBINARY_TYPE) \
+     || ((t) == CS_TEXT_TYPE)       \
+     || ((t) == CS_IMAGE_TYPE)      \
+     || ((t) == CS_TINYINT_TYPE)    \
+     || ((t) == CS_SMALLINT_TYPE)   \
+     || ((t) == CS_INT_TYPE)        \
+     || ((t) == CS_BIT_TYPE)        \
+     || ((t) == CS_VARCHAR_TYPE)    \
+     || ((t) == CS_VARBINARY_TYPE)  \
+     || ((t) == CS_UNICHAR_TYPE)    \
+    )
+#endif
+
 
 /*
  * dsp_desc_bind():
@@ -92,15 +118,14 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
                      CS_UNUSED,         /* Buffer Length */
                      (CS_INT*)NULL) != CS_SUCCEED)
     {
-        fprintf( stderr, 
-            "dsp_desc_bind: Unable to retrieve column count (CS_NUMDATA)\n" );
+        fprintf( stderr, "dsp_desc_bind: Unable to retrieve column count (CS_NUMDATA)\n" );
         return NULL;
     }
 
     d = (dsp_desc_t*)malloc( sizeof( dsp_desc_t ) );
     c = (dsp_col_t*)malloc( sizeof( dsp_col_t ) * ncols );
 
-    if (d == NULL || c == NULL) 
+    if (d == NULL || c == NULL)
     {
         fprintf( stderr, "dsp_desc_bind: Memory allocation failure.\n" );
         if (d != NULL)
@@ -116,7 +141,7 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
     d->d_bylist_size = 0;
     d->d_bylist      = NULL;
 
-    for (i = 0; i < ncols; i++) 
+    for (i = 0; i < ncols; i++)
     {
         d->d_cols[i].c_data = NULL;
 
@@ -133,7 +158,7 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
         d->d_cols[i].c_format.usertype    = 0;
         d->d_cols[i].c_format.locale      = NULL;
     }
-    
+
     if (result_type == CS_COMPUTE_RESULT)
     {
         if (ct_compute_info( cmd,                         /* Command */
@@ -144,22 +169,19 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
                              (CS_INT*)NULL ) != CS_SUCCEED)
         {
             dsp_desc_destroy( d );
-            fprintf( stderr, 
-                "dsp_desc_bind: Unable to fetch by-list len of compute results\n" );
+            fprintf( stderr, "dsp_desc_bind: Unable to fetch by-list len of compute results\n" );
             return NULL;
         }
 
         if (d->d_bylist_size > 0)
         {
 
-            d->d_bylist = (CS_SMALLINT*)malloc( sizeof(CS_SMALLINT) * 
-                                                d->d_bylist_size );
-        
+            d->d_bylist = (CS_SMALLINT*)malloc( sizeof(CS_SMALLINT) *d->d_bylist_size );
+
             if (d->d_bylist == NULL)
             {
                 dsp_desc_destroy( d );
-                fprintf( stderr, 
-                    "dsp_desc_bind: Memory failure for by-list size array\n" );
+                fprintf( stderr, "dsp_desc_bind: Memory failure for by-list size array\n" );
                 return NULL;
             }
 
@@ -171,26 +193,24 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
                                  (CS_INT*)NULL) != CS_SUCCEED)
             {
                 dsp_desc_destroy( d );
-                fprintf( stderr, 
-                    "dsp_desc_bind: Memory allocation failure for by-list array\n" );
+                fprintf( stderr, "dsp_desc_bind: Memory allocation failure for by-list array\n" );
                 return NULL;
             }
         }
     }
 
-    
+
     /*
      * Blast through the set of columns, binding the output to a
      * friendly chunk of memory.
      */
-    for (i = 0; i < ncols; i++) 
+    for (i = 0; i < ncols; i++)
     {
         /*-- Get description for column --*/
-        if (ct_describe( cmd, i+1, &d->d_cols[i].c_format ) != CS_SUCCEED) 
+        if (ct_describe( cmd, i+1, &d->d_cols[i].c_format ) != CS_SUCCEED)
         {
             dsp_desc_destroy( d );
-            fprintf( stderr, 
-                "dsp_desc_bind: Unable to fetch description of column #%d\n",
+            fprintf( stderr, "dsp_desc_bind: Unable to fetch description of column #%d\n",
                 (int)i+1 );
             return NULL;
         }
@@ -203,9 +223,9 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
         d->d_cols[i].c_data         = NULL;
 
 #if 0
-	/* This code has been commented out as it generates the dreaded
-	   "bind resulted in truncation" error. */
-        if (g_dsp_props.p_maxlen > 0 && 
+        /* This code has been commented out as it generates the dreaded
+           "bind resulted in truncation" error. */
+        if (g_dsp_props.p_maxlen > 0 &&
             d->d_cols[i].c_maxlength > g_dsp_props.p_maxlen)
         {
             d->d_cols[i].c_maxlength = g_dsp_props.p_maxlen;
@@ -222,9 +242,9 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
          * request), I am forcing these data types to malloc a tad
          * more memory then they may need.
          */
-	/* The amount of memory alloced used to be 64 bytes. Pushed 
-	   to 256 following discovery of buffer overflow problems by
-	   Mike Tibbetts */
+        /* The amount of memory alloced used to be 64 bytes. Pushed
+           to 256 following discovery of buffer overflow problems by
+           Mike Tibbetts */
         if (d->d_cols[i].c_format.datatype == CS_FLOAT_TYPE ||
             d->d_cols[i].c_format.datatype == CS_REAL_TYPE)
         {
@@ -284,12 +304,12 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
                 "    buf  = %p,\n"
                 "    bytes= NULL,\n"
                 "    ind  = %p)\n",
-                (void*)cmd, 
-                i + 1, 
-                (int)str_fmt.maxlength, 
+                (void*)cmd,
+                i + 1,
+                (int)str_fmt.maxlength,
                 (void*)d->d_cols[i].c_data,
                 (void*)&d->d_cols[i].c_nullind);)
-                
+
 
             /*
              * Now, bind the incoming row to the native data type. That
@@ -319,9 +339,8 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
              * data prior to doing the conversion.
              */
             d->d_cols[i].c_is_native = CS_TRUE;
-            d->d_cols[i].c_native    = 
-                (CS_VOID*)malloc(d->d_cols[i].c_format.maxlength);
-            
+            d->d_cols[i].c_native    = (CS_VOID*)malloc(d->d_cols[i].c_format.maxlength);
+
             if (d->d_cols[i].c_native == NULL)
             {
                 fprintf( stderr,
@@ -351,8 +370,8 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
                 "    buf  = %p,\n"
                 "    bytes= %p,\n"
                 "    ind  = %p)\n",
-                (void*)cmd, 
-                i + 1, 
+                (void*)cmd,
+                i + 1,
                 (int)d->d_cols[i].c_format.datatype,
                 (int)d->d_cols[i].c_format.format,
                 (int)d->d_cols[i].c_format.maxlength,
@@ -425,6 +444,7 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
     return d;
 }
 
+
 CS_INT dsp_desc_fetch( cmd, d )
     CS_COMMAND  *cmd;
     dsp_desc_t  *d;
@@ -435,6 +455,9 @@ CS_INT dsp_desc_fetch( cmd, d )
     CS_INT      j;
     CS_INT      p;
     CS_DATAFMT  str_fmt;
+#if defined(HAVE_LOCALE_H)
+    CS_CHAR    *radix;
+#endif
 
     if ((r = ct_fetch( cmd,              /* Command */
                        CS_UNUSED,        /* Type */
@@ -445,11 +468,11 @@ CS_INT dsp_desc_fetch( cmd, d )
         return CS_END_DATA;
     }
 
-	/* mpeppler - 4/9/2004
-	   allow CS_ROW_FAIL results to go through and not abort the entire
-	   query. CS_ROW_FAIL usually means a conversion or truncation error
-	   which shouldn't be fatal to the entire query, although a warning 
-	   should be printed. */
+        /* mpeppler - 4/9/2004
+           allow CS_ROW_FAIL results to go through and not abort the entire
+           query. CS_ROW_FAIL usually means a conversion or truncation error
+           which shouldn't be fatal to the entire query, although a warning
+           should be printed. */
     if (r != CS_SUCCEED && r != CS_ROW_FAIL)
     {
         return r;
@@ -487,7 +510,7 @@ CS_INT dsp_desc_fetch( cmd, d )
          * nothing left to be done.
          * sqsh-2.1.8: Except when the source datatype was binary, then
          * we have to prepend the result string with characters '0x'.
-	 * 20110107: Prepend 0x0 in case of odd number of chars in string.
+         * 20110107: Prepend 0x0 in case of odd number of chars in string.
          */
         if (d->d_cols[i].c_is_native == CS_FALSE)
         {
@@ -496,8 +519,10 @@ CS_INT dsp_desc_fetch( cmd, d )
                 d->d_cols[i].c_format.datatype == CS_VARBINARY_TYPE  ||
                 d->d_cols[i].c_format.datatype == CS_IMAGE_TYPE)
             {
-                for (p = strlen (d->d_cols[i].c_data), j = p%2==0?2:3; p >= 0;
-                                 d->d_cols[i].c_data[p+j] = d->d_cols[i].c_data[p]) p--;
+                p = strlen (d->d_cols[i].c_data);
+                j = (p % 2 == 0 ? 2 : 3);
+                for (; p >= 0; p--)
+                    d->d_cols[i].c_data[p+j] = d->d_cols[i].c_data[p];
                 d->d_cols[i].c_data[0] = '0';
                 d->d_cols[i].c_data[1] = 'x';
                 if (j==3) d->d_cols[i].c_data[2] = '0';
@@ -511,17 +536,101 @@ CS_INT dsp_desc_fetch( cmd, d )
          * character data here.
         */
         str_fmt.maxlength = d->d_cols[i].c_maxlength + 1;
+        str_fmt.precision = d->d_cols[i].c_format.precision;
+        str_fmt.scale = d->d_cols[i].c_format.scale;
+
         switch (d->d_cols[i].c_format.datatype)
         {
+            case CS_BINARY_TYPE:
+            case CS_LONGBINARY_TYPE:
+            case CS_VARBINARY_TYPE:
+            case CS_IMAGE_TYPE:
+                /*
+                 * This case will only be executed if one or more of the datatypes are removed from
+                 * the LET_CTLIB_CONV macro.
+                */
+                strcpy( d->d_cols[i].c_data, "0x" );
+                d->d_cols[i].c_format.maxlength = d->d_cols[i].c_native_len;
+
+                if (cs_convert( g_context,                     /* Context */
+                                &d->d_cols[i].c_format,        /* Source Format */
+                                d->d_cols[i].c_native,         /* Source Data */
+                                &str_fmt,                      /* Dest Format */
+                                (CS_VOID*)(d->d_cols[i].c_data+2),/* Dest Data */
+                                (CS_INT*)NULL ) == CS_FAIL)
+                {
+                    fprintf( stderr, "dsp_desc_fetch: cs_convert(BIN->CHAR) column %d failed\n", (int) i+1 );
+                    dsp_display_fmt( "src_fmt", &d->d_cols[i].c_format );
+                    dsp_display_fmt( "dst_fmt", &str_fmt );
+                    return CS_FAIL;
+                }
+                break;
+
+            case CS_NUMERIC_TYPE:
+            case CS_DECIMAL_TYPE:
+                if (cs_convert( g_context,                     /* Context */
+                                &d->d_cols[i].c_format,        /* Source Format */
+                                d->d_cols[i].c_native,         /* Source Data */
+                                &str_fmt,                      /* Dest Format */
+                                (CS_VOID*)(d->d_cols[i].c_data),/* Dest Data */
+                                (CS_INT*)NULL ) == CS_FAIL)
+                {
+                    fprintf( stderr, "dsp_desc_fetch: cs_convert(NUMERIC->CHAR) column %d failed\n", (int) i+1 );
+                    dsp_display_fmt( "src_fmt", &d->d_cols[i].c_format );
+                    dsp_display_fmt( "dst_fmt", &str_fmt );
+                    return CS_FAIL;
+                }
+
+#if defined(HAVE_LOCALE_H)
+                /*
+                 * sqsh-2.3: Convert the decimal separator in numeric/decimal datatypes
+                 * to the character according to the locale definition of the client.
+                 * By courtesy of Niki Hansche.
+                */
+                if (g_lconv != NULL && (radix = (CS_CHAR *) strrchr((CS_CHAR*) (d->d_cols[i].c_data), '.')) != NULL)
+                {
+                    *radix = (CS_CHAR) *g_lconv->decimal_point;
+                }
+#endif
+                break;
+
+            case CS_MONEY_TYPE:
+            case CS_MONEY4_TYPE:
+                if (cs_convert( g_context,                     /* Context */
+                                &d->d_cols[i].c_format,        /* Source Format */
+                                d->d_cols[i].c_native,         /* Source Data */
+                                &str_fmt,                      /* Dest Format */
+                                (CS_VOID*)(d->d_cols[i].c_data),/* Dest Data */
+                                (CS_INT*)NULL ) == CS_FAIL)
+                {
+                    fprintf( stderr, "dsp_desc_fetch: cs_convert(MONEY->CHAR) column %d failed\n", (int) i+1 );
+                    dsp_display_fmt( "src_fmt", &d->d_cols[i].c_format );
+                    dsp_display_fmt( "dst_fmt", &str_fmt );
+                    return CS_FAIL;
+                }
+
+#if defined(HAVE_LOCALE_H)
+                /*
+                 * sqsh-2.3: Convert the decimal separator in money datatypes
+                 * to the character according to the locale definition of the client.
+                 * By courtesy of Niki Hansche.
+                */
+                if (g_lconv != NULL && (radix = (CS_CHAR *) strrchr((CS_CHAR*) (d->d_cols[i].c_data), '.')) != NULL)
+                {
+                    *radix = (CS_CHAR) *g_lconv->mon_decimal_point;
+                }
+#endif
+                break;
+
             case CS_REAL_TYPE:
-                sprintf( (char*)d->d_cols[i].c_data, "%*.*f", 
+                sprintf( (char*)d->d_cols[i].c_data, "%*.*f",
                          g_dsp_props.p_real_prec + 2,
                          g_dsp_props.p_real_scale,
                          (double)(*((CS_REAL*)d->d_cols[i].c_native)) );
                 break;
 
             case CS_FLOAT_TYPE:
-                sprintf( (char*)d->d_cols[i].c_data, "%*.*f", 
+                sprintf( (char*)d->d_cols[i].c_data, "%*.*f",
                          g_dsp_props.p_flt_prec + 2,
                          g_dsp_props.p_flt_scale,
                          (double)(*((CS_FLOAT*)d->d_cols[i].c_native)) );
@@ -533,23 +642,23 @@ CS_INT dsp_desc_fetch( cmd, d )
             case CS_DATETIME_TYPE:
             case CS_DATETIME4_TYPE:
 #if defined(CS_DATE_TYPE)
-	    case CS_DATE_TYPE:
+            case CS_DATE_TYPE:
 #endif
 #if defined(CS_TIME_TYPE)
-	    case CS_TIME_TYPE:
-#endif
-#if defined(CS_BIGTIME_TYPE)
-	    case CS_BIGTIME_TYPE:
+            case CS_TIME_TYPE:
 #endif
 #if defined(CS_BIGDATETIME_TYPE)
-	    case CS_BIGDATETIME_TYPE:
+            case CS_BIGDATETIME_TYPE:
+#endif
+#if defined(CS_BIGTIME_TYPE)
+            case CS_BIGTIME_TYPE:
 #endif
                 if (dsp_datetime_conv( g_context,              /* Context */
                                       &d->d_cols[i].c_format,  /* Data format */
                                        d->d_cols[i].c_native,  /* Data */
                                        d->d_cols[i].c_data,    /* Destination */
                                        d->d_cols[i].c_maxlength+1,
-				       d->d_cols[i].c_format.datatype ) != CS_SUCCEED)
+                                       d->d_cols[i].c_format.datatype ) != CS_SUCCEED)
                 {
                     return CS_FAIL;
                 }
@@ -565,9 +674,8 @@ CS_INT dsp_desc_fetch( cmd, d )
                                 (CS_VOID*)d->d_cols[i].c_data, /* Dest Data */
                                 (CS_INT*)NULL ) != CS_SUCCEED)
                 {
-                    fprintf( stderr, 
-                        "dsp_desc_fetch: cs_convert(%d->CHAR) column %d failed\n",
-                       (int)d->d_cols[i].c_format.datatype, (int)i+1 );
+                    fprintf( stderr, "dsp_desc_fetch: cs_convert(%d->CHAR) column %d failed\n",
+                             (int) d->d_cols[i].c_format.datatype, (int) i+1 );
                     return CS_FAIL;
                 }
                 break;
@@ -588,11 +696,11 @@ void dsp_desc_destroy( d )
 {
     CS_INT       i;
 
-    if (d != NULL) 
+    if (d != NULL)
     {
-        if (d->d_cols != NULL) 
+        if (d->d_cols != NULL)
         {
-            for (i = 0; i < d->d_ncols; i++) 
+            for (i = 0; i < d->d_ncols; i++)
             {
                 if (d->d_cols[i].c_native != NULL)
                 {
@@ -615,6 +723,33 @@ void dsp_desc_destroy( d )
     }
 }
 
+
+static void dsp_display_fmt( nm, f )
+    CS_CHAR     *nm;
+    CS_DATAFMT  *f;
+{
+    if (f->namelen > 0 && f->namelen < CS_MAX_NAME)
+    {
+        fprintf( stderr, "%s->name      = %*.*s\n",
+        (char*) nm, (int) f->namelen, (int) f->namelen, (char*) f->name );
+    }
+    else
+    {
+        fprintf( stderr, "%s->name      = <empty>\n", (char*)nm );
+    }
+    fprintf( stderr, "%s->namelen   = %d\n", (char*) nm, (int)   f->namelen  );
+    fprintf( stderr, "%s->datatype  = %d\n", (char*) nm, (int)   f->datatype );
+    fprintf( stderr, "%s->format    = %d\n", (char*) nm, (int)   f->format   );
+    fprintf( stderr, "%s->maxlength = %d\n", (char*) nm, (int)   f->maxlength);
+    fprintf( stderr, "%s->scale     = %d\n", (char*) nm, (int)   f->scale    );
+    fprintf( stderr, "%s->precision = %d\n", (char*) nm, (int)   f->precision);
+    fprintf( stderr, "%s->status    = %d\n", (char*) nm, (int)   f->status   );
+    fprintf( stderr, "%s->count     = %d\n", (char*) nm, (int)   f->count    );
+    fprintf( stderr, "%s->usertype  = %d\n", (char*) nm, (int)   f->usertype );
+    fprintf( stderr, "%s->locale    = %p\n", (char*) nm, (void*) f->locale   );
+}
+
+
 /*
  * dsp_just():
  *
@@ -623,20 +758,44 @@ void dsp_desc_destroy( d )
 static CS_INT dsp_just( type )
     CS_INT  type;
 {
-    switch (type) 
+    switch (type)
     {
-        case CS_BIT_TYPE:
         case CS_TINYINT_TYPE:
         case CS_SMALLINT_TYPE:
         case CS_INT_TYPE:
         case CS_REAL_TYPE:
         case CS_FLOAT_TYPE:
+        case CS_BIT_TYPE:
+        case CS_DATETIME_TYPE:
+        case CS_DATETIME4_TYPE:
         case CS_MONEY_TYPE:
         case CS_MONEY4_TYPE:
         case CS_NUMERIC_TYPE:
         case CS_DECIMAL_TYPE:
-        case CS_DATETIME_TYPE:
-        case CS_DATETIME4_TYPE:
+#if defined(CS_DATE_TYPE)
+        case CS_DATE_TYPE:
+#endif
+#if defined(CS_TIME_TYPE)
+        case CS_TIME_TYPE:
+#endif
+#if defined(CS_BIGINT_TYPE)
+        case CS_BIGINT_TYPE:
+#endif
+#if defined(CS_USMALLINT_TYPE)
+        case CS_USMALLINT_TYPE:
+#endif
+#if defined(CS_UINT_TYPE)
+        case CS_UINT_TYPE:
+#endif
+#if defined(CS_UBIGINT_TYPE)
+        case CS_UBIGINT_TYPE:
+#endif
+#if defined(CS_BIGDATETIME_TYPE)
+        case CS_BIGDATETIME_TYPE:
+#endif
+#if defined(CS_BIGTIME_TYPE)
+        case CS_BIGTIME_TYPE:
+#endif
             return DSP_JUST_RIGHT;
         default:
             break;
@@ -655,21 +814,27 @@ static CS_INT dsp_just( type )
 static CS_INT dsp_dlen( fmt )
     CS_DATAFMT   *fmt;
 {
-    switch (fmt->datatype) 
+    switch (fmt->datatype)
     {
         case CS_CHAR_TYPE:
         case CS_LONGCHAR_TYPE:
         case CS_TEXT_TYPE:
         case CS_VARCHAR_TYPE:
+        case CS_UNICHAR_TYPE:
+#if defined(CS_UNITEXT_TYPE)
+        case CS_UNITEXT_TYPE:
+#endif
+#if defined(CS_XML_TYPE)
+        case CS_XML_TYPE:
+#endif
             return fmt->maxlength;
-        case CS_IMAGE_TYPE:
+
         case CS_BINARY_TYPE:
         case CS_LONGBINARY_TYPE:
+        case CS_IMAGE_TYPE:
         case CS_VARBINARY_TYPE:
-        case CS_UNICHAR_TYPE:
             return (2 * fmt->maxlength) + 2; /* sqsh-2.1.8 fix  */
-        case CS_BIT_TYPE:
-            return 1;
+
         case CS_TINYINT_TYPE:
             return 3;
         case CS_SMALLINT_TYPE:
@@ -682,22 +847,49 @@ static CS_INT dsp_dlen( fmt )
         case CS_FLOAT_TYPE:
             /*-- Sign + Decimal + Precision --*/
             return 2 + g_dsp_props.p_flt_prec;
+        case CS_BIT_TYPE:
+            return 1;
+
         case CS_MONEY4_TYPE:
             return dsp_money4_len( g_context );
         case CS_MONEY_TYPE:
             return dsp_money_len( g_context );
-        case CS_DATETIME_TYPE:
-        case CS_DATETIME4_TYPE:
-#if defined(CS_DATE_TYPE)
-	    case CS_DATE_TYPE:
-#endif
-#if defined(CS_TIME_TYPE)
-	    case CS_TIME_TYPE:
-#endif
-            return dsp_datetime_len( g_context,  fmt->datatype);
         case CS_NUMERIC_TYPE:
         case CS_DECIMAL_TYPE:
             return (fmt->precision + 3);
+
+        case CS_DATETIME_TYPE:
+        case CS_DATETIME4_TYPE:
+#if defined(CS_DATE_TYPE)
+        case CS_DATE_TYPE:
+#endif
+#if defined(CS_TIME_TYPE)
+        case CS_TIME_TYPE:
+#endif
+#if defined(CS_BIGDATETIME_TYPE)
+        case CS_BIGDATETIME_TYPE:
+#endif
+#if defined(CS_BIGTIME_TYPE)
+        case CS_BIGTIME_TYPE:
+#endif
+            return dsp_datetime_len( g_context,  fmt->datatype);
+
+#if defined(CS_BIGINT_TYPE) 
+        case CS_BIGINT_TYPE:
+            return 20;
+#endif
+#if defined(CS_USMALLINT_TYPE)
+        case CS_USMALLINT_TYPE:
+            return 5;
+#endif
+#if defined(CS_UINT_TYPE)
+        case CS_UINT_TYPE:
+            return 10;
+#endif
+#if defined(CS_UBIGINT_TYPE)
+        case CS_UBIGINT_TYPE:
+            return 20;
+#endif
         default:
             break;
     }

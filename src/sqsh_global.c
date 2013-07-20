@@ -28,7 +28,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_global.c,v 1.7 2012/04/29 11:19:22 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_global.c,v 1.8 2013/02/19 18:06:42 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -57,3 +57,9 @@ int         g_do_ncols     = 0;
 funcarg_t   g_func_args[64];
 int         g_func_nargs   = 0;  
 int         g_interactive  = False;  
+
+#if defined(HAVE_LOCALE_H)
+    struct lconv  *g_lconv = NULL;
+#else
+    void *g_lconv = NULL;
+#endif

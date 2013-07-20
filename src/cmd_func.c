@@ -70,13 +70,12 @@ int cmd_func( argc, argv )
                 do_export = True;
                 break;
             default :
-                fprintf( stderr, "\\func: -%c: Invalid option\n",
-                    (int)ch );
+                fprintf( stderr, "\\func: %s\n", sqsh_get_errstr());
                 have_error = True;
         }
     }
 
-    if ((argc - sqsh_optind) != 1)
+    if ( have_error || (argc - sqsh_optind) != 1)
     {
         fprintf( stderr, "Use: \\func [-x] <name>\n" );
         fprintf( stderr, "         <body>\n" );
@@ -181,8 +180,7 @@ int cmd_call( argc, argv )
 
     if (f == NULL)
     {
-        fprintf( stderr, "\\call: Error calling %s: %s\n",
-		 func_name ? (char*)func_name : "NULL", sqsh_get_errstr() );
+        fprintf( stderr, "\\call: Error calling %s: %s\n", func_name ? (char*)func_name : "NULL", sqsh_get_errstr() );
         return(CMD_FAIL);
     }
 

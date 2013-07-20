@@ -28,10 +28,15 @@
 #include "sqsh_error.h"
 #include "sqsh_compat.h"
 #include "dsp.h"
+#include "config.h"
+
+#if defined(HAVE_LOCALE_H)
+#include <locale.h>
+#endif
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_conv.c,v 1.4 2013/04/04 10:52:35 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_conv.c,v 1.5 2013/04/18 11:54:43 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -52,9 +57,18 @@ static int  sg_datetime_len      = -1;
 static int  sg_datetime4_len     = -1;
 static int  sg_date_len          = -1;
 static int  sg_time_len          = -1;
+static int  sg_bigdatetime_len   = -1;
+static int  sg_bigtime_len       = -1;
+#if defined(HAVE_SETLOCALE)
+static char *sg_locale           = NULL;
+#endif
+#if defined(CS_BIGDATETIME_TYPE) && defined(CS_BIGTIME_TYPE)
+static char sg_datetime_def[64]  = "%b %d %Y %l:%M:%S.%q%p";
+static char sg_time_def[64]      = "%l:%M:%S.%q%p";
+#endif
 
 /*-- Prototypes --*/
-static CS_INT dsp_type_len       _ANSI_ARGS(( CS_CONTEXT*, CS_CHAR*, 
+static CS_INT dsp_type_len       _ANSI_ARGS(( CS_CONTEXT*, CS_CHAR*,
                                               CS_DATAFMT*, CS_VOID* ));
 static char*  dsp_datetime_strip _ANSI_ARGS(( CS_INT, char*, int ));
 
@@ -75,8 +89,9 @@ int dsp_datetimefmt_set( fmt )
      * we are now changing the format from what it was, these
      * variables should be reset.
      */
-    sg_datetime_len  = -1;
-    sg_datetime4_len = -1;
+    sg_datetime_len    = -1;
+    sg_datetime4_len   = -1;
+    sg_bigdatetime_len = -1;
 
     /*
      * If the format is NULL or "default", then we simply store
@@ -195,7 +210,8 @@ int dsp_timefmt_set( fmt )
      * we are now changing the format from what it was, these
      * variables should be reset.
      */
-    sg_time_len  = -1;
+    sg_time_len    = -1;
+    sg_bigtime_len = -1;
 
     /*
      * If the format is NULL or "default", then we simply store
@@ -241,11 +257,12 @@ char* dsp_timefmt_get()
  *
  * Calculates the maximum number of characters required to store
  * a date in a string format of the current locale.  This function
- * is similar to dsp_money_len() except that every month is 
+ * is similar to dsp_money_len() except that every month is
  * converted to verify if particular month names are longer than
  * others.
  *
  * sqsh-2.1.9 - Also implement date and time datatype conversions.
+ * sqsh-2.3   - Improve handling of bigdatetime and bigtime data types.
  */
 CS_INT dsp_datetime_len( ctxt, type )
     CS_CONTEXT   *ctxt;
@@ -260,6 +277,30 @@ CS_INT dsp_datetime_len( ctxt, type )
     int             max_len;
     int             len;
     char           *fmt;
+#if defined(CS_BIGDATETIME_TYPE) && defined(CS_BIGTIME_TYPE)
+    char           *conv_fmt;
+#endif
+#if  defined(HAVE_SETLOCALE)
+    char           *locale;
+
+    /*
+     * sqsh-2.3 : If the locale was changed recently, we have to reset
+     * the cached type len values.
+     */
+    locale = setlocale (LC_ALL, NULL);
+    if ( sg_locale != locale )
+    {
+        DBG(sqsh_debug(DEBUG_DISPLAY, "locale changed to %s\n", locale);)
+
+        sg_locale = locale;
+        sg_datetime_len      = -1;
+        sg_datetime4_len     = -1;
+        sg_date_len          = -1;
+        sg_time_len          = -1;
+        sg_bigdatetime_len   = -1;
+        sg_bigtime_len       = -1;
+    }
+#endif
 
     /*
      * Check to see if we have cached the value from the last time
@@ -276,13 +317,6 @@ CS_INT dsp_datetime_len( ctxt, type )
         return sg_datetime4_len;
     }
 
-#if defined(CS_BIGDATETIME_TYPE)
-    if (type == CS_BIGDATETIME_TYPE && sg_datetime_len != -1)
-    {
-        return sg_datetime_len;
-    }
-#endif
-
 #if defined(CS_DATE_TYPE)
     if (type == CS_DATE_TYPE && sg_date_len != -1)
     {
@@ -297,10 +331,17 @@ CS_INT dsp_datetime_len( ctxt, type )
     }
 #endif
 
-#if defined(CS_BIGTIME_TYPE)
-    if (type == CS_BIGTIME_TYPE && sg_time_len != -1)
+#if defined(CS_BIGDATETIME_TYPE)
+    if (type == CS_BIGDATETIME_TYPE && sg_bigdatetime_len != -1)
     {
-        return sg_time_len;
+        return sg_bigdatetime_len;
+    }
+#endif
+
+#if defined(CS_BIGTIME_TYPE)
+    if (type == CS_BIGTIME_TYPE && sg_bigtime_len != -1)
+    {
+        return sg_bigtime_len;
     }
 #endif
 
@@ -313,19 +354,10 @@ CS_INT dsp_datetime_len( ctxt, type )
 
     if ((type == CS_DATETIME_TYPE  && *sg_datetime_fmt == '\0')
      || (type == CS_DATETIME4_TYPE && *sg_datetime_fmt == '\0')
-#if defined(CS_BIGDATETIME_TYPE)
-     || (type == CS_BIGDATETIME_TYPE && *sg_datetime_fmt == '\0')
-#endif
 #if defined(CS_DATE_TYPE)
      || (type == CS_DATE_TYPE && *sg_date_fmt == '\0')
 #endif
-#if defined(CS_TIME_TYPE)
-     || (type == CS_TIME_TYPE && *sg_time_fmt == '\0')
-#endif
-#if defined(CS_BIGTIME_TYPE)
-     || (type == CS_BIGTIME_TYPE && *sg_time_fmt == '\0')
-#endif
-		)
+       )
     {
         dt_fmt.datatype  = type;
         dt_fmt.maxlength = sizeof(CS_DATETIME);
@@ -346,34 +378,50 @@ CS_INT dsp_datetime_len( ctxt, type )
             /*-- Build a made-up day of the month --*/
 
             switch (type)
-              {
+            {
+                case CS_DATETIME_TYPE:
+                    sprintf( dt_buf, "%d/12/1997 11:59:53.123PM", i );
+                    break;
+                case CS_DATETIME4_TYPE:
+                    sprintf( dt_buf, "%d/12/1997 11:59PM", i );
+                    break;
 #if defined(CS_DATE_TYPE)
-              case CS_DATE_TYPE:
-                sprintf( dt_buf, "%d/12/1997", i );
-                break;
-#endif
-#if defined(CS_TIME_TYPE)
-              case CS_TIME_TYPE:
-                sprintf( dt_buf, "11:59:53:123PM" );
-                break;
+                case CS_DATE_TYPE:
+                    sprintf( dt_buf, "%d/12/1997", i );
+                    break;
 #endif
                 default:
-                  sprintf( dt_buf, "%d/12/1997 11:59:53:123PM", i );
-                break;
-              }
+                    sprintf( dt_buf, "%d/12/1997 11:59:53PM", i );
+                    break;
+            }
             len = dsp_type_len( ctxt, (CS_CHAR*)dt_buf, &dt_fmt, &dt );
 
             /*-- Keep track of the longest date encountered --*/
             max_len = max(len, max_len);
         }
     }
+#if defined(CS_TIME_TYPE)
+    else if (type == CS_TIME_TYPE && *sg_time_fmt == '\0')
+    {
+        dt_fmt.datatype  = type;
+        dt_fmt.maxlength = sizeof(CS_DATETIME);
+        dt_fmt.locale    = NULL;
+        dt_fmt.format    = CS_FMT_UNUSED;
+        dt_fmt.scale     = 0;
+        dt_fmt.precision = 0;
+        sprintf( dt_buf, "11:59:53.123PM" );
+        max_len = dsp_type_len( ctxt, (CS_CHAR*)dt_buf, &dt_fmt, &dt );
+    }
+#endif
     else
     {
         /*
          * If the user has supplied a display format to be used in
          * place of the CT-Lib format, then we have a lot of work
-         * to do; beginning wth building a reasonable UNIX time
+         * to do; beginning with building a reasonable UNIX time
          * structure.
+         * sqsh-2.3 : Note that CS_BIGDATETIME_TYPE and CS_BIGTIME_TYPE
+         * will use a default format here, if one is not supplied.
          */
         tm.tm_sec   = 59;
         tm.tm_min   = 59;
@@ -386,30 +434,37 @@ CS_INT dsp_datetime_len( ctxt, type )
 
         /*
          * Strip down the format string as defined by the CS_DATETIME
-         * datatype, and replace the ms (%u) with the longest possible
+         * datatype, and replace the ms (%q) with the longest possible
          * number.
          */
-            switch (type)
-              {
+        switch (type)
+        {
 #if defined(CS_DATE_TYPE)
-              case CS_DATE_TYPE:
+            case CS_DATE_TYPE:
                 fmt = dsp_datetime_strip( type, sg_date_fmt, 999 );
                 break;
 #endif
 #if defined(CS_TIME_TYPE)
-              case CS_TIME_TYPE:
+            case CS_TIME_TYPE:
                 fmt = dsp_datetime_strip( type, sg_time_fmt, 999 );
+                break;
+#endif
+#if defined(CS_BIGDATETIME_TYPE)
+            case CS_BIGDATETIME_TYPE:
+                conv_fmt = sg_datetime_fmt[0] == '\0' ? sg_datetime_def : sg_datetime_fmt;
+                fmt = dsp_datetime_strip( type, conv_fmt, 999999 );
                 break;
 #endif
 #if defined(CS_BIGTIME_TYPE)
-              case CS_BIGTIME_TYPE:
-                fmt = dsp_datetime_strip( type, sg_time_fmt, 999 );
+            case CS_BIGTIME_TYPE:
+                conv_fmt = sg_time_fmt[0] == '\0' ? sg_time_def : sg_time_fmt;
+                fmt = dsp_datetime_strip( type, conv_fmt, 999999 );
                 break;
 #endif
-                default:
+            default:
                 fmt = dsp_datetime_strip( type, sg_datetime_fmt, 999 );
                 break;
-              }      
+        }
 
         max_len   = 0;
         max_month = 0;
@@ -460,41 +515,42 @@ CS_INT dsp_datetime_len( ctxt, type )
         }
     }
 
-    DBG(sqsh_debug(DEBUG_DISPLAY, 
-                   "dsp_datetime_len: %s = %d chars\n", 
+    DBG(sqsh_debug(DEBUG_DISPLAY,
+                   "dsp_datetime_len: %s (type %d) = %d chars\n",
                    (type == CS_DATETIME_TYPE)?"CS_DATETIME":"Other DATE/TIME type",
-                   max_len);)
+                   type, max_len);)
 
-	switch(type) {
-	  case CS_DATETIME_TYPE:
-		sg_datetime_len = max_len;
-		break;
-	  case CS_DATETIME4_TYPE:
-		sg_datetime4_len = max_len;
-		break;
-#if defined(CS_BIGDATETIME_TYPE)
-	  case CS_BIGDATETIME_TYPE:
-		sg_datetime_len = max_len;
-		break;
-#endif
+    switch (type) {
+        case CS_DATETIME_TYPE:
+            sg_datetime_len = max_len;
+            break;
+
+        case CS_DATETIME4_TYPE:
+            sg_datetime4_len = max_len;
+            break;
 #if defined(CS_DATE_TYPE)
-	  case CS_DATE_TYPE:
-		sg_date_len = max_len;
-		break;
+        case CS_DATE_TYPE:
+            sg_date_len = max_len;
+            break;
 #endif
 #if defined(CS_TIME_TYPE)
-	  case CS_TIME_TYPE:
-		sg_time_len = max_len;
-		break;
+        case CS_TIME_TYPE:
+            sg_time_len = max_len;
+            break;
+#endif
+#if defined(CS_BIGDATETIME_TYPE)
+        case CS_BIGDATETIME_TYPE:
+            sg_bigdatetime_len = max_len;
+            break;
 #endif
 #if defined(CS_BIGTIME_TYPE)
-	  case CS_BIGTIME_TYPE:
-		sg_time_len = max_len;
-		break;
+        case CS_BIGTIME_TYPE:
+            sg_bigtime_len = max_len;
+            break;
 #endif
-	}
+    }
 
-/*	fprintf(stderr, "type = %d, len = %d\n", type, max_len); */
+/*  fprintf(stderr, "type = %d, len = %d\n", type, max_len); */
 
     return (CS_INT)max_len;
 }
@@ -536,9 +592,14 @@ CS_RETCODE dsp_datetime_conv( ctx, dt_fmt, dt, buf, len, type )
             conv_fmt = sg_time_fmt;
             break;
 #endif
+#if defined(CS_BIGDATETIME_TYPE)
+        case CS_BIGDATETIME_TYPE:
+            conv_fmt = sg_datetime_fmt[0] == '\0' ? sg_datetime_def : sg_datetime_fmt;
+            break;
+#endif
 #if defined(CS_BIGTIME_TYPE)
         case CS_BIGTIME_TYPE:
-            conv_fmt = sg_time_fmt;
+            conv_fmt = sg_time_fmt[0] == '\0' ? sg_time_def : sg_time_fmt;
             break;
 #endif
         default:
@@ -566,8 +627,7 @@ CS_RETCODE dsp_datetime_conv( ctx, dt_fmt, dt, buf, len, type )
                         (CS_VOID*)buf,         /* String */
                         (CS_INT*)NULL ) != CS_SUCCEED)
         {
-            fprintf( stderr, 
-                "dsp_datetime_conv: cs_convert(DATETIME->CHAR) failed\n" );
+            fprintf( stderr, "dsp_datetime_conv: cs_convert(DATETIME->CHAR) failed\n" );
             return CS_FAIL;
         }
 
@@ -600,8 +660,12 @@ CS_RETCODE dsp_datetime_conv( ctx, dt_fmt, dt, buf, len, type )
      * type of date that we are processing and replace the ms
      * field if it exists.
      */
-    fmt = dsp_datetime_strip( dt_fmt->datatype, conv_fmt, 
-                              (int)dr.datemsecond );
+#if defined(CS_BIGDATETIME_TYPE) && defined(CS_BIGTIME_TYPE)
+    if (dt_fmt->datatype == CS_BIGDATETIME_TYPE || dt_fmt->datatype == CS_BIGTIME_TYPE)
+        fmt = dsp_datetime_strip( dt_fmt->datatype, conv_fmt, (int) dr.datesecfrac );
+    else
+#endif
+        fmt = dsp_datetime_strip( dt_fmt->datatype, conv_fmt, (int) dr.datemsecond );
 
     /*
      * According to the strftime(3C) documentation, there is no real
@@ -647,12 +711,12 @@ CS_INT dsp_money_len( ctxt )
      */
     len = dsp_type_len( ctxt, (CS_CHAR*)"-922337203685477.5808",
                               &mon_fmt, (CS_VOID*)&mon );
-    
+
     if (len < 19)
     {
         len = 19;
     }
-    
+
     DBG(sqsh_debug(DEBUG_DISPLAY, "dsp_money_len: CS_MONEY = %d chars\n",
                         len);)
 
@@ -771,7 +835,7 @@ static char* dsp_datetime_strip( type, fmt, ms )
 
     /*
      * Now, we want to keep date format that the caller specified,
-     * but we want to strip out the milisecond (%u) and the 
+     * but we want to strip out the millisecond (%q) and the
      * delimeter for small and regular datetimes ([]).
      */
     for (cp = new_fmt; *fmt != '\0'; ++fmt)
@@ -779,11 +843,21 @@ static char* dsp_datetime_strip( type, fmt, ms )
         switch (*fmt)
         {
             case '%':
-                if (*(fmt + 1) == 'u')
+                if (*(fmt + 1) == 'q')
                 {
                     fmt += 1;
-                    sprintf( cp, "%03d", ms );
-                    cp += 3;
+#if defined(CS_BIGDATETIME_TYPE) && defined(CS_BIGTIME_TYPE)
+                    if (type == CS_BIGDATETIME_TYPE || type == CS_BIGTIME_TYPE)
+                    {
+                        sprintf( cp, "%06d", ms );
+                        cp += 6;
+                    }
+                    else
+#endif
+                    {
+                        sprintf( cp, "%03d", ms );
+                        cp += 3;
+                    }
                 }
                 else
                 {
@@ -804,7 +878,7 @@ static char* dsp_datetime_strip( type, fmt, ms )
 
             case ']':
                 break;
-            
+
             default:
                 *cp++ = *fmt;
         }

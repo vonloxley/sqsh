@@ -35,6 +35,12 @@
 #include "dsp.h"
 #include "sqsh_func.h"
 
+#include "config.h"
+
+#if defined(HAVE_LOCALE_H)
+    #include <locale.h>
+#endif
+
 /* g_cs_ver: This is the value of CS_VERSION_xxx. Stored in a global
  *          because it is needed to figure out the correct BLK_VERSION_xxx
  *          value to use in cmd_blk.c
@@ -151,5 +157,14 @@ extern char       *g_lock;
  * g_interactive: Global indicator if sqsh was started in interactive mode.
  */
 extern int         g_interactive;
+
+/*
+ * g_lconv: sqsh-2.3 - Do locale conversion of numeric/decimal/money datatypes.
+ */
+#if defined(HAVE_LOCALE_H)
+    extern struct lconv *g_lconv;
+#else
+    extern void *g_lconv;
+#endif
 
 #endif
