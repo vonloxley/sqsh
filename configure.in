@@ -308,7 +308,7 @@ AC_SUBST(X_LIBDIR)
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS(stropts.h memory.h stdlib.h time.h sys/time.h sys/types.h string.h strings.h fcntl.h unistd.h errno.h limits.h sys/param.h crypt.h shadow.h)
+AC_CHECK_HEADERS(stropts.h memory.h stdlib.h time.h sys/time.h sys/types.h string.h strings.h fcntl.h unistd.h errno.h limits.h sys/param.h crypt.h shadow.h locale.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -318,7 +318,7 @@ AC_TYPE_UID_T
 
 dnl Checks for library functions.
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS(sigaction strcasecmp strerror cftime strftime memcpy memmove localtime timelocal strchr gettimeofday get_process_stats crypt poll)
+AC_CHECK_FUNCS(sigaction strcasecmp strerror cftime strftime memcpy memmove localtime timelocal strchr gettimeofday get_process_stats crypt poll localeconv setlocale)
 AC_SIGSETJMP
 
 dnl
