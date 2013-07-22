@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.10 2013/04/04 10:52:35 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.11 2013/07/20 16:18:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -65,6 +65,8 @@ static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
      || ((t) == CS_SMALLINT_TYPE)   \
      || ((t) == CS_INT_TYPE)        \
      || ((t) == CS_BIT_TYPE)        \
+     || ((t) == CS_NUMERIC_TYPE)    \
+     || ((t) == CS_DECIMAL_TYPE)    \
      || ((t) == CS_VARCHAR_TYPE)    \
      || ((t) == CS_VARBINARY_TYPE)  \
      || ((t) == CS_UNICHAR_TYPE)    \
@@ -86,6 +88,8 @@ static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
      || ((t) == CS_SMALLINT_TYPE)   \
      || ((t) == CS_INT_TYPE)        \
      || ((t) == CS_BIT_TYPE)        \
+     || ((t) == CS_NUMERIC_TYPE)    \
+     || ((t) == CS_DECIMAL_TYPE)    \
      || ((t) == CS_VARCHAR_TYPE)    \
      || ((t) == CS_VARBINARY_TYPE)  \
      || ((t) == CS_UNICHAR_TYPE)    \
@@ -527,17 +531,36 @@ CS_INT dsp_desc_fetch( cmd, d )
                 d->d_cols[i].c_data[1] = 'x';
                 if (j==3) d->d_cols[i].c_data[2] = '0';
             }
-
+#if defined(HAVE_LOCALE_H)
+            else if (d->d_cols[i].c_format.datatype == CS_NUMERIC_TYPE ||
+                     d->d_cols[i].c_format.datatype == CS_DECIMAL_TYPE)
+            {
+                /*
+                 * sqsh-2.3: Convert the decimal separator in numeric/decimal datatypes
+                 * to the character according to the locale definition of the client.
+                 * By courtesy of Niki Hansche.
+                */
+                if (g_lconv != NULL && (radix = (CS_CHAR *) strrchr((CS_CHAR*) (d->d_cols[i].c_data), '.')) != NULL)
+                {
+                    *radix = (CS_CHAR) *g_lconv->decimal_point;
+                }
+            }
+#endif
             continue;
         }
 
         /*
-         * The datatype is declared native, so we have to convert it to displayable
-         * character data here.
+         * The datatype is declared native, so we have to convert it to displayable character data here.
+         * The case for CS_BINARY_TYPE, CS_LONGBINARY_TYPE. CS_VARBINARY_TYPE, CS_IMAGE_TYPE,
+         * CS_NUMERIC_TYPE and CS_DECIMAL_TYPE will only be executed if one or more of these datatypes
+         * are removed from the LET_CTLIB_CONV macro coded above. Otherwise these types are already
+         * decoded by CT-LIB. Note that freetds might have problems converting NUMERIC and DECIMAL
+         * types with cs_convert.
         */
         str_fmt.maxlength = d->d_cols[i].c_maxlength + 1;
         str_fmt.precision = d->d_cols[i].c_format.precision;
         str_fmt.scale = d->d_cols[i].c_format.scale;
+        d->d_cols[i].c_format.maxlength = d->d_cols[i].c_native_len;
 
         switch (d->d_cols[i].c_format.datatype)
         {
@@ -545,12 +568,7 @@ CS_INT dsp_desc_fetch( cmd, d )
             case CS_LONGBINARY_TYPE:
             case CS_VARBINARY_TYPE:
             case CS_IMAGE_TYPE:
-                /*
-                 * This case will only be executed if one or more of the datatypes are removed from
-                 * the LET_CTLIB_CONV macro.
-                */
                 strcpy( d->d_cols[i].c_data, "0x" );
-                d->d_cols[i].c_format.maxlength = d->d_cols[i].c_native_len;
 
                 if (cs_convert( g_context,                     /* Context */
                                 &d->d_cols[i].c_format,        /* Source Format */
@@ -665,8 +683,6 @@ CS_INT dsp_desc_fetch( cmd, d )
                 break;
 
             default:
-                d->d_cols[i].c_format.maxlength = d->d_cols[i].c_native_len;
-
                 if (cs_convert( g_context,                     /* Context */
                                 &d->d_cols[i].c_format,        /* Source Format */
                                 d->d_cols[i].c_native,         /* Source Data */
@@ -676,6 +692,8 @@ CS_INT dsp_desc_fetch( cmd, d )
                 {
                     fprintf( stderr, "dsp_desc_fetch: cs_convert(%d->CHAR) column %d failed\n",
                              (int) d->d_cols[i].c_format.datatype, (int) i+1 );
+                    dsp_display_fmt( "src_fmt", &d->d_cols[i].c_format );
+                    dsp_display_fmt( "dst_fmt", &str_fmt );
                     return CS_FAIL;
                 }
                 break;
