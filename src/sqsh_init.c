@@ -48,7 +48,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_init.c,v 1.6 2013/05/07 21:18:02 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_init.c,v 1.7 2013/07/20 16:18:35 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -72,7 +72,7 @@ int sqsh_init()
 	/*
 	 * sqsh-2.3 : Initialize locale to the default of C.
 	 */
-#if defined(HAVE_SETLOCALE)
+#if defined(HAVE_LOCALE_H) && defined(HAVE_SETLOCALE)
 	setlocale ( LC_ALL, "C" );
 #endif
 

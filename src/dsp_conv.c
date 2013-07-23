@@ -36,7 +36,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_conv.c,v 1.5 2013/04/18 11:54:43 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_conv.c,v 1.6 2013/07/20 16:18:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -280,7 +280,7 @@ CS_INT dsp_datetime_len( ctxt, type )
 #if defined(CS_BIGDATETIME_TYPE) && defined(CS_BIGTIME_TYPE)
     char           *conv_fmt;
 #endif
-#if  defined(HAVE_SETLOCALE)
+#if  defined(HAVE_LOCALE_H) && defined(HAVE_SETLOCALE)
     char           *locale;
 
     /*

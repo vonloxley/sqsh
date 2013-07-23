@@ -33,7 +33,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_misc.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: var_misc.c,v 1.2 2013/07/20 16:18:35 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -448,7 +448,7 @@ int var_set_lconv( env, var_name, var_value )
 
 	if( strcmp( *var_value, "1" ) == 0 )
 	{
-#if defined(HAVE_SETLOCALE) && defined(HAVE_LOCALECONV)
+#if defined(HAVE_LOCALE_H) && defined(HAVE_SETLOCALE) && defined(HAVE_LOCALECONV)
 		setlocale ( LC_ALL, "" );
 		g_lconv = localeconv();
 		return True;
@@ -461,7 +461,7 @@ int var_set_lconv( env, var_name, var_value )
 	}
 	else if( strcmp( *var_value, "0" ) == 0 )
 	{
-#if defined(HAVE_SETLOCALE)
+#if defined(HAVE_LOCALE_H) && defined(HAVE_SETLOCALE)
 		setlocale ( LC_ALL, "C" );
 #endif
 		g_lconv = NULL;
