@@ -127,7 +127,7 @@
 <p>
 </p>
 <h1><a name="name">NAME</a></h1>
-<p>sqsh - Interactive database shell (version 2.2.0)</p>
+<p>sqsh - Interactive database shell (version 2.3)</p>
 <p>
 </p>
 <hr />
@@ -1308,7 +1308,7 @@ values in variables <strong>$secmech</strong> or <strong>$secure_options</strong
 <p>For example, connecting to a server using Kerberos (which happens to be
 the default, i.e. first entry in libtcl.cfg [SECURITY] tab in this example):</p>
 <pre>
-  ~&gt; sqsh -SSYB1502 -Uuser1 -RFC6A1502 -Z
+  ~$ sqsh -SSYB1502 -Uuser1 -RFC6A1502 -Z
   \connect: Network authenticated session expires at:
             16 Feb 2010 15:28:39 (11764 secs)
   SYB1502.user1.master.1&gt; select @@servername,@@authmech,
@@ -2625,7 +2625,7 @@ format for this variable is %d-%b-%y (e.g. 02-Feb-1996).</p>
 <p>This variable may be set with a date format similar to <strong>$date</strong> and
 is used to control the display format of all SQL Server DATE columns. (Similar
 to <strong>$datetime</strong>.) Note that only 63 bytes are available in total for the
-variable string and the remainder will be truncated.</p>
+expanded string and the remainder will be truncated.</p>
 </dd>
 <dt><strong><a name="datetime" class="item">datetime (date-spec)</a></strong></dt>
 
@@ -2633,167 +2633,48 @@ variable string and the remainder will be truncated.</p>
 <p>This variable may be set with a date format similar to <strong>$date</strong> and <strong>$time</strong> and
 is used to control the display format of all SQL Server DATETIME, BIGDATETIME
 and SMALLDATETIME columns. Note that only 63 bytes are available in total for
-the variable string and the remainder will be truncated.</p>
+the expanded string and the remainder will be truncated.</p>
 <p>Note that this features relies upon the operating system specific locale
-information for determining such things as the name of the month and day, rather
-than going through the CT-Lib locale information. This means that the date
-format could potentially miss-match the locale as requested using the <strong>-z</strong>
-flag. For example, if <em>sqsh</em> is run on an operating system configured for US
-English, but requests French as the language of choice using <strong>-z</strong>, the use of
-<strong>$datetime</strong> will cause all date information to be displayed in US English
-rather than French.</p>
+information and the setting of <strong>$localeconv</strong> for determining such things as the
+name of the month and day, rather than going through the CT-Lib locale
+information. This means that the date format could potentially miss-match the
+locale as requested using the <strong>-z</strong> flag. For example, if <em>sqsh</em> is run on an
+operating system configured for US English, but requests French as the language
+of choice using <strong>-z</strong>, the use of <strong>$datetime</strong> will cause all date information
+to be displayed in US English rather than French.</p>
 <p>Ordinary characters defined in the variable are left in place without any
 conversion. Characters introduced by a '%' character are replaced during
-display of a column value as follows:</p>
+display of a column value according to the definitions in the <strong>strftime</strong>
+manual page.</p>
 <dl>
 <dt><strong><a name="__" class="item">[]</a></strong></dt>
 
 <dd>
 <p>Any contained between a pair of braces ('[' and ']') will be removed
 when displaying SMALLDATETIME columns. This feature is particularly useful for
-removing the seconds and milliseconds values which are not applicable to
-SMALLDATETIME anyway. For DATETIME columns, only the actual braces will be
-removed.</p>
+removing the seconds, milliseconds or microseconds values which are not
+applicable to SMALLDATETIME anyway. For DATETIME or BIGDATETIME columns,
+only the actual braces will be removed.</p>
 </dd>
-<dt><strong><a name="_a" class="item">%a</a></strong></dt>
+<dt><strong><a name="_q" class="item">%q</a></strong></dt>
 
 <dd>
-<p>The abbreviated weekday name according to the current operating system locale.</p>
-</dd>
-<dt><strong><a name="_a" class="item">%A</a></strong></dt>
-
-<dd>
-<p>The full weekday name according to the current operating system locale.</p>
-</dd>
-<dt><strong><a name="_b" class="item">%b</a></strong></dt>
-
-<dd>
-<p>The abbreviated month name according to the current operating system locale.</p>
-</dd>
-<dt><strong><a name="_b" class="item">%B</a></strong></dt>
-
-<dd>
-<p>The full month name according to the current operating system locale.</p>
-</dd>
-<dt><strong><a name="_c" class="item">%c</a></strong></dt>
-
-<dd>
-<p>The preferred date and time representation for the current operating system's
-locale.</p>
-</dd>
-<dt><strong><a name="_d" class="item">%d</a></strong></dt>
-
-<dd>
-<p>The day of the month as a decimal number (range 0 to 31).</p>
-</dd>
-<dt><strong><a name="_d" class="item">%D</a></strong></dt>
-
-<dd>
-<p>The date in US format (mm/dd/yy).</p>
-</dd>
-<dt><strong><a name="_h" class="item">%H</a></strong></dt>
-
-<dd>
-<p>The hour as a decimal number using a 24-hour clock (range 00 to 23)</p>
-</dd>
-<dt><strong><a name="_i" class="item">%I</a></strong></dt>
-
-<dd>
-<p>The hour as a decimal number using a 12-hour clock (range 01 to 12)</p>
-</dd>
-<dt><strong><a name="_j" class="item">%j</a></strong></dt>
-
-<dd>
-<p>The day of the year as a decimal number (range 001 to 366).</p>
-</dd>
-<dt><strong><a name="_m" class="item">%m</a></strong></dt>
-
-<dd>
-<p>The month as a decimal number (range 10 to 12).</p>
-</dd>
-<dt><strong><a name="_m" class="item">%M</a></strong></dt>
-
-<dd>
-<p>The minute as a decimal number.</p>
-</dd>
-<dt><strong><a name="_p" class="item">%p</a></strong></dt>
-
-<dd>
-<p>Either 'am' or 'pm' according to the given time value, or the
-corresponding strings for the current operating system locale.</p>
-</dd>
-<dt><strong><a name="_r" class="item">%r</a></strong></dt>
-
-<dd>
-<p>The time in 12-hour format (hh:mm:ss [AM|PM]).</p>
-</dd>
-<dt><strong><a name="_s" class="item">%s</a></strong></dt>
-
-<dd>
-<p>Seconds since the epoc (1970-01-01 00:00:00 UTC) (this is not supported on all
-systems).</p>
-</dd>
-<dt><strong><a name="_s" class="item">%S</a></strong></dt>
-
-<dd>
-<p>The second as a decimal number.</p>
-</dd>
-<dt><strong><a name="_t" class="item">%T</a></strong></dt>
-
-<dd>
-<p>The current time in 24-hour format (hh:mm:ss).</p>
-</dd>
-<dt><strong><a name="_u" class="item">%u</a></strong></dt>
-
-<dd>
-<p>The millisecond as a decimal number.</p>
-</dd>
-<dt><strong><a name="_u" class="item">%U</a></strong></dt>
-
-<dd>
-<p>The week number of the current year as a decimal number, starting with the first
-Sunday as the first day of the first week.</p>
-</dd>
-<dt><strong><a name="_w" class="item">%W</a></strong></dt>
-
-<dd>
-<p>The week number of the current year as a decimal number, starting with the first
-Monday as the first day of the first week.</p>
-</dd>
-<dt><strong><a name="_w" class="item">%w</a></strong></dt>
-
-<dd>
-<p>The day of the week as a decimal, Sunday being 0.</p>
-</dd>
-<dt><strong><a name="_x" class="item">%x</a></strong></dt>
-
-<dd>
-<p>The preferred date representation for the current locale without the time.</p>
-</dd>
-<dt><strong><a name="_x" class="item">%X</a></strong></dt>
-
-<dd>
-<p>The preferred time representation for the current locale without the date.</p>
-</dd>
-<dt><strong><a name="_y" class="item">%y</a></strong></dt>
-
-<dd>
-<p>The year as a decimal number without a century (range 00 to 99).</p>
-</dd>
-<dt><strong><a name="_y" class="item">%Y</a></strong></dt>
-
-<dd>
-<p>The year as a decimal number including the century.</p>
-</dd>
-<dt><strong><a name="_z" class="item">%Z</a></strong></dt>
-
-<dd>
-<p>The time zone (e.g., EDT), or nothing if not time zone is determinable.</p>
-</dd>
-<dt><strong><a name="__" class="item">%%</a></strong></dt>
-
-<dd>
-<p>A literal '%' character.</p>
+<p>Specifies the milliseconds for DATETIME and TIME and microseconds for
+BIGDATETIME and BIGTIME data types. In previous versions of sqsh the <em>%u</em>
+specifier was used for the millisecond part of the datetime datatype.
+However, as <em>%u</em> is used by <strong>strftime</strong> to denote the day number of the week,
+this is replaced by <em>%q</em> since sqsh-2.3. For example when using the default C
+locale:</p>
+<pre>
+    1&gt; \set datetime='%e %b %Y %H:%M[:%S.%q]%p'
+    1&gt; select convert(bigdatetime,getdate())
+    2&gt; select convert(smalldatetime,getdate())
+    3&gt; go</pre>
+<pre>
+    -----------------------------
+    22 Jul 2013 13:26:52.938000PM
+    -------------------
+    22 Jul 2013 13:27PM</pre>
 </dd>
 </dl>
 </dd>
@@ -3129,6 +3010,42 @@ buffer.</p>
 <p>Used to configure the line separator for the horizontal display style, this
 defaults to &quot;\n\t&quot;.</p>
 </dd>
+<dt><strong><a name="localeconv" class="item">localeconv (boolean)</a></strong></dt>
+
+<dd>
+<p>A boolean variable that when set to true will result in the Operating System
+locale to be used for displaying all datetime (DATETIME, SMALLDATETIME, TIME,
+DATE, BIGDATETIME and BIGTIME) and the numeric, decimal, real, float and
+money/smallmoney datatypes in the result set. When this variable is
+set to false (i.e. the default), sqsh will use the internal C/POSIX locale
+to determine how to display these datatypes. For example:</p>
+<pre>
+    ~$ export LANG=nl_NL.utf8
+    ~$ locale -ck LC_TIME
+    LC_TIME
+    abday=&quot;zo;ma;di;wo;do;vr;za&quot;
+    day=&quot;zondag;maandag;dinsdag;woensdag;donderdag;vrijdag;zaterdag&quot;
+    abmon=&quot;jan;feb;mrt;apr;mei;jun;jul;aug;sep;okt;nov;dec&quot;
+    mon=&quot;januari;februari;maart;april;mei;juni;juli;augustus;september;oktober;
+         november;december&quot;
+    am_pm=&quot;;&quot;
+    ...</pre>
+<pre>
+    ~$ sqsh -Llocaleconv=On -Ldatetime=&quot;%A %e %B %Y&quot; -C&quot;select getdate()&quot;
+     ---------------------------
+            maandag 22 juli 2013</pre>
+<pre>
+    (1 row affected)
+    ~$ sqsh -Llocaleconv=Off -Ldatetime=&quot;%A %e %B %Y&quot; -C&quot;select getdate()&quot;
+     ---------------------------
+             Monday 22 July 2013</pre>
+<pre>
+    (1 row affected)</pre>
+<p>Also, depending on the locale, the decimal specifier in money, numeric,
+decimal, float and real datatypes may be displayed as a <strong>&quot;,&quot;</strong>. Note that sqsh
+does not take the thousands_sep into account when displaying numerical data
+values.</p>
+</dd>
 <dt><strong>lock (string/write-only)</strong></dt>
 
 <dd>
@@ -3428,7 +3345,7 @@ format for this variable is %H:%M:%S (e.g. 14:32:58).</p>
 <p>This variable may be set with a time format similar to <strong>$time</strong> and
 is used to control the display format of all SQL Server TIME and BIGTIME
 columns. (Similar to <strong>$datetime</strong>.) Note that only 63 bytes are available in
-total for the variable string and the remainder will be truncated.</p>
+total for the expanded string and the remainder will be truncated.</p>
 </dd>
 <dt><strong><a name="tmp_dir" class="item">tmp_dir (path)</a></strong></dt>
 

@@ -1,0 +1,228 @@
+                                        Changes in sqsh-2.3
+
+                               New features, enhancements, bug fixes:
+
+1 - Feature  -    A new boolean variable $localeconv is introduced that will enable the use
+                  of the active Operating System locale with sqsh when displaying the result set
+                  for datetime datatypes (DATETIME, SMALLDATETIME, DATE, TIME, BIGDATETIME,
+                  BIGTIME) in combination with the $datetime, $datefmt, $timefmt variables and the
+                  real, float, numeric, decimal and money/smallmoney datatypes.
+                  By default this variable is 0 (off, false) which results in the internal C/POSIX
+                  locale being used.
+                  (In the sqsh manual page there was a remark with the $datetime variable, stating
+                  that the OS locale would always be used to display the datetime results, but as
+                  the locale was never actually set in sqsh, the locale would always be C/POSIX by
+                  default, anyway).
+                  Note that you can set this variable in your .sqshrc file to enable it by default.
+                  (\set localeconv=1)
+
+                  For example:
+
+                  $ export LANG=nl_NL.utf8
+                  $ locale -ck LC_TIME
+                  LC_TIME
+                  abday="zo;ma;di;wo;do;vr;za"
+                  day="zondag;maandag;dinsdag;woensdag;donderdag;vrijdag;zaterdag"
+                  abmon="jan;feb;mrt;apr;mei;jun;jul;aug;sep;okt;nov;dec"
+                  mon="januari;februari;maart;april;mei;juni;juli;augustus;september;oktober;november;december"
+                  am_pm=";"
+                  ...
+
+                  $ locale -ck LC_NUMERIC
+                  LC_NUMERIC
+                  decimal_point=","
+                  thousands_sep=""
+                  grouping=-1;-1
+                  numeric-decimal-point-wc=44
+                  numeric-thousands-sep-wc=0
+                  numeric-codeset="UTF-8"
+
+                  $ sqsh -Llocaleconv=On -Ldatefmt="%A %e %B %Y" -C"select convert(date,getdate())"
+
+                   ---------------------------
+                          dinsdag 23 juli 2013
+
+                  (1 row affected)
+                  $ sqsh -Llocaleconv=Off -Ldatetime="%A %e %B %Y" -C"select getdate()"
+
+                   ---------------------------
+                          Tuesday 23 July 2013
+
+                  (1 row affected)
+                  $ sqsh -Llocaleconv=True -C"select 99.99"
+
+                   -------
+                     99,99
+
+                  (1 row affected)
+                  $ sqsh -Llocaleconv=False -C"select 99.99"
+
+                   -------
+                     99.99
+
+                  (1 row affected)
+
+                  Note that sqsh will not take grouping of thousands into account. Only the decimal_point
+                  or mon_decimal_point will be used in displaying numerical or monetary values.
+                  A big thank you to K.M. Hansche who provided the initial code to enable locale
+                  conversions.
+
+
+2 - Enhancement - Another contribution by K.M. Hansche is some code to enable the use of a \for loop command
+                  inside a sqsh function definition (the \func command).
+
+
+3 - Enhancement - Another contribution by K.M. Hansche is some code to produce html5 compatible output when you use
+                  the "\go -m html" command to generate result set output in html format.
+
+
+4 - Enhancement - Display size and justification of datatypes bigint (CS_BIGINT_TYPE), unsigned smallint
+                  (CS_USMALLINT_TYPE), unsigned int (CS_UINT_TYPE) and unsigned bigint (CS_UBIGINT_TYPE)
+                  adapted. Previously these datatypes were displayed with length 256 bytes and left
+                  justification. Display is now right justified and output size is:
+
+                  bigint             20 characters
+                  unsigned smallint   5 characters
+                  unsigned int       10 characters
+                  unsigned bigint    20 characters
+
+                  Also the justification of all datetime datatypes is set to right. This was not the case
+                  for DATE, TIME, BIGDATETIME and BIGTIME. Where appropriate, the display size is also fixed
+                  for these datatypes.
+
+
+5 - Enhancement - The datatypes bigdatetime and bigtime will now be correctly processed with microseconds
+                  taken into account, even when variables $datetime and $timefmt are not set (i.e. default).
+                  Basically, the following defaults will be used for BIGDATETIME = "%b %d %Y %l:%M:%S.%q%p"
+                  and BIGTIME = "%l:%M:%S.%q%p". See the strftime manual page for a description of these
+                  % variables.
+
+                  1> \set datetime=NULL
+                  1> \set timefmt=NULL
+                  1> select convert(bigdatetime,getdate())
+                  2> select convert(bigtime,getdate())
+                  3> go
+
+                   -----------------------------
+                   Jul 23 2013 11:52:21.440000AM
+
+                  (1 row affected)
+
+                   -----------------
+                   11:52:21.440000AM
+
+                  (1 row affected)
+
+
+                  When you set the $datetime and/or $timefmt variables according to the strftime variables
+                  that start with %, you now have to use %q to expand milliseconds or microseconds. In
+                  previous versions of sqsh the %u variables specified the number of milliseconds, but as
+                  %u also specifies the day number of the week (Monday 1 .. Sunday 7), this is now replaced
+                  by %q as this was the only free character left. Note that %q automatically expands to
+                  microseconds when a bigdatetime or bigtime datatype is used, and expands to milliseconds
+                  with regular datetime and time datatypes.
+
+
+6 - Enhancement - All missing CS_*_TYPES in metadata description processing are being added now. This means that
+                  when you request the result set metadata, the data types of the columns are properly
+                  shown, instead of <INVALID>. Also some other missing status information from newer Open Client
+                  versions are added as well. For example:
+
+                  1> select convert(bigint,1)
+                  2> \go -m meta
+                  CS_ROW_RESULT
+                     CS_BROWSE_INFO        = CS_FALSE
+                     CS_CMD_NUMBER         = 1
+                     CS_NUMDATA            = 1
+                     CS_NUMORDERCOLS       = 0
+                     COLUMN #1
+                        name      =
+                        namelen   =  0
+                        datatype  =  CS_BIGINT_TYPE
+                        format    =  CS_FMT_UNUSED
+                        maxlength =  8
+                        scale     =  0
+                        precision =  0
+                        status    =  CS_UPDATABLE
+                        count     =  0
+                        usertype  =  43
+                        locale    =  0x0x8ad2e70
+                     CS_TRANS_STATE        = CS_TRAN_COMPLETED
+                  CS_CMD_DONE
+                     CS_CMD_NUMBER         = 1
+                     CS_ROW_COUNT          = 1
+                     CS_TRANS_STATE        = CS_TRAN_COMPLETED
+
+
+7 - Bugfix -      In sqsh-2.2.0 an annoying bug was introduced when displaying binary data. As the string
+                  terminator was not properly set in the output string, the output string could contain
+                  garbage and scrambled data. This is being fixed now.
+
+8 - Bugfix -      When the first character on a line of input is the # character, and it is not a potential
+                  temporary table name, then sqsh assumed the line contained only a comment and was discarded
+                  from the SQL buffer. This could lead to syntax errors in the following situation:
+
+                  /* ############################################
+                  #  This is a block of comment that should     #
+                  #  be properly handled and added to the       #
+                  #  SQL buffer that will be send to the server.#
+                  #  ############################################*/
+
+                  What happened in older versions was that only the first line was put into the SQL buffer,
+                  but the other lines were ignored. That led to a missing closing comment statement (*/) and thus
+                  to a syntax error on the server.
+                  When sqsh now determines a # character on the first position in the input stream, it checks
+                  the current SQL buffer for any nested level of C style comments. When the buffer started any
+                  comment that is not closed yet, the line of input will just be added to the SQL buffer as is.
+
+
+9 - Bugfix -      Older versions of sqsh could only handle a line of input of max 4096 bytes. When readline support
+                  was compiled in, and a larger line of input was red from the input stream, that line of input was
+                  copied to a fixed buffer of 4096 bytes, resulting in a buffer overflow and a crash (core dump) of
+                  sqsh. When readline support was not compiled in, the buffer would be truncated at 4K.
+                  Now sqsh uses a flexible input buffer of initial size 16K. When more data is copied into this
+                  buffer, it will automatically expand to fit the data.
+                  Note, when no readline support is used, the buffer is still limited to 16K, which still might
+                  lead to silent truncation.
+
+
+
+                             All modified source files in release 2.3
+
+  sqsh-2.3/src/cmd_connect.c  - Removed some useless code in autouse processing.
+
+  sqsh-2.3/src/cmd_do.c       - Enable \for command inside \func command. (Enhancement 2)
+
+  sqsh-2.3/src/cmd_func.c     - Correct error handling for invalid \func calls.
+
+  sqsh-2.3/src/cmd_input.c    - Implementation of bugfix 8.
+
+  sqsh-2.3/src/config.h.in    - Implementation of feature 1.
+
+  sqsh-2.3/src/dsp_conv.c     - Implementation of feature 1 and enhancements 4 and 5.
+
+  sqsh-2.3/src/dsp_desc.c     - Implementation of feature 1 and enhancements 4 and 5 and bugfix 7.
+
+  sqsh-2.3/src/dsp_html.c     - Implementation of enhancement 3.
+
+  sqsh-2.3/src/dsp_meta.c     - Implementation of enhancement 6.
+
+  sqsh-2.3/src/sqsh_config.h  - Set version to sqsh-2.3.
+
+  sqsh-2.3/src/sqsh_global.c  - Implementation of feature 1.
+
+  sqsh-2.3/src/sqsh_global.h  - Implementation of feature 1.
+
+  sqsh-2.3/src/sqsh_init.c    - Implementation of feature 1.
+
+  sqsh-2.3/src/sqsh_job.c     - Simple code fix. A variable was assigned a value through some
+                                hash bucket calculation, but instead of using this variable, the
+                                bucket was calculated again when it was needed.
+
+  sqsh-2.3/src/sqsh_readline.c- Implementation for bugfix 9.
+
+  sqsh-2.3/src/var.h          - Implementation of feature 1 (define new variable "localeconv").
+
+  sqsh-2.3/src/var_misc.c     - Implementation of feature 1. Change locale settings when value of localeconv
+                                is changed from false to true and vice versa.
+

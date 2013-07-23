@@ -124,13 +124,13 @@
 .\" ========================================================================
 .\"
 .IX Title "sqsh 1"
-.TH sqsh 1 "2013-05-05" "2.2.0" "sqsh-2.2.0"
+.TH sqsh 1 "2013-07-23" "2.3" "sqsh-2.3"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
 .nh
 .SH "NAME"
-sqsh \- Interactive database shell (version 2.2.0)
+sqsh \- Interactive database shell (version 2.3)
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 .Vb 10
@@ -1324,7 +1324,7 @@ For example, connecting to a server using Kerberos (which happens to be
 the default, i.e. first entry in libtcl.cfg [\s-1SECURITY\s0] tab in this example):
 .PP
 .Vb 9
-\&  ~> sqsh \-SSYB1502 \-Uuser1 \-RFC6A1502 \-Z
+\&  ~$ sqsh \-SSYB1502 \-Uuser1 \-RFC6A1502 \-Z
 \&  \econnect: Network authenticated session expires at:
 \&            16 Feb 2010 15:28:39 (11764 secs)
 \&  SYB1502.user1.master.1> select @@servername,@@authmech,
@@ -2407,144 +2407,55 @@ format for this variable is \f(CW%d\fR\-%b\-%y (e.g. 02\-Feb\-1996).
 This variable may be set with a date format similar to \fB\f(CB$date\fB\fR and
 is used to control the display format of all \s-1SQL\s0 Server \s-1DATE\s0 columns. (Similar
 to \fB\f(CB$datetime\fB\fR.) Note that only 63 bytes are available in total for the
-variable string and the remainder will be truncated.
+expanded string and the remainder will be truncated.
 .IP "datetime (date-spec)" 4
 .IX Item "datetime (date-spec)"
 This variable may be set with a date format similar to \fB\f(CB$date\fB\fR and \fB\f(CB$time\fB\fR and
 is used to control the display format of all \s-1SQL\s0 Server \s-1DATETIME\s0, \s-1BIGDATETIME\s0
 and \s-1SMALLDATETIME\s0 columns. Note that only 63 bytes are available in total for
-the variable string and the remainder will be truncated.
+the expanded string and the remainder will be truncated.
 .Sp
 Note that this features relies upon the operating system specific locale
-information for determining such things as the name of the month and day, rather
-than going through the CT-Lib locale information. This means that the date
-format could potentially miss-match the locale as requested using the \fB\-z\fR
-flag. For example, if \fIsqsh\fR is run on an operating system configured for \s-1US\s0
-English, but requests French as the language of choice using \fB\-z\fR, the use of
-\&\fB\f(CB$datetime\fB\fR will cause all date information to be displayed in \s-1US\s0 English
-rather than French.
+information and the setting of \fB\f(CB$localeconv\fB\fR for determining such things as the
+name of the month and day, rather than going through the CT-Lib locale
+information. This means that the date format could potentially miss-match the
+locale as requested using the \fB\-z\fR flag. For example, if \fIsqsh\fR is run on an
+operating system configured for \s-1US\s0 English, but requests French as the language
+of choice using \fB\-z\fR, the use of \fB\f(CB$datetime\fB\fR will cause all date information
+to be displayed in \s-1US\s0 English rather than French.
 .Sp
 Ordinary characters defined in the variable are left in place without any
 conversion. Characters introduced by a '%' character are replaced during
-display of a column value as follows:
+display of a column value according to the definitions in the \fBstrftime\fR
+manual page.
 .RS 4
 .IP "[]" 4
 Any contained between a pair of braces ('[' and ']') will be removed
 when displaying \s-1SMALLDATETIME\s0 columns. This feature is particularly useful for
-removing the seconds and milliseconds values which are not applicable to
-\&\s-1SMALLDATETIME\s0 anyway. For \s-1DATETIME\s0 columns, only the actual braces will be
-removed.
-.ie n .IP "%a" 4
-.el .IP "\f(CW%a\fR" 4
-.IX Item "%a"
-The abbreviated weekday name according to the current operating system locale.
-.ie n .IP "%A" 4
-.el .IP "\f(CW%A\fR" 4
-.IX Item "%A"
-The full weekday name according to the current operating system locale.
-.ie n .IP "%b" 4
-.el .IP "\f(CW%b\fR" 4
-.IX Item "%b"
-The abbreviated month name according to the current operating system locale.
-.ie n .IP "%B" 4
-.el .IP "\f(CW%B\fR" 4
-.IX Item "%B"
-The full month name according to the current operating system locale.
-.ie n .IP "%c" 4
-.el .IP "\f(CW%c\fR" 4
-.IX Item "%c"
-The preferred date and time representation for the current operating system's
-locale.
-.ie n .IP "%d" 4
-.el .IP "\f(CW%d\fR" 4
-.IX Item "%d"
-The day of the month as a decimal number (range 0 to 31).
-.ie n .IP "%D" 4
-.el .IP "\f(CW%D\fR" 4
-.IX Item "%D"
-The date in \s-1US\s0 format (mm/dd/yy).
-.ie n .IP "%H" 4
-.el .IP "\f(CW%H\fR" 4
-.IX Item "%H"
-The hour as a decimal number using a 24\-hour clock (range 00 to 23)
-.ie n .IP "%I" 4
-.el .IP "\f(CW%I\fR" 4
-.IX Item "%I"
-The hour as a decimal number using a 12\-hour clock (range 01 to 12)
-.ie n .IP "%j" 4
-.el .IP "\f(CW%j\fR" 4
-.IX Item "%j"
-The day of the year as a decimal number (range 001 to 366).
-.ie n .IP "%m" 4
-.el .IP "\f(CW%m\fR" 4
-.IX Item "%m"
-The month as a decimal number (range 10 to 12).
-.ie n .IP "%M" 4
-.el .IP "\f(CW%M\fR" 4
-.IX Item "%M"
-The minute as a decimal number.
-.ie n .IP "%p" 4
-.el .IP "\f(CW%p\fR" 4
-.IX Item "%p"
-Either 'am' or 'pm' according to the given time value, or the
-corresponding strings for the current operating system locale.
-.ie n .IP "%r" 4
-.el .IP "\f(CW%r\fR" 4
-.IX Item "%r"
-The time in 12\-hour format (hh:mm:ss [AM|PM]).
-.ie n .IP "%s" 4
-.el .IP "\f(CW%s\fR" 4
-.IX Item "%s"
-Seconds since the epoc (1970\-01\-01 00:00:00 \s-1UTC\s0) (this is not supported on all
-systems).
-.ie n .IP "%S" 4
-.el .IP "\f(CW%S\fR" 4
-.IX Item "%S"
-The second as a decimal number.
-.ie n .IP "%T" 4
-.el .IP "\f(CW%T\fR" 4
-.IX Item "%T"
-The current time in 24\-hour format (hh:mm:ss).
-.ie n .IP "%u" 4
-.el .IP "\f(CW%u\fR" 4
-.IX Item "%u"
-The millisecond as a decimal number.
-.ie n .IP "%U" 4
-.el .IP "\f(CW%U\fR" 4
-.IX Item "%U"
-The week number of the current year as a decimal number, starting with the first
-Sunday as the first day of the first week.
-.ie n .IP "%W" 4
-.el .IP "\f(CW%W\fR" 4
-.IX Item "%W"
-The week number of the current year as a decimal number, starting with the first
-Monday as the first day of the first week.
-.ie n .IP "%w" 4
-.el .IP "\f(CW%w\fR" 4
-.IX Item "%w"
-The day of the week as a decimal, Sunday being 0.
-.ie n .IP "%x" 4
-.el .IP "\f(CW%x\fR" 4
-.IX Item "%x"
-The preferred date representation for the current locale without the time.
-.ie n .IP "%X" 4
-.el .IP "\f(CW%X\fR" 4
-.IX Item "%X"
-The preferred time representation for the current locale without the date.
-.ie n .IP "%y" 4
-.el .IP "\f(CW%y\fR" 4
-.IX Item "%y"
-The year as a decimal number without a century (range 00 to 99).
-.ie n .IP "%Y" 4
-.el .IP "\f(CW%Y\fR" 4
-.IX Item "%Y"
-The year as a decimal number including the century.
-.ie n .IP "%Z" 4
-.el .IP "\f(CW%Z\fR" 4
-.IX Item "%Z"
-The time zone (e.g., \s-1EDT\s0), or nothing if not time zone is determinable.
-.IP "%%" 4
-A literal '%' character.
+removing the seconds, milliseconds or microseconds values which are not
+applicable to \s-1SMALLDATETIME\s0 anyway. For \s-1DATETIME\s0 or \s-1BIGDATETIME\s0 columns,
+only the actual braces will be removed.
+.ie n .IP "%q" 4
+.el .IP "\f(CW%q\fR" 4
+.IX Item "%q"
+Specifies the milliseconds for \s-1DATETIME\s0 and \s-1TIME\s0 and microseconds for
+\&\s-1BIGDATETIME\s0 and \s-1BIGTIME\s0 data types. In previous versions of sqsh the \fI\f(CI%u\fI\fR
+specifier was used for the millisecond part of the datetime datatype.
+However, as \fI\f(CI%u\fI\fR is used by \fBstrftime\fR to denote the day number of the week,
+this is replaced by \fI\f(CI%q\fI\fR since sqsh\-2.3. For example when using the default C
+locale:
+.Sp
+.Vb 4
+\&    1> \eset datetime=\*(Aq%e %b %Y %H:%M[:%S.%q]%p\*(Aq
+\&    1> select convert(bigdatetime,getdate())
+\&    2> select convert(smalldatetime,getdate())
+\&    3> go
+\&
+\&    \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+\&    22 Jul 2013 13:26:52.938000PM
+\&    \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+\&    22 Jul 2013 13:27PM
+.Ve
 .RE
 .RS 4
 .RE
@@ -2821,6 +2732,43 @@ buffer.
 .IX Item "linesep (string)"
 Used to configure the line separator for the horizontal display style, this
 defaults to \*(L"\en\et\*(R".
+.IP "localeconv (boolean)" 4
+.IX Item "localeconv (boolean)"
+A boolean variable that when set to true will result in the Operating System
+locale to be used for displaying all datetime (\s-1DATETIME\s0, \s-1SMALLDATETIME\s0, \s-1TIME\s0,
+\&\s-1DATE\s0, \s-1BIGDATETIME\s0 and \s-1BIGTIME\s0) and the numeric, decimal, real, float and
+money/smallmoney datatypes in the result set. When this variable is
+set to false (i.e. the default), sqsh will use the internal C/POSIX locale
+to determine how to display these datatypes. For example:
+.Sp
+.Vb 10
+\&    ~$ export LANG=nl_NL.utf8
+\&    ~$ locale \-ck LC_TIME
+\&    LC_TIME
+\&    abday="zo;ma;di;wo;do;vr;za"
+\&    day="zondag;maandag;dinsdag;woensdag;donderdag;vrijdag;zaterdag"
+\&    abmon="jan;feb;mrt;apr;mei;jun;jul;aug;sep;okt;nov;dec"
+\&    mon="januari;februari;maart;april;mei;juni;juli;augustus;september;oktober;
+\&         november;december"
+\&    am_pm=";"
+\&    ...
+\&
+\&    ~$ sqsh \-Llocaleconv=On \-Ldatetime="%A %e %B %Y" \-C"select getdate()"
+\&     \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+\&            maandag 22 juli 2013
+\&
+\&    (1 row affected)
+\&    ~$ sqsh \-Llocaleconv=Off \-Ldatetime="%A %e %B %Y" \-C"select getdate()"
+\&     \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+\&             Monday 22 July 2013
+\&
+\&    (1 row affected)
+.Ve
+.Sp
+Also, depending on the locale, the decimal specifier in money, numeric,
+decimal, float and real datatypes may be displayed as a \fB\*(L",\*(R"\fR. Note that sqsh
+does not take the thousands_sep into account when displaying numerical data
+values.
 .IP "lock (string/write\-only)" 4
 .IX Item "lock (string/write-only)"
 Defines the password to be used by the \fB\elock\fR command. If unset or set to the
@@ -3065,7 +3013,7 @@ format for this variable is \f(CW%H:\fR%M:%S (e.g. 14:32:58).
 This variable may be set with a time format similar to \fB\f(CB$time\fB\fR and
 is used to control the display format of all \s-1SQL\s0 Server \s-1TIME\s0 and \s-1BIGTIME\s0
 columns. (Similar to \fB\f(CB$datetime\fB\fR.) Note that only 63 bytes are available in
-total for the variable string and the remainder will be truncated.
+total for the expanded string and the remainder will be truncated.
 .IP "tmp_dir (path)" 4
 .IX Item "tmp_dir (path)"
 This contains the directory to which temporary files used internally by \fIsqsh\fR
