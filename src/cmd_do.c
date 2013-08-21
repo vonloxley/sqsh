@@ -74,6 +74,8 @@ int cmd_do( argc, argv )
 	varbuf_t         *do_buf;
 	varbuf_t         *orig_sqlbuf;          /* SQL Buffer upon entry */
 	CS_CONNECTION    *orig_conn;            /* Connection upon entry */
+	CS_CONTEXT       *orig_ctxt;            /* Context upon entry */
+	char              orig_password[SQSH_PASSLEN+1]; /* Current session password */
 	int               ret        = False;
 	int               have_error = False;
 	int               exit_status;
@@ -85,6 +87,19 @@ int cmd_do( argc, argv )
 	** restore when we are done.
 	*/
 	env_tran( g_env );
+
+	/*
+	 *                        sqsh-2.4 modification.
+	 * This is totally utterly ugly, but the \do block may call \reconnect with a lot of
+	 * parameter changes that will be committed in the global environment upon a successfull
+	 * connection. If we put some of the original values on the logsave chain first, then the
+	 * env_rollback call at the end of this function will eventually restore these parameter
+	 * values back to the values of the current session.
+	 */
+	env_get( g_env, "DSQUERY",  &expand); env_put( g_env, "DSQUERY",  expand, ENV_F_TRAN );
+	env_get( g_env, "database", &expand); env_put( g_env, "database", expand, ENV_F_TRAN );
+	env_get( g_env, "username", &expand); env_put( g_env, "username", expand, ENV_F_TRAN );
+	strcpy ( orig_password, g_password);
 
 	while ((ch = sqsh_getopt( argc, argv, "S:U:P:D:n" )) != EOF)
 	{
@@ -166,7 +181,7 @@ int cmd_do( argc, argv )
 	}
 
 	/*
-	** Before we go any further, read the reaminder of the input
+	** Before we go any further, read the remainder of the input
 	** from the user (up to \done).
 	*/
 	do_buf = varbuf_create( 512 );
@@ -221,6 +236,7 @@ int cmd_do( argc, argv )
 	*/
 	orig_sqlbuf = g_sqlbuf;
 	orig_conn   = g_connection;
+	orig_ctxt   = g_context;
 
 	/*
 	** And replace then with new copies.  Note that setting
@@ -240,6 +256,7 @@ int cmd_do( argc, argv )
 	if (do_connection == True)
 	{
 		g_connection = NULL;
+		g_context    = NULL;
 		if (jobset_run( g_jobset, "\\connect", &exit_status ) == -1)
 		{
 			fprintf( stderr, "\\do: Connect failed\n" );
@@ -261,9 +278,19 @@ int cmd_do( argc, argv )
 		g_connection = NULL;
 	}
 
+	if (do_connection == True &&
+		g_context != NULL)
+	{
+		if (ct_exit ( g_context, CS_UNUSED) != CS_SUCCEED)
+		    ct_exit ( g_context, CS_FORCE_EXIT );
+		cs_ctx_drop ( g_context );
+		g_context = NULL;
+	}
+
 	varbuf_destroy( g_sqlbuf );
 	varbuf_destroy( do_buf );
 
+	g_context    = orig_ctxt;
 	g_connection = orig_conn;
 	g_sqlbuf     = orig_sqlbuf;
 
@@ -271,6 +298,7 @@ int cmd_do( argc, argv )
 		varbuf_destroy( expand_buf );
 
 	env_rollback( g_env );
+	env_set( g_env, "password", orig_password );
 	return(ret);
 }
 

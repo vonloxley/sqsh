@@ -34,10 +34,11 @@
 #include "sqsh_readline.h"
 #include "sqsh_stdin.h"
 #include "sqsh_varbuf.h"
+#include "sqsh_parser/sqsh_parser.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.10 2013/05/05 19:50:43 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.11 2013/07/20 16:18:35 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -56,7 +57,7 @@ static char*   sqsh_generator      _ANSI_ARGS(( char*, int )) ;
  */
 static int sqsh_readline_addcol   _ANSI_ARGS(( char* )) ;
 static int sqsh_readline_clearcol _ANSI_ARGS(( void  )) ;
-static int DynColnameLoad         _ANSI_ARGS(( char* )) ;
+static int DynColnameLoad         _ANSI_ARGS(( char*, char* )) ;
 
 /*
  * sqsh-2.2.0 - Function prototypes for new feature readline_histignore.
@@ -885,6 +886,8 @@ static char* sqsh_generator( text, state )
     char        *word;
     char        *keyword_dynamic;
     char        objname[256];
+    varbuf_t   *vb;
+    char       *tn;
 
     len    = strlen(text);
     nitems = sizeof(sqsh_statements) / sizeof(char*);
@@ -915,13 +918,29 @@ static char* sqsh_generator( text, state )
              * name we want to autocomplete. Obtain the objname from the text
              * and query all the column/parameter names for this object and
              * store them in a linked list.
+             * sqsh-2.4 : Added code to generate a completion list for aliased
+             * objectnames as well. Code contributed by K.-M. Hansche.
              */
             for ( idx = 0; text[idx] != '\0' && text[idx] != '.'; idx++ );
             if ( text[idx] == '.' )
             {
                 strncpy ( objname, text, idx );
                 objname[idx] = '\0';
-                (void) DynColnameLoad ( objname );
+                vb = varbuf_create ( varbuf_getlen(g_sqlbuf) + strlen(rl_line_buffer) );
+                if (vb == NULL)
+                {
+                    fprintf (stderr, "sqsh: %s\n", sqsh_get_errstr());
+                    sqsh_exit (255);
+                }
+                varbuf_strcpy ( vb, varbuf_getstr(g_sqlbuf) );
+                varbuf_strcat ( vb, rl_line_buffer );
+
+                parseSql ( varbuf_getstr(vb) );
+                tn = getTableForAlias ( objname );
+                (void) DynColnameLoad ( (tn != NULL) ? tn : objname, objname );
+
+                varbuf_destroy(vb);
+                delTableDefs();
             }
             else if (sg_colname_start != NULL)
                 sqsh_readline_clearcol ();
@@ -1226,8 +1245,9 @@ static int sqsh_readline_clearcol()
  * an existing table, view or stored procedure.
  *
  */
-static int DynColnameLoad (objname)
+static int DynColnameLoad (objname, alias)
     char *objname;
+    char *alias;
 {
     CS_COMMAND *cmd;
     CS_DATAFMT  columns[1];
@@ -1257,7 +1277,7 @@ static int DynColnameLoad (objname)
         return (CS_FAIL);
     }
     sprintf (query, "select \'%s.\' + name from syscolumns where id=object_id(\'%s\') order by name"
-                  ,objname, objname);
+                  ,alias, objname);
     if (ct_command( cmd,                /* Command Structure */
                     CS_LANG_CMD,        /* Command Type      */
                     query,              /* Query Buffer      */

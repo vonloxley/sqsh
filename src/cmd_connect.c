@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.31 2013/05/05 19:50:43 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.32 2013/07/20 16:18:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -165,11 +165,10 @@ int cmd_connect( argc, argv )
     char      *cp;
     extern    char *sqsh_optarg ;
     extern    int   sqsh_optind ;
-    char      use_database[128] ;
     int       c ;
     int       have_error = False ;
     int       preserve_context   = True ;
-    char      orig_password[64];
+    char      orig_password[SQSH_PASSLEN+1];
     int       password_changed = False;
     char      sqlbuf[64];
     char      passbuf[64];
@@ -536,7 +535,7 @@ int cmd_connect( argc, argv )
          * If we don't have a password to use (i.e. the $password isn't set
          * or -P was not supplied), then ask the user for one.
          */
-	else if (g_password_set == False)
+        else if (g_password_set == False)
         {
             len = sqsh_getinput( "Password: ", passbuf, sizeof(passbuf), 0);
 
@@ -563,9 +562,8 @@ int cmd_connect( argc, argv )
      */
     if( preserve_context && database != NULL && *database != '\0' )
     {
-        strncpy( use_database, database, sizeof(use_database)-1 ) ;
-        use_database[sizeof(use_database)-1] = '\0';
-        autouse = use_database ;
+        env_put ( g_env, "autouse", database, ENV_F_TRAN ) ;
+        env_get ( g_env, "autouse", &autouse ) ;
     }
 
     /*
@@ -1143,6 +1141,7 @@ int cmd_connect( argc, argv )
         }
     }
     while (sg_login_failed == True);
+    sg_login = False;
 
     /* XXX */
     /* ct_cancel(g_connection, NULL, CS_CANCEL_ALL); */
@@ -1260,17 +1259,29 @@ int cmd_connect( argc, argv )
                       ) != CS_SUCCEED)
         {
             ct_cmd_drop( cmd );
-            goto connect_succeed;
+            goto connect_fail;
         }
 
         if (ct_send( cmd ) != CS_SUCCEED)
         {
             ct_cmd_drop( cmd );
-            goto connect_succeed;
+            goto connect_fail;
         }
 
         while (ct_results( cmd, &result_type ) != CS_END_RESULTS);
         ct_cmd_drop( cmd );
+
+        /*
+         * sqsh-2.4 - Check in batch mode if the -D <database> is correctly set.
+         *            Otherwise, abort to prevent script execution in wrong default
+         *            database.
+         */
+        env_get ( g_env, "database", &database ) ;
+        if (g_interactive != True && strcmp (autouse, database) != 0)
+        {
+            fprintf (stderr, "sqsh: ERROR: Unable to use database %s in batch mode\n", autouse);
+            sqsh_exit(254);
+        }
     }
 
 connect_succeed:
@@ -1380,7 +1391,6 @@ connect_leave:
         varbuf_destroy( exp_buf );
 
     sig_restore();
-    sg_login = False;
     return return_code;
 }
 

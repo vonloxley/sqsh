@@ -34,9 +34,10 @@
  * The maximum length of a password.  I just pulled this one out of
  * the air.
  * sqsh-2.1.6 - Increased value from 12 to 30
+ * sqsh-2.4   - Increased value from 30 to 64
  */
 #ifndef SQSH_PASSLEN
-#define SQSH_PASSLEN    30
+#define SQSH_PASSLEN    64
 #endif
 
 /*
@@ -148,7 +149,7 @@
 /*
  * Current version number.
  */
-#define SQSH_VERSION     "sqsh-2.3"
+#define SQSH_VERSION     "sqsh-2.4"
 
 #if !defined(__ansi__)
 #  if defined(__STDC__) || defined(STDC_HEADERS) || defined(PROTOTYPES)

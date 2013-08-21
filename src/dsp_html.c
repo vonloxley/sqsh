@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_html.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_html.c,v 1.3 2013/07/20 16:18:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -257,7 +257,7 @@ int dsp_html( output, cmd, flags )
 						}
 						dsp_fputs( "</th>\n", output );
 					}
-					dsp_fputs( "</tr>\n</thead>\n", output );
+					dsp_fputs( "</tr>\n</thead><tbody>\n", output );
 				}
 
 				if (g_dsp_interrupted)
@@ -272,7 +272,7 @@ int dsp_html( output, cmd, flags )
 					if (g_dsp_interrupted)
 						goto dsp_interrupted;
 
-					dsp_fputs( "<tbody>\n<tr>\n", output );
+					dsp_fputs( "<tr>\n", output );
 					for (i = 0; i < select_desc->d_ncols; i++)
 					{
 						col = &select_desc->d_cols[i];
@@ -297,7 +297,7 @@ int dsp_html( output, cmd, flags )
 
 						dsp_fputs( "</td>\n", output );
 					}
-					dsp_fputs( "</tr>\n</tbody>\n", output );
+					dsp_fputs( "</tr>\n", output );
 
 					if (g_dsp_interrupted)
 						goto dsp_interrupted;
@@ -358,7 +358,7 @@ int dsp_html( output, cmd, flags )
 
 	if (in_table == CS_TRUE)
 	{
-		dsp_fputs( "</table>\n", output );
+		dsp_fputs( "</tbody></table>\n", output );
 	}
 
 	if (last_row_result != CS_STATUS_RESULT && rows_affected != CS_NO_COUNT && 
@@ -462,7 +462,7 @@ static CS_INT dsp_comp_prrow_one( output, sel_desc, com_desc )
 
 		dsp_fputs( "</th>", output );
 	}
-	dsp_fputs( "</tr>\n</thead>\n", output );
+	dsp_fputs( "</tr>\n</thead><tbody>\n", output );
 
 	dsp_fputs( "<tbody>\n<tr>\n", output );
 	for (i = 0; i < sel_desc->d_ncols; i++)
