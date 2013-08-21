@@ -23,9 +23,9 @@ SQSHRC_GLOBAL  = $(conf_dir)/sqshrc
 
 MAN_PAGES      = sqsh.1
 SRCS           = $(OBJS:.o=.c)
-HEADERS        = 
+HEADERS        =
 
-SUBDIRS        = src
+SUBDIRS        = src/sqsh_parser src
 TARGET         = sqsh
 
 build : build-subdirs

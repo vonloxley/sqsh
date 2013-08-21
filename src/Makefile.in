@@ -3,8 +3,8 @@
 #
 
 #  The following list of sqshrc files will be executed by sqsh upon
-#  startup.  This allows for system-wide defaults to be set in a 
-#  common directory. If you don't want a global sqshrc just comment 
+#  startup.  This allows for system-wide defaults to be set in a
+#  common directory. If you don't want a global sqshrc just comment
 #  out SQSHRC_GLOBAL, below.
 
 sysconfdir    = @sysconfdir@
@@ -27,13 +27,13 @@ SYBASE_LIBDIR = @SYBASE_LIBDIR@
 #  word "Guess", then 'configure' didn't have an entry for your operating
 #  system and it took a best guess to figure out which libraries you
 #  need. In either case, there may be problems, so look this line over
-#  and if it doesn't work, compare it to the libraries located in 
+#  and if it doesn't work, compare it to the libraries located in
 #  $SYBASE/samples/ctlibrary.
 #
 #  The listings below show suggested libraries for Operating Systems
 #  that frequently fail to be recognized by 'configure':
 #
-#  SCO:   -lblk -lct -lcs -lcomn -ltcl -ltli -lnsl_s -lintl -m -lsocket 
+#  SCO:   -lblk -lct -lcs -lcomn -ltcl -ltli -lnsl_s -lintl -m -lsocket
 #  Dynix: -lblk -lct -lcs -lcomn -ltcl -ltli -lnsl -lintl -lm -lseq
 #
 SYBASE_LIBS   = @SYBASE_LIBS@ @SYBASE_OS@
@@ -57,7 +57,7 @@ READLINE_INCDIR = @READLINE_INCDIR@
 READLINE_LIBS   = @READLINE_LIBS@
 
 #
-#  Motif Support - The `configure' motif support logic for sqsh 
+#  Motif Support - The `configure' motif support logic for sqsh
 #  isn't exactly perfected yet. If --with-motif was run, the
 #  following what `configure' guessed at for the location
 #  for your Motif includes and libs.  Note that if MOTIF_INCDIR
@@ -117,7 +117,7 @@ X_LIBS       = @ATHENA_LIBS@ $(MOTIF_LIBS) @X_LIBS@
 #
 #  you probably have the bug.  First, PLEASE e-mail me (gray@voicenet.com)
 #  and I'll give you a description of what is going on so you can call
-#  tech support: I am trying to get them to fix the problem, but they 
+#  tech support: I am trying to get them to fix the problem, but they
 #  are moving at a snails pace.  Then, when you have done that, un-
 #  comment the following line, which will attempt to install a work-
 #  around for the problem.
@@ -169,7 +169,7 @@ LIB_DIRS       = $(X_LIBDIR) $(MOTIF_INCDIR) $(SYBASE_LIBDIR) $(READLINE_LIBDIR)
 CFLAGS         = @CFLAGS@ $(DEBUG) $(DEFINES) $(INCLUDE_DIRS)
 CPPFLAGS       = @CPPFLAGS@
 LDFLAGS        = $(DEBUG) $(LIB_DIRS) @LDFLAGS@
-LIBS           = $(SYBASE_LIBS) $(X_LIBS) $(READLINE_LIBS) @LIBS@
+LIBS           = $(SYBASE_LIBS) $(X_LIBS) $(READLINE_LIBS) @LIBS@ @SQSH_PARSE_LIB@
 
 # The follow define information about the components that make up
 # the actual program.
@@ -206,7 +206,7 @@ OBJS = $(CMDS) $(VARS) $(DISPLAYS) $(CORE)
 
 MAN_PAGES      = sqsh.1
 SRCS           = $(OBJS:.o=.c)
-HEADERS        = 
+HEADERS        =
 
 $(TARGET) : $(OBJS) sqsh_main.o
 	$(CC) $(LDFLAGS) $(OBJS) sqsh_main.o $(LIBS) -o $@
@@ -227,7 +227,7 @@ realclean : clean
 distclean : realclean
 	rm -f Makefile config.h core
 
-# 
+#
 # The following absolutely disgusting list of dependancies was
 # automatically generated via 'gcc -MM'
 #

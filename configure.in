@@ -223,12 +223,19 @@ else
 			rl_completion_matches,:,DEF_READLINE="${DEF_READLINE} -DOLD_READLINE",
 			${READLINE_LIBDIR} ${READLINE_LIBS})
 	fi
+
+	if [[ "$with_readline" = "yes" ]]; then
+		SQSH_PARSE_LIB="sqsh_parser/sqsh_parser.a"
+	else
+		SQSH_PARSE_LIB=""
+	fi
 fi
 
 AC_SUBST(DEF_READLINE)
 AC_SUBST(READLINE_INCDIR)
 AC_SUBST(READLINE_LIBDIR)
 AC_SUBST(READLINE_LIBS)
+AC_SUBST(SQSH_PARSE_LIB)
 
 DEF_X11="-DUSE_X11"
 
@@ -327,4 +334,4 @@ dnl
 AC_SYSV_SIGNALS
 AC_PROG_INSTALL
 
-AC_OUTPUT(Makefile src/Makefile scripts/install.sh scripts/make_wrapper.sh)
+AC_OUTPUT(Makefile src/Makefile src/sqsh_parser/Makefile scripts/install.sh scripts/make_wrapper.sh)
