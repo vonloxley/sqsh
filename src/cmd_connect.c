@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.32 2013/07/20 16:18:35 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.33 2013/08/21 11:16:39 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -165,6 +165,8 @@ int cmd_connect( argc, argv )
     char      *cp;
     extern    char *sqsh_optarg ;
     extern    int   sqsh_optind ;
+    char      use_database[128] ;
+    char      *usedbcheck ;
     int       c ;
     int       have_error = False ;
     int       preserve_context   = True ;
@@ -562,8 +564,9 @@ int cmd_connect( argc, argv )
      */
     if( preserve_context && database != NULL && *database != '\0' )
     {
-        env_put ( g_env, "autouse", database, ENV_F_TRAN ) ;
-        env_get ( g_env, "autouse", &autouse ) ;
+        strncpy( use_database, database, sizeof(use_database)-1 ) ;
+        use_database[sizeof(use_database)-1] = '\0';
+        autouse = use_database ;
     }
 
     /*
@@ -1276,10 +1279,11 @@ int cmd_connect( argc, argv )
          *            Otherwise, abort to prevent script execution in wrong default
          *            database.
          */
-        env_get ( g_env, "database", &database ) ;
-        if (g_interactive != True && strcmp (autouse, database) != 0)
+        env_get ( g_env, "database",   &database ) ;    /* Need to refresh var pointer */
+        env_get ( g_env, "usedbcheck", &usedbcheck ) ;
+        if (g_interactive != True && *usedbcheck == '1' && strcmp (autouse, database) != 0)
         {
-            fprintf (stderr, "sqsh: ERROR: Unable to use database %s in batch mode\n", autouse);
+            fprintf (stderr, "sqsh: ERROR: Unable to use database '%s' in batch mode\n", autouse);
             sqsh_exit(254);
         }
     }

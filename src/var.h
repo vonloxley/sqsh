@@ -207,6 +207,8 @@ static var_entry_t  sg_var_entry[] = {
     { "tds_version",      NULL,          var_set_nullstr,     NULL            },
     /* sqsh-2.3 - New variable */
     { "localeconv",       "0",           var_set_lconv,       NULL            },
+    /* sqsh-2.4 - New variable */
+    { "usedbcheck",       "0",           var_set_bool,        NULL            },
 } ;
 
 #endif /* SQSH_INIT */
