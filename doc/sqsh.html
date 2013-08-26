@@ -127,7 +127,7 @@
 <p>
 </p>
 <h1><a name="name">NAME</a></h1>
-<p>sqsh - Interactive database shell (version 2.3)</p>
+<p>sqsh - Interactive database shell (version 2.4)</p>
 <p>
 </p>
 <hr />
@@ -1097,7 +1097,7 @@ query. When the <em>block</em> is executed, special sqsh variables #[0-9]+ (a ha
 followed by a number) may be used to reference the values in the returned query.
 For example the following command:</p>
 <pre>
-    select id, name from master..sysdatabases
+    select dbid, name from master..sysdatabases
     \do
         \echo &quot;Checkpointing database #2, dbid #1&quot;
         use #2
@@ -2958,7 +2958,22 @@ completion is requested, <em>sqsh</em> dynamically creates a list of columns tha
 belongs to the object (table, view, procedure) and allows for Readline TAB
 completion of the column or parameter names. This feature is only available if
 GNU Readline support has been compiled into <em>sqsh</em> and <strong>$keyword_completion</strong>
-is set to a value greater than zero.</p>
+is set to a value greater than zero. In sqsh-2.4 it is also possible to use
+the object alias in the SQL buffer for auto-completion. For example when you
+enter the following query in the buffer and type the TAB key twice after
+the alias 'd' and the dot, a list of column names will be produced for the
+'sysdatabases' table for further completion:</p>
+<pre>
+    SYBPROD.sa.tempdb.1&gt; select * from master..sysdatabases d,
+    SYBPROD.sa.tempdb.2&gt;               master.dbo.sysusages u
+    SYBPROD.sa.tempdb.3&gt; where d.&lt;TAB&gt;&lt;TAB&gt;
+    d.audflags         d.def_remote_loc   d.durability       d.status2
+    d.audflags2        d.def_remote_type  d.logptr           d.status3
+    d.crdate           d.deftabaud        d.name             d.status4
+    d.dbid             d.defvwaud         d.spare            d.suid
+    d.defpraud         d.dumptrdate       d.status           d.version
+    SYBPROD.sa.tempdb.3&gt; where d.</pre>
+<p>Note that sqsh is now able to perform cross database auto-completion.</p>
 </dd>
 <dt><strong><a name="keyword_file" class="item">keyword_file (string)</a></strong></dt>
 
@@ -3354,6 +3369,17 @@ total for the expanded string and the remainder will be truncated.</p>
 are to be written. These files are generated either during buffer editing (the
 <strong>\buf-edit</strong> command), or to maintain output defer files for background jobs.
 The default value for this variable is /tmp.</p>
+</dd>
+<dt><strong><a name="usedbcheck" class="item">usedbcheck (boolean)</a></strong></dt>
+
+<dd>
+<p>When this variable is set to 'On' (default is 'Off') and a database name is
+provided with the -D parameter and sqsh is run in batch mode, then a check
+will be performed if the named database is accessible, otherwise sqsh is
+aborted with exit code 254. Also the following error message will be shown:
+  sqsh: ERROR: Unable to use database '...' in batch mode
+This is to prevent that a SQL script is inadvertently executed in the wrong
+database.</p>
 </dd>
 <dt><strong><a name="username" class="item">username (string)</a></strong></dt>
 

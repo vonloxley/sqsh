@@ -1,6 +1,6 @@
 =head1 NAME
 
-sqsh - Interactive database shell (version 2.3)
+sqsh - Interactive database shell (version 2.4)
 
 =head1 SYNOPSIS
 
@@ -997,7 +997,7 @@ query. When the I<block> is executed, special sqsh variables #[0-9]+ (a hash
 followed by a number) may be used to reference the values in the returned query.
 For example the following command:
 
-    select id, name from master..sysdatabases
+    select dbid, name from master..sysdatabases
     \do
         \echo "Checkpointing database #2, dbid #1"
         use #2
@@ -2771,7 +2771,23 @@ completion is requested, I<sqsh> dynamically creates a list of columns that
 belongs to the object (table, view, procedure) and allows for Readline TAB
 completion of the column or parameter names. This feature is only available if
 GNU Readline support has been compiled into I<sqsh> and B<$keyword_completion>
-is set to a value greater than zero.
+is set to a value greater than zero. In sqsh-2.4 it is also possible to use
+the object alias in the SQL buffer for auto-completion. For example when you
+enter the following query in the buffer and type the TAB key twice after
+the alias 'd' and the dot, a list of column names will be produced for the
+'sysdatabases' table for further completion:
+
+    SYBPROD.sa.tempdb.1> select * from master..sysdatabases d,
+    SYBPROD.sa.tempdb.2>               master.dbo.sysusages u
+    SYBPROD.sa.tempdb.3> where d.<TAB><TAB>
+    d.audflags         d.def_remote_loc   d.durability       d.status2
+    d.audflags2        d.def_remote_type  d.logptr           d.status3
+    d.crdate           d.deftabaud        d.name             d.status4
+    d.dbid             d.defvwaud         d.spare            d.suid
+    d.defpraud         d.dumptrdate       d.status           d.version
+    SYBPROD.sa.tempdb.3> where d.
+
+Note that sqsh is now able to perform cross database auto-completion.
 
 =item keyword_file (string)
 
@@ -3138,6 +3154,16 @@ This contains the directory to which temporary files used internally by I<sqsh>
 are to be written. These files are generated either during buffer editing (the
 B<\buf-edit> command), or to maintain output defer files for background jobs.
 The default value for this variable is /tmp.
+
+=item usedbcheck (boolean)
+
+When this variable is set to 'On' (default is 'Off') and a database name is
+provided with the -D parameter and sqsh is run in batch mode, then a check
+will be performed if the named database is accessible, otherwise sqsh is
+aborted with exit code 254. Also the following error message will be shown:
+  sqsh: ERROR: Unable to use database '...' in batch mode
+This is to prevent that a SQL script is inadvertently executed in the wrong
+database.
 
 =item username (string)
 

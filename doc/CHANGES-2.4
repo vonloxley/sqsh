@@ -1,0 +1,184 @@
+                                        Changes in sqsh-2.4
+
+                               New features, enhancements, bug fixes:
+
+1a - Feature  -   Readline auto-completion of aliased objects in the current SQL buffer.
+                  In sqsh-2.1.8 dynamic auto-completion was introduced when readline support is also
+                  compiled in sqsh and the variable $keyword_completion is set to a value between 1 and 4.
+                  (See the sqsh man page for a description of the meaning of these values).
+                  You could then enter an object name in the input buffer followed by a dot and using the readline
+                  auto-completion sequence (usually 2 TAB keystrokes or 2 ESC keystrokes), then a list of
+                  available column names would be shown to choose from.
+                  With this feature enhancement you can now use an alias name for an object in the SQL buffer and
+                  use auto-completion on the alias name as well. For example:
+
+
+    SYBPROD.sa.tempdb.1> \echo $keyword_completion
+    4
+    SYBPROD.sa.tempdb.1> select * from master..sysdatabases    d,
+    SYBPROD.sa.tempdb.2>               master.dbo.sysusages    u
+    SYBPROD.sa.tempdb.3> where  d.<TAB><TAB>
+    d.audflags         d.def_remote_loc   d.durability       d.status2
+    d.audflags2        d.def_remote_type  d.logptr           d.status3
+    d.crdate           d.deftabaud        d.name             d.status4
+    d.dbid             d.defvwaud         d.spare            d.suid
+    d.defpraud         d.dumptrdate       d.status           d.version
+    SYBPROD.sa.tempdb.3> where  d.s<TAB><TAB>
+    d.spare    d.status   d.status2  d.status3  d.status4  d.suid
+    SYBPROD.sa.tempdb.3> where  d.s
+
+
+                  So when you type d.<TAB><TAB> (where <TAB> means a keystroke of the TAB key), then sqsh
+                  will parse the SQL buffer entered so far and determines that the alias name 'd' actually
+                  refers to the master..sysdatabases table. So it dynamically creates a list of columns
+                  for this table and shows them on screen.
+                  In the second example we have typed 'd.s' already and when we ask for a completion
+                  (<TAB><TAB>) then sqsh will produce a list of all column names in sysdatabases that
+                  start with a 's'.
+
+                  This feature enhancement is contributed by K.M. Hansche.
+
+
+1b - Enhancement - Column name auto-completion is now capable of handling cross database object names like in
+                   the above example. In previous versions of sqsh you could only use column name completion
+                   of objects located in the current database.
+                   Please note - in order for this feature to work correctly - you need to specify a
+                   fully qualified object name as a consecutive string without spaces. In ASE, for example,
+                   it is perfectly valid to code:
+
+    select * from master . dbo . sysdatabases d where d.dbid=1
+
+                  However, sqsh readline auto-completion is expecting an object name master.dbo.sysdatabases.
+
+
+2 - Feature  -    A new boolean variable 'usedbcheck' is defined that may be set to True (default is False).
+                  This will result in a check being performed if sqsh is able to access a database that is
+                  provided with the -D parameter while sqsh is run in batch mode. This is to prevent a script
+                  file is being executed in the wrong database. Suppose a user 'test_user' is trying to execute
+                  a batch script in the pubs3 database, but the database 'pubs3' is in 'dbo use only' mode.
+                  The test_user is a normal user in this database. The default database of test_user is pubs2.
+
+
+    ~$ sqsh -Utest_user -Ptest_user_pw -Dpubs3 -C"select db_name()"
+    Msg 923, Level 14, State 1
+    Server 'SYBPROD', Line 1
+    User 6 not allowed in database 'pubs3' - only the owner of this database can access it.
+    Msg 10334, Level 18, State 127
+    Server 'SYBPROD', Line 1
+    Permission related internal error was encountered.  Unable to continue execution.
+    Msg 10334, Level 18, State 80
+    Server 'SYBPROD', Line 1
+    Permission related internal error was encountered.  Unable to continue execution.
+
+     ------------------------------
+     pubs2
+
+    (1 row affected)
+
+
+                  Although we try to execute a script (or statement in this case with the -C parameter) in the
+                  pubs3 database, we end up in the pubs2 database and thus may inadvertently cause a lot of
+                  problems when a script file is executed there. When we enable the variable 'usedbcheck',
+                  sqsh will abort if it is not able to set the database to the one specified with the -D
+                  parameter. Note that we enable the variable here with -Lusedbcheck=On on the command line,
+                  but of course you can also permanently enable the variable in the .sqshrc file.
+
+
+    ~$ sqsh -Utest_user -Ptest_user_pw -Dpubs3 -C"select db_name()" -Lusedbcheck=On
+    Msg 923, Level 14, State 1
+    Server 'SYBPROD', Line 1
+    User 6 not allowed in database 'pubs3' - only the owner of this database can access it.
+    Msg 10334, Level 18, State 127
+    Server 'SYBPROD', Line 1
+    Permission related internal error was encountered.  Unable to continue execution.
+    Msg 10334, Level 18, State 80
+    Server 'SYBPROD', Line 1
+    Permission related internal error was encountered.  Unable to continue execution.
+    sqsh: ERROR: Unable to use database 'pubs3' in batch mode
+
+
+                  Note the error message at the last line. Also note that this feature does not work in interactive mode.
+                  So when you start sqsh in interactive mode, that is when you get a prompt, then sqsh will not abort and
+                  you have to check the error messages and the sqsh prompt to determine the current database scope.
+
+
+    ~$ sqsh -Utest_user -Ptest_user_pw -Dpubs3 -Lusedbcheck=On
+    Msg 923, Level 14, State 1
+    Server 'SYBPROD', Line 1
+    User 6 not allowed in database 'pubs3' - only the owner of this database can access it.
+    Msg 10334, Level 18, State 127
+    Server 'SYBPROD', Line 1
+    Permission related internal error was encountered.  Unable to continue execution.
+    Msg 10334, Level 18, State 80
+    Server 'SYBPROD', Line 1
+    Permission related internal error was encountered.  Unable to continue execution.
+    SYBPROD.test_user.pubs2.1>
+
+
+3 - Fix -         In the situation were a login trigger decided a login attempt should be aborted using syb_quit()
+                  and sqsh was called with a -D parameter, then sqsh started to loop producing the output:
+
+                  Open Client Message
+                  Layer 1, Origin 1, Severity 1, Number 50
+                  ct_results(): user api layer: external error: The connection has been marked dead.
+                  Open Client Message
+                  Layer 1, Origin 1, Severity 1, Number 50
+                  ct_results(): user api layer: external error: The connection has been marked dead.
+                  ...
+
+                  This was caused by a callback function that neglected the dead connection while it thought it
+                  was still in a login sequence at the time sqsh attempted to execute a 'use <dbname>' command.
+                  This is being fixed now so that the callback function will abort sqsh when the connection
+                  is marked dead, directly following an unsuccessful login attempt.
+
+
+4 - Fix -         In sqsh-2.2.0 the \reconnect command code was improved to be able to recover from reconnect
+                  failures due to timeouts or an abort request by typing ^C, for example. Unfortunately this broke
+                  the ability to use \reconnect inside a \do block. This is being fixed now so that you can use a
+                  script again like:
+
+    use dbadb
+    \go
+    create table srvadmin (srvname varchar(30), dbuser varchar(30), dbpasswd varchar(30), dbname varchar(30))
+    \go
+    insert into srvadmin (srvname, dbuser, dbpasswd, dbname) values ('SYBPROD', 'dbaprod', 'dbaprodpw', 'monproddb')
+    insert into srvadmin (srvname, dbuser, dbpasswd, dbname) values ('SYBTEST', 'dbatest', 'dbatestpw', 'montestndb')
+    insert into srvadmin (srvname, dbuser, dbpasswd, dbname) values ('SYBDEV',  'dbadev',  'dbadevpw',  'mondevdb')
+    \go
+    select * from dbadb..srvadmin
+    \do
+      \reconnect -S#1 -U#2 -P#3 -c
+      select srvname=@@servername, loginame=suser_name(), dbname=db_name(), spid=@@spid
+      exec sp__dba_monsrv #4
+      \go
+    \done
+
+
+5 - Fix -         Another contribution by K.M. Hansche is a fix in dsp_html.c to produce correct html5 compatible
+                  table output when you use the "\go -m html" command to generate result set output in html format.
+
+
+
+
+                             All modified source files in release 2.4
+
+  sqsh-2.4/src/cmd_connect.c   - Implementation of feature 2 and fix 3.
+
+  sqsh-2.4/src/cmd_do.c        - Implementation of fix 4.
+
+  sqsh-2.4/src/dsp_html.c      - Implementation of fix 5.
+
+  sqsh-2.4/src/Makefile.in     - Implementation of feature 1 to include the sqsh_parser.a object library.
+                                 In the root directory the files Makefile.in and configure have also been adapted to
+                                 create and run a Makefile in src/sqsh_parser/
+
+  sqsh-2.4/src/sqsh_config.h   - Expanded the size definition of a password buffer from 30 to 64 characters.
+                                 Changed the version string to sqsh-2.4.
+
+  sqsh-2.4/src/sqsh_readline.c - Implementation of feature enhancement 1.
+
+  sqsh-2.4/src/var.h           - Implementation of feature 2 (define new variable "usedbcheck").
+
+  sqsh-2.4/src/sqsh_parser/    - A new directory containing the source files to parse a SQL buffer for alias names
+                                 that are eligible for readline auto-completion. Implementation of feature 1.
+
