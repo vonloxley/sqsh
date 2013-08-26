@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION=2.1
+VERSION=2.4
 
 # Determine how to use echo without a carriage return.
 # This is pretty much stolen from autoconf.
