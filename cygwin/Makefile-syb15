@@ -1,4 +1,4 @@
-#  $Id: Makefile-syb15,v 1.1 2010/02/08 13:31:57 mwesdorp Exp $
+#  $Id: Makefile-syb15,v 1.2 2013/02/25 10:54:25 mwesdorp Exp $
 #
 #  Makefile for sqsh on Cygwin
 #
@@ -172,10 +172,10 @@ DEFINES        = -DSQSH_RC='${SQSHRC_PATH}' $(DEF_READLINE) \
                  $(DEF_MOTIF) $(DEF_BUGFIX)
 INCLUDE_DIRS   = $(X_INCDIR) $(MOTIF_INCDIR) $(SYBASE_INCDIR) $(READLINE_INCDIR)
 LIB_DIRS       = $(X_LIBDIR) $(MOTIF_INCDIR) $(SYBASE_LIBDIR) $(READLINE_LIBDIR)
-CFLAGS         = -g -O2 $(DEBUG) $(DEFINES) $(INCLUDE_DIRS)
+CFLAGS         = -g -Wall -O2 $(DEBUG) $(DEFINES) $(INCLUDE_DIRS)
 CPPFLAGS       = -D_MSC_VER=800 -D_CYGWIN32_
 LDFLAGS        = $(DEBUG) $(LIB_DIRS)
-LIBS           = $(SYBASE_LIBS) $(X_LIBS) $(READLINE_LIBS)
+LIBS           = $(SYBASE_LIBS) $(X_LIBS) $(READLINE_LIBS) sqsh_parser/sqsh_parser.a
 
 # The follow define information about the components that make up
 # the actual program.
