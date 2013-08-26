@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.11 2013/07/20 16:18:35 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.12 2013/08/21 11:16:39 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -921,8 +921,8 @@ static char* sqsh_generator( text, state )
              * sqsh-2.4 : Added code to generate a completion list for aliased
              * objectnames as well. Code contributed by K.-M. Hansche.
              */
-            for ( idx = 0; text[idx] != '\0' && text[idx] != '.'; idx++ );
-            if ( text[idx] == '.' )
+            for ( idx = strlen(text)-1; idx >= 0 && text[idx] != '.'; idx-- );
+            if ( idx >= 0 && text[idx] == '.' )
             {
                 strncpy ( objname, text, idx );
                 objname[idx] = '\0';
@@ -1243,6 +1243,10 @@ static int sqsh_readline_clearcol()
  *
  * sqsh-2.1.8 - Dynamically execute a query to obtain the column names of
  * an existing table, view or stored procedure.
+ * sqsh-2.4   - Also take the database into account. An object may be
+ *              specified as master.dbo.sysdatabases, or dbo.sysusages
+ *              or syscolumns for example, the last two expected to
+ *              exist in the current database.
  *
  */
 static int DynColnameLoad (objname, alias)
@@ -1260,6 +1264,8 @@ static int DynColnameLoad (objname, alias)
     CS_SMALLINT indicator [1];
     CS_CHAR     name   [256];
     CS_CHAR     query  [768];
+    CS_CHAR     dbname [256];
+    char       *cptr;
 
 
     if (sg_colname_start != NULL)
@@ -1276,8 +1282,23 @@ static int DynColnameLoad (objname, alias)
         DBG(sqsh_debug(DEBUG_ERROR, "DynColnameLoad: Call to ct_cmd_alloc failed.\n"));
         return (CS_FAIL);
     }
-    sprintf (query, "select \'%s.\' + name from syscolumns where id=object_id(\'%s\') order by name"
-                  ,alias, objname);
+    /*
+     * sqsh-2.4 - If the objectname contains two dots, then the first part specifies
+     * the database name, the second part the owner name (may be empty) and the last
+     * part the objectname itself.
+     */
+    if ((cptr = strchr( objname, '.' )) != NULL && strchr( cptr + 1, '.' ) != NULL)
+    {
+        idx = (CS_INT) (cptr - objname);
+        strncpy (dbname, objname, idx);
+        dbname[idx] = '\0';
+        sprintf (query, "select \'%s.\' + name from %s..syscolumns where id=object_id(\'%s\') order by name"
+                      ,alias, dbname, objname);
+    }
+    else
+        sprintf (query, "select \'%s.\' + name from syscolumns where id=object_id(\'%s\') order by name"
+                      ,alias, objname);
+
     if (ct_command( cmd,                /* Command Structure */
                     CS_LANG_CMD,        /* Command Type      */
                     query,              /* Query Buffer      */
