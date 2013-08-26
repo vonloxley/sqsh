@@ -60,8 +60,8 @@
 #define HAVE_STRERROR 1
 /* #undef HAVE_CFTIME */
 #define HAVE_STRFTIME 1
-#define HAVE_MEMCPY 1
-#define HAVE_MEMMOVE 1
+/* #undef HAVE_MEMCPY */
+/* #undef HAVE_MEMMOVE */
 #define HAVE_LOCALTIME 1
 #define HAVE_TIMELOCAL 1
 #define HAVE_STRCHR 1
@@ -81,5 +81,12 @@
  * Signal behaviour
  */
 /* #undef SYSV_SIGNALS */
+
+/*
+ * sqsh-2.3 : Test availability of locale
+ */
+#define HAVE_LOCALE_H 1
+#define HAVE_LOCALECONV 1
+#define HAVE_SETLOCALE 1
 
 #endif

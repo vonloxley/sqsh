@@ -1,4 +1,4 @@
-$Id: README,v 1.3 2010/02/08 13:31:57 mwesdorp Exp $
+$Id: README,v 1.4 2013/02/25 10:54:25 mwesdorp Exp $
 
 Building sqsh on Windows in the Cygwin environment
 
@@ -52,28 +52,33 @@ Sybase DLLs directly.
    If you run into errors you probably miss some Cygwin development packages.
    Install these missing packages and retry the ./configure. When succesfull, this will
    generate some required installation files like src/config.h for example.
+   There is also a config.h file in the cygwin directory that you may copy to the src
+   directory as the created config.h may lead to compile errors.
    Now copy the Cygwin makefile to the src directory. This will overwrite the generated
    Makefile with the Cygwin Makefile you just edited in the previous step:
 
      cp cygwin/Makefile-syb15 src/Makefile
+     cp cygwin/config.h       src/config.h
 
-4) Now you can run
+4) Now you can run from the sqsh root dir:
      make
      make install
      make install.man
 
    By default, sqsh will be installed in /usr/local/bin. Make sure this directory is
    in your PATH.
+   You may also run make in the src/sqsh_parser directory and then run make in the src
+   directory and copy the created sqsh.exe to your own preferred location..
 
 5) Install a .sqshrc file in your $HOME directory. There are some examples in the doc
-   directory. If you choose the sqshrc-2.1.9 file as a template,
+   directory. If you choose the sqshrc-2.2.0 file as a template,
    you will also have to create a $HOME/.sqsh and $HOME/tmp directory.
    Please note that this template will use a prompt and text color scheme that is fitted
    for a white background. Adjust the prompt and text color definitions accordingly to
    your terminal color scheme.
 
-     cd sqsh-2.1.9/doc
-     cp sqshrc-2.1.9 $HOME/.sqshrc
+     cd sqsh-2.4/doc
+     cp sqshrc-2.2.0 $HOME/.sqshrc
      cd $HOME && mkdir .sqsh && mkdir tmp
 
 6) Make sure you have a valid sql.ini file in your %SYBASE%\ini directory.
