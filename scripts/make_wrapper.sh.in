@@ -7,7 +7,8 @@ fi
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@/bin
-sybase=@SYBASE_OCOS@
+sybase=@SYBASE@
+sybase_ocos=@SYBASE_OCOS@
 
 readline_libdir='@READLINE_LIBDIR@'
 motif_libdir='@MOTIF_LIBDIR@'
@@ -17,7 +18,7 @@ readline_libdir=`echo $readline_libdir | sed -e 's,^#.*$,,g'`
 motif_libdir=`echo $motif_libdir | sed -e 's,^#.*$,,g'`
 x_libdir=`echo $x_libdir | sed -e 's,^#.*$,,g'`
 
-LD_LIBRARY_PATH=$sybase/lib
+LD_LIBRARY_PATH=$sybase_ocos/lib
 if [ "$readline_libdir" != "" ]; then
 	readline_libdir=`echo $readline_libdir | sed -e 's,^-L,,g'`
 	LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$readline_libdir"
