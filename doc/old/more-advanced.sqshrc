@@ -1,0 +1,267 @@
+#
+# $HOME/.sqshrc file
+# Make sure you have a .sqsh and a tmp directory in your $HOME when using this
+# sqshrc file.
+#
+# mkdir .sqsh tmp
+# chmod 700 .sqsh
+# chmod 755 tmp
+#
+#\set username=sa
+#\set password=********
+
+#
+# Basic variable settings.
+#
+\set banner=Off
+\set bcp_colsep='#'
+\set bcp_rowsep=''
+\set bcp_trim=Off
+\set charset='iso_1'
+\set datetime='%e %b %Y %H:%M:%S'
+\set encryption=On
+\set history='$HOME/.sqsh/sqshhist_$DSQUERY'
+\set histsize=100
+\set hostname=`hostname`
+\set keyword_completion=exact
+\set readline_histsize=200
+\set xgeom=100x30
+
+#
+# Version dependent variable settings.
+#
+\if [ "$version" = "sqsh-2.1.7" -a "$TERM" != "linux" -a "$TERM" != "console" ]
+  \set term_title='$DSQUERY ($hostname)'
+\fi
+\if [ "$version" = "sqsh-2.1.7" ]
+  \set histunique=On
+  \set hist_auto_save=10
+  \set ignoreeof=On
+  \set keyword_file='$HOME/.sqsh/sqsh_words'
+  \set login_timeout=60
+  \set readline_history='$HOME/.sqsh/sqshread_$DSQUERY'
+  \set session='$HOME/.sqsh/.sqsh_session'
+  \set tmp_dir='$HOME/tmp'
+  \set xwin_title='$DSQUERY result $histnum'
+\elif [ "$version" = "sqsh-2.1.6" ]
+  \set histunique=On
+  \set ignoreeof=On
+  \set keyword_file='$HOME/.sqsh/sqsh_words'
+  \set login_timeout=60
+  \set readline_history='$HOME/.sqsh/sqshread_$DSQUERY'
+  \set session="$HOME/.sqsh/.sqsh_session"
+  \set tmp_dir='$HOME/tmp'
+\else
+  \set keyword_file="$HOME/.sqsh/sqsh_words"
+  \set readline_history="$HOME/.sqsh/sqshread_$DSQUERY"
+  \set session="$HOME/.sqsh/.sqsh_session"
+  \set tmp_dir="$HOME/tmp"
+\fi
+
+#
+# Set a color prompt
+#
+# Color codes are presented in a string between {}. If sqsh encounters a {
+# in the prompt string it will assume a colorcode is supplied and will act
+# as such. The color definition consists of three values separated by ;
+# The last colorcode for the background may be ommitted.
+#
+# Color definitions byte 1,2,3
+# The first code defines the Color Attribute Code with possible values:
+#   0=none 1=bold
+# The second value defines the Text Color Code:
+#   30=black 31=red 32=green 33=yellow 34=blue 35=magenta 36=cyan 37=white
+# The third value defines the Background Color Code:
+#   40=black 41=red 42=green 43=yellow 44=blue 45=magenta 46=cyan 47=white
+#
+# Example:
+# Cyan text in white background "{0;36;47}"
+# Bold yellow text              "{1;33}"
+#
+# sqsh will translate the colorcodes to an actual colorcode string that
+# is presented to readline: for example "\001\033[0;36;47m\002"
+#
+# Note that if you want to use curly brackets in your prompt, you have to
+# escape colorization by specifying a double brace, like {{...}}.
+# Using color codes is only usefull if readline support is compiled in sqsh.
+#
+\if [ "$version" = "sqsh-2.1.7" -o "$version" = "sqsh-2.1.6" ]
+  \set prompt_color='{0;36;47}'
+  \set text_color='{0;37}'
+  \set prompt='$prompt_color[$histnum] $DSQUERY.$username.$database.$lineno>$text_color '
+  \set prompt2='$prompt_color[sqsh]-->$text_color '
+\else
+  \set prompt='[$histnum] $DSQUERY.$username.$database.$lineno> '
+  \set prompt2='[sqsh]--> '
+\fi
+
+#
+# cd <database>
+#
+# Replacement for issuing a 'use <db>' with the following
+# exceptions:
+#  o  There is no need to issue a 'go' (that is done for you)
+#  o  Issuing a 'cd -' will return you to the previous
+#     database you were using (provided that you switched to
+#     this database using cd as well).
+#  o  Just 'cd' will return you to the master database.
+#
+\func -x cd
+  \if [ $# -gt 1 ]
+    \echo "usage: cd [ db | - ]"
+    \return 1
+  \fi
+
+  \if [ $# -eq 1 ]
+    \set parm=${1}
+  \else
+    \set parm=master
+  \fi
+
+  \if [ "${parm}" = "-" ]
+    \set db=${prev_db}
+  \else
+    \set db=${parm}
+  \fi
+
+  \if [ -z "${db}" ]
+    \set db=master
+  \fi
+
+  \set cur_db=$database
+
+  use $db
+  go
+
+  \if [ $? -eq 0 ]
+    \set prev_db=$cur_db
+  \fi
+\done
+
+#
+# \db
+#
+# Lists the names of all databases in the system.
+#
+\func -x \db
+  select name = convert(varchar(30),name)
+  from master..sysdatabases
+  order by name
+  go -f
+\done
+
+#
+# \logins
+#
+# Show logins
+#
+\func -x \logins
+
+  declare @allauth int
+  select @allauth = low
+  from master.dbo.spt_values
+  where type="ua" and upper(name) = 'ANY'
+
+  select "Suid"             = l.suid
+        ,"Name"             = convert(varchar(25),l.name)
+        ,"Pwdate"           = l.pwdate
+        ,"Auth mech"        = convert(char(12), isnull(v.name,'NONE'))
+        ,"Default database" = convert(varchar(30),l.dbname)
+  from master.dbo.spt_values v
+      ,master.dbo.syslogins  l
+  where v.low   =* (l.status & @allauth)
+  and   v.type  ="ua"
+  order by l.suid
+  go
+\done
+
+#
+# \obj <type>
+#
+# Where <type> is a valid type as defined in the type column
+# of sysobjects. This function will list the name of all
+# objects matching that type.
+#
+\func -x \obj
+  \if [ $# -ne 1 ]
+    \echo "use: \obj [U|V|S|TR|P|...]"
+    \return 1
+  \fi
+
+  set quoted_identifier off
+
+  select name = convert(varchar(30),name)
+  from   sysobjects
+  where  type = "${1}"
+  order by name
+  go
+\done
+
+#
+# \rc
+#
+# Generate sp_dbcc_runcheck statements for all databases configured in dbccdb.
+#
+\func -x \rc
+  select distinct "exec sp_dbcc_runcheck " + db_name(dbid) as "DBCC checkstorage/checkverify"
+  from dbccdb..dbcc_config
+  where dbid > 0
+  order by dbid
+  go -f
+\done
+
+#
+# \switch
+#
+# Reconnect to another server using the same username and password as the
+# current connection and take care of the history buffers of the old and new
+# server.
+#
+\func -x \switch
+  \if [ $# -ne 1 ]
+    \echo "Use: \switch server_name"
+    \return 1
+  \fi
+
+  \hist-save
+  \set history=""
+  \buf-del 1-$histnum
+  \echo "Switch connection to server ${1}"
+  \reconnect -S${1}
+  \if [ "${DSQUERY}" != "${1}" ]
+    \echo "Switch to server ${1} failed"
+  \fi
+  \set history='$HOME/.sqsh/sqshhist_$DSQUERY'
+  \hist-load
+\done
+
+#
+# \v
+#
+# Show the ASE version string.
+#
+\func -x \v
+  print @@version
+  go -h -f
+\done
+
+#
+# Set shortcut \h to display all history buffers
+# Set shortcut \hi to display last 20 history buffers with extended info
+#
+\alias \h='\history'
+\if [ "$version" = "sqsh-2.1.7" ]
+  \alias \hi='\history -i -x20'
+\fi
+
+#
+# Start a bash login shell from sqsh
+#
+\alias \s='\shell bash -l'
+
+#
+# Set short aliases for style
+#
+\alias \hori='\set style=horizontal'
+\alias \vert='\set style=vertical'
+

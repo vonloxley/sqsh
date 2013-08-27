@@ -1,0 +1,12 @@
+$Id: RELEASE,v 1.1.1.1 2004/04/07 12:35:01 chunkm0nkey Exp $
+
+This file contains notes to myself about things that need to
+be done prior to each release:
+
+1. Update version number in INSTALL
+2. Update version, date in doc/sqsh.1
+3. Update version number in sqsh_global.c
+4. Check everything in
+5. Apply 'cvs tag sqsh-[major]_[minor]'
+6. Perform 'cvs export -r sqsh-[major]_[minor] -d ~/sqsh-[major].[minor] sqsh'
+7. Generate doc/sqsh.1.ps.

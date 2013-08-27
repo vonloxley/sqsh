@@ -1,0 +1,88 @@
+# $Id: sample.sqshrc,v 1.1.1.1 2004/04/07 12:35:01 chunkm0nkey Exp $
+#
+# .sqshrc - Example sqsh initialization file
+#
+
+# $password : Setting your password within your .sqshrc is probably
+#             the most secure method of using sqsh.  However, make
+#             sure that you 'chmod go-rwx ~/.sqshrc', otherwise you
+#             leave yourself wide open to attacks.
+#
+\set password=xxxxxxx
+
+#
+# $semicolon_hack : This turns on the ability to use a semicolon as
+#             a sort of in-line go.  It is kind of hacky but seems
+#             to work pretty well.
+#
+\set semicolon_hack=on
+
+#
+# $prompt :   The value of this variable is expanded each time the
+#             prompt is displayed.  It may contain variables and
+#             even command substitutions (note that $date and $time
+#             are the more efficient ways of displaying the current
+#             date than `date`).
+#
+\set prompt='[$histnum] ${DSQUERY}.${database}.${lineno}> '
+
+#
+# $histsize : This variable is used to configure the number of 
+#             previous batches that have been executed by sqsh,
+#             setting this variable high uses up a little extra
+#             memory, and makes it a little harder to find the
+#             query that you are looking for, but comes in handy.
+#
+\set histsize=20
+
+#
+# $exit_failcount : This variable causes sqsh to exit with an exit
+#             status of the total number of batches that failed
+#             during the current session. This is useful for use 
+#             within shell scripts and the such.
+#
+\set exit_failcount=on
+
+#
+# $keyword_completion : This variable is used to configure what sort
+#             of keyword (tab) completion is performed by GNU Readline,
+#             it only has an affect if readline support is compiled
+#             into sqsh, otherwise it is effectively ignored.
+#
+\set keyword_completion=smart
+
+#
+# $history_shorthand : Turns on the ability to perform csh-style
+#             history recall on the command line, such as !20.
+#
+\set history_shorthand=on
+
+#
+# $filter_prog : When sqsh is run with -t, or -t is passed to \go,
+#             the following program will be used to filter the
+#             command batch prior to being shipped off to SQL
+#             server. Note, that this settings looks for a set of
+#             m4 macros in $HOME/.sqsh_m4.
+#
+#             For you cpp fans, since cpp doesn't support the 
+#             inclusion of a header file on the command line,
+#             like m4, you can try something like:
+#
+#             \set filter_prog="cat $HOME/.sqsh_cpp - | cpp -C -P"
+#
+#             Assuming that your version of cpp can read from stdin.
+#
+\set filter_prog="m4 $HOME/.sqsh_m4 -"
+
+#
+# The following alias is used to act as a replacement for the
+# '\go | more' command. It is smart enough to carry over any
+# parameters to \go.  If you always want "more" support then
+# you can do "\alias \go='\go !* | more'".
+# 
+\alias mo='\go !* | more'
+
+#
+# The following alias's create a more 'isql-like' environment.
+#
+\alias :r='\buf-load -a !*'
