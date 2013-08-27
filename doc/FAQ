@@ -1,7 +1,7 @@
-                     SQSH-FAQ Version 2.1
+                     SQSH-FAQ Version 2.4
 
 Name:      SQSH-FAQ
-Version:   $Id: FAQ,v 1.1.1.1 2001/10/23 20:31:05 gray Exp $
+Version:   $Id: FAQ,v 1.1.1.1 2004/04/07 12:34:59 chunkm0nkey Exp $
 Copyright: (C) 1996-2001 by Scott C. Gray
 
 This document contains of Frequently Asked Questions (or Frequently
@@ -9,8 +9,10 @@ Answered Questions, as the case may be) concerning sqsh, a UNIX
 replacement for the 'isql' program supplied with Sybase SQL Server.
 
 If you have any questions, comments, or additions to this FAQ feel
-free to send them to Scott Gray, gray@voicenet.com (or, if that 
-fails try sgray@inventa.com).
+free to send them to:
+
+  https://sourceforge.net/p/sqsh/support-requests/
+  https://sourceforge.net/p/sqsh/bugs/
 
 Contents:
 
@@ -72,7 +74,7 @@ Section 1:  Introduction to Sqsh and how to install it
 
 1.3  What is the current release?
 
-  The current release of sqsh is 2.1.
+  The current release of sqsh is 2.4.
 
 1.4  Basic requirements
 
@@ -89,16 +91,17 @@ Section 1:  Introduction to Sqsh and how to install it
       CT-Library or FreeTDS (http://www.freetds.org).
       
       Sqsh has been tested almost all versions of DB-Library as well
-      as CT-Lib 10.0.x, 11.1.x, and 12.x. Note that there is little
+      as CT-Lib 10.0.x, 11.1.x, 12.x and 15.x. Note that there is little
       effort underway to allow sqsh to continue compiling against
-      CT-Lib 10.x, so it may require a bit of work on your part if
-      you really need 10.x support.
+      CT-Lib 10.x and 11.x, so it may require a bit of work on your part if
+      you really need 10.x or 11.x support.
 
-  3.  GNU Readline 4.2
+  3.  GNU Readline 5.x, 6.x
       Although this library is not required, it is highly recommended
       if you will to take advantage of command-line history, and key-
-      word completion.  Readline 4.2 may be found at 
-          http://cnswww.cns.cwru.edu/~chet/readline/rltop.html.
+      word completion.  Readline may be found at 
+          http://ftp.gnu.org/gnu/readline/
+          http://cnswww.cns.cwru.edu/~chet/readline/rltop.html
 
   4.  X11R4 or Later
       If available, sqsh may be compiled such that a result set may
@@ -113,6 +116,7 @@ Section 1:  Introduction to Sqsh and how to install it
    The SQSH Homepage may be found at:
 
               http://www.sqsh.org/
+              http://sourceforge.net/projects/sqsh
 
    Sqsh comes with a pretty extensive set of documentation:
 
@@ -124,6 +128,8 @@ Section 1:  Introduction to Sqsh and how to install it
        doc/sqsh.1          -  Sqsh manual page in 'roff -man' format
        doc/sample.sqshrc   -  Example configuration file
        doc/advanced.sqshrc -  Example configuration with advanced features
+       doc/sqshrc-2.2.0    -  Another config example enabling recent features
+       doc/CHANGES-2.x.y   -  Documentation changes since sqsh-2.1.6
 
    Please make sure you read at least FAQ, README and INSTALL before asking
    building and installation questions, and read the manual page before
@@ -148,8 +154,10 @@ Section 1:  Introduction to Sqsh and how to install it
 1.8  Where do I get it?
 
    Currently, the only available location to get sqsh from is
-   the home page:
-   
+   the Sourceforge project page:
+   http://sourceforge.net/projects/sqsh
+
+   The original home page also contains lots of information:
    http://www.sqsh.org/
 
 Section 2:  Features
@@ -166,12 +174,17 @@ Section 3:  Common build and installation problems
        % gunzip -c sqsh-X.Y.tar.gz | tar xvf -
        % cd sqsh-X.Y
        % ./configure --prefix="/<install_dir>" --with-x --with-readline
-       % vi Makefile
+       % vi Makefile src/Makefile
        % make
        % make install
        % make install.man
    
-   What could be easier? :)
+   What could be easier? :) Well, there is also a conf.sh file in the root
+   directory that may help you in setting the correct compiler flags, etc.
+   Edit this file to your platform needs and run ./conf.sh instead of
+   ./configure
+   Basically conf.sh will run configure for you with the appropriate
+   settings.
 
 3.2  I cannot get 'configure' to run while building GNU Readline
 
@@ -296,7 +309,7 @@ Section 3:  Common build and installation problems
    Sqsh will *not* build on Linux against the *really* old version
    of CT-Lib (10.0.4) that may still be floating around out there.
    It is highly recommended that you get ahold of a more recent 
-   version that is bundled with ASE (11.0.3.3 or 12.x).
+   version that is bundled with ASE (15.x).
 
 Section 4:  Run-time problems
 
@@ -348,8 +361,7 @@ Section 4:  Run-time problems
 4.4  Why doesn't command line editing work?
 
    In order to vi-style or emacs-style command line editing support
-   you must compile sqsh using the GNU Readline library, available
-   from ftp://prep.ai.mit.edu/pub/gnu/readline/readline-2.2.1.tar.gz.
+   you must compile sqsh using the GNU Readline library.
    See section 3.2 for tips on building readline.
 
    By default, the readline library starts in "emacs" editing mode,

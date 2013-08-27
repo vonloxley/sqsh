@@ -3,29 +3,36 @@
 # File: conf.sh
 # A wrapper file to run configure with the correct settings.
 # Check your configuration and adjust accordingly. When you are finished
-# run this script from the prompt: ~/sqsh-2.2.0$ ./conf.sh
-# If configure completes successfully continue with make and make install.
+# run this script from the prompt: cd ~/sqsh-2.4 && ./conf.sh
+# If configure completes successfully, continue with make and make install.
 #
 
 export CC="gcc"
 
 #
-# 64bit compile flag settings
+# General 64bit compile flag settings (Linux, Solaris)
 # Uncomment the LDFLAGS line with -lcrypt if you want to use the \lock command
 # in combination with your Unix/Linux password to unlock the sqsh session.
 #
-export CFLAGS="-g -O2 -m64"
+export CPPFLAGS="-DSYB_LP64"
+export CFLAGS="-g -O2 -Wall -m64"
 export LDFLAGS="-m64"
 #export LDFLAGS="-m64 -lcrypt"
-export CPPFLAGS="-DSYB_LP64"
+
+#
+# 64bit compile flags for IBM AIX 5.x, 6.x, 7.x
+#
+#export CPPFLAGS="-DSYB_LP64"
+#export CFLAGS="-g -O2 -Wall -maix64"
+#export LDFLAGS="-maix64"
 
 #
 # 32bit compile flag settings
 # Uncomment these settings if you want to build a 32 bit version of sqsh
 #
-#export CFLAGS="-g -O2"
-#export LDFLAGS="-lcrypt"
 #export CPPFLAGS=""
+#export CFLAGS="-g -O2 -Wall"
+#export LDFLAGS="-lcrypt"
 
 #
 # If you want to include X-Windows and optional Motif libraries to create

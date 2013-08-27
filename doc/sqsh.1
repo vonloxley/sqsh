@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "sqsh 1"
-.TH sqsh 1 "2013-08-26" "2.4" "sqsh-2.4"
+.TH sqsh 1 "2013-08-27" "2.4" "sqsh-2.4"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -2703,7 +2703,7 @@ the alias 'd' and the dot, a list of column names will be produced for the
 \&    SYBPROD.sa.tempdb.3> where d.
 .Ve
 .Sp
-Note that sqsh is now able to perform cross database auto-completion.
+Note that sqsh is now able to perform cross database auto-completion as well.
 .IP "keyword_file (string)" 4
 .IX Item "keyword_file (string)"
 If Readline support has been compiled into \fIsqsh\fR, and \fIsqsh\fR is being run in
@@ -3041,12 +3041,15 @@ The default value for this variable is /tmp.
 .IP "usedbcheck (boolean)" 4
 .IX Item "usedbcheck (boolean)"
 When this variable is set to 'On' (default is 'Off') and a database name is
-provided with the \-D parameter and sqsh is run in batch mode, then a check
-will be performed if the named database is accessible, otherwise sqsh is
-aborted with exit code 254. Also the following error message will be shown:
-  sqsh: \s-1ERROR:\s0 Unable to use database '...' in batch mode
+provided with the \-D parameter and sqsh is run in batch mode, i.e.
+non-interactive, then a check will be performed if the specified database is
+accessible, otherwise sqsh is aborted with exit code 254. Also the following
+error message will be shown:
+.Sp
+\&\fBsqsh: \s-1ERROR:\s0 Unable to use database '...' in batch mode\fR
+.Sp
 This is to prevent that a \s-1SQL\s0 script is inadvertently executed in the wrong
-database.
+database, usually the default database of the login (master for example).
 .IP "username (string)" 4
 .IX Item "username (string)"
 The name of the user currently connected to the database.

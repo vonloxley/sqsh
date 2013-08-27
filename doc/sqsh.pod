@@ -2787,7 +2787,7 @@ the alias 'd' and the dot, a list of column names will be produced for the
     d.defpraud         d.dumptrdate       d.status           d.version
     SYBPROD.sa.tempdb.3> where d.
 
-Note that sqsh is now able to perform cross database auto-completion.
+Note that sqsh is now able to perform cross database auto-completion as well.
 
 =item keyword_file (string)
 
@@ -3158,12 +3158,15 @@ The default value for this variable is /tmp.
 =item usedbcheck (boolean)
 
 When this variable is set to 'On' (default is 'Off') and a database name is
-provided with the -D parameter and sqsh is run in batch mode, then a check
-will be performed if the named database is accessible, otherwise sqsh is
-aborted with exit code 254. Also the following error message will be shown:
-  sqsh: ERROR: Unable to use database '...' in batch mode
+provided with the -D parameter and sqsh is run in batch mode, i.e.
+non-interactive, then a check will be performed if the specified database is
+accessible, otherwise sqsh is aborted with exit code 254. Also the following
+error message will be shown:
+
+B<sqsh: ERROR: Unable to use database '...' in batch mode>
+
 This is to prevent that a SQL script is inadvertently executed in the wrong
-database.
+database, usually the default database of the login (master for example).
 
 =item username (string)
 

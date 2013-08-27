@@ -56,13 +56,13 @@ chmod gou+rx $tmp_dir/install.sh
 #
 # Basic readme files.
 #
-cp COPYING ChangeLog doc/README.bin $tmp_dir
+cp COPYING doc/README.bin $tmp_dir
 
 #
 # Documentation files.
 #
-cp doc/FAQ doc/global.sqshrc doc/sample.sqsh_m4 \
-   doc/sample.sqshrc doc/advanced.sqshrc doc/sqsh.1 \
+cp ChangeLog doc/FAQ doc/global.sqshrc doc/sample.sqsh_m4 \
+   doc/sqsh.1 doc/sqsh.html doc/sqshrc-2.4 doc/CHANGES-2.* \
 	$tmp_dir/doc
 
 #
