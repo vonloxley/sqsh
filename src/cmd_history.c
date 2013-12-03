@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_history.c,v 1.7 2013/04/18 11:54:43 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: cmd_history.c,v 1.8 2013/05/07 21:18:02 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -117,6 +117,7 @@ int cmd_history( argc, argv )
 	 * sqsh-2.2.0 - Since the datetime format string may contain [] to filter out seconds for
 	 * smalldatetime datatypes, we have to remove these brackets here. Also replace the %u format
 	 * specifier with 000 when specified in the format string.
+	 * sqsh-2.5: Strip of .%q and [] from the datetime format string.
 	 */
 	if (show_info == True)
 	{
@@ -125,13 +126,11 @@ int cmd_history( argc, argv )
 			strcpy (fmt, "%Y%m%d %H:%M:%S");
 		else
 		{
-			for (cp = fmt; *datetime != '\0'; ++datetime)
+			for (cp = fmt; *datetime != '\0'; datetime++)
 			{
-				if (*datetime == '%' && *(datetime+1) == 'u')
+				if (*datetime == '.' && *(datetime+1) == '%' && *(datetime+2) == 'q')
 				{
-					sprintf (cp, "000");
-					cp += 3;
-					datetime += 1;
+					datetime += 2;
 				}
 				else if (*datetime != '[' && *datetime != ']')
 					*cp++ = *datetime;

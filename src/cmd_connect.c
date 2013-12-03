@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.33 2013/08/21 11:16:39 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.34 2013/08/22 19:54:34 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -636,6 +636,8 @@ int cmd_connect( argc, argv )
             g_cs_ver = CS_VERSION_100;
             retcode = cs_ctx_alloc(g_cs_ver, &g_context);
         }
+        DBG(sqsh_debug(DEBUG_TDS, "cmd_connect: g_cs_ver (CS_VERSION) set to: %d\n", g_cs_ver);)
+
         if (retcode != CS_SUCCEED) /* nothing worked... */
             goto connect_fail;
 
@@ -1511,6 +1513,12 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
     char    var_value[31];
     int     i;
     char   *c;
+    /* sqsh-2.5 - New variables to support feature p2f */
+    char   *p2faxm;
+    int     p2faxm_int;
+    char   *p2fname;
+    FILE   *dest_fp;
+    int     p2fstat = False;
 
     /*
      * Record last error in $?
@@ -1601,6 +1609,30 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
         if (msg->severity >= 0 || msg->msgnumber == 10)
         {
             /*
+             * sqsh-2.5 : Implementation of p2f feature.
+             * When the number of messages handled by this callback handler exceeds the limit specified in p2faxm,
+             * and a file is provided in $p2fname and is succesfully opened and we are in interactive mode, then
+             * write the remaining messages from the current batch to this file instead of on screen.
+             * Note that global variable g_p2fc will be reset to zero for each new batch in dsp.c.
+             */
+            env_get( g_env, "p2faxm",  &p2faxm );
+            p2faxm_int = atoi(p2faxm);
+            if (++g_p2fc       > p2faxm_int &&
+                p2faxm_int     > 0          &&
+                g_p2f_fp      != NULL       &&
+                g_interactive == True)
+            {
+                if (g_p2fc == p2faxm_int + 1) {
+                    env_get( g_env, "p2fname", &p2fname );
+                    fprintf (stderr, "Warning: Number of printed server messages exceeds p2faxm=%d limit for current batch.\n", p2faxm_int);
+                    fprintf (stderr,"          Remaining server messages will be printed to file: %s\n", p2fname);
+                    fflush  (stderr );
+                    fprintf (g_p2f_fp, "--------\n");
+                }
+                p2fstat = True;
+            }
+
+            /*
              * If the message was something other than informational, and
              * the severity was greater than 0, then print information to
              * stderr with a little pre-amble information.  According to
@@ -1609,17 +1641,18 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
              */
             if (msg->msgnumber > 0 && msg->severity > 10)
             {
-                fprintf( stderr, "Msg %d, Level %d, State %d\n",
+                dest_fp = (p2fstat == True) ? g_p2f_fp : stderr;
+                fprintf( dest_fp, "Msg %d, Level %d, State %d\n",
                             (int)msg->msgnumber, (int)msg->severity, (int)msg->state );
                 if (msg->svrnlen > 0)
-                    fprintf( stderr, "Server '%s'", (char*)msg->svrname );
+                    fprintf( dest_fp, "Server '%s'", (char*)msg->svrname );
                 if (msg->proclen > 0)
-                    fprintf( stderr, ", Procedure '%s'", (char*)msg->proc );
+                    fprintf( dest_fp, ", Procedure '%s'", (char*)msg->proc );
                 if( msg->line > 0 )
-                    fprintf( stderr, ", Line %d", (int)msg->line );
-                fprintf( stderr, "\n" );
-                wrap_print( stderr, msg->text );
-                fflush( stderr );
+                    fprintf( dest_fp, ", Line %d", (int)msg->line );
+                fprintf( dest_fp, "\n" );
+                wrap_print( dest_fp, msg->text );
+                fflush( dest_fp );
             }
             else
             {
@@ -1627,8 +1660,9 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
                  * Otherwise, it is just an informational (e.g. print) message
                  * from the server, so send it to stdout.
                  */
-                wrap_print( stdout, msg->text );
-                fflush( stdout );
+                dest_fp = (p2fstat == True) ? g_p2f_fp : stdout;
+                wrap_print( dest_fp, msg->text );
+                fflush( dest_fp );
             }
         }
     }
@@ -2055,13 +2089,11 @@ ShowNetAuthCredExp (conn, cmdname)
                 else
                 {
                     fmt = (char *) malloc (sizeof(char) * strlen(datetime)+2);
-                    for (cp = fmt; *datetime != '\0'; ++datetime)
+                    for (cp = fmt; *datetime != '\0'; datetime++)
                     {
-                        if (*datetime == '%' && *(datetime+1) == 'u')
+                        if (*datetime == '.' && *(datetime+1) == '%' && *(datetime+2) == 'q')
                         {
-                            sprintf (cp, "000");
-                            cp += 3;
-                            datetime += 1;
+                            datetime += 2;
                         }
                         else if (*datetime != '[' && *datetime != ']')
                             *cp++ = *datetime;

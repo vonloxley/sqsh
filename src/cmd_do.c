@@ -316,6 +316,9 @@ static int cmd_do_exec( conn, sql, dobuf )
 
 	/*
 	** Save away current signal context.
+	**
+	** sqsh-2.5: Make sure that the signal context is restored using sig_restore() prior
+	** to every return from this function.
 	*/
 	sig_save();
 
@@ -341,17 +344,20 @@ static int cmd_do_exec( conn, sql, dobuf )
 	{
 		fprintf( stderr, "\\do: Error initializing command\n" );
 
-		sig_restore();
 		ct_cmd_drop( cmd );
+		sig_restore();
 		return(CMD_FAIL);
 	}
+
+	/* sqsh-2.5 - Feature p2f, reset g_p2fc before a new batch is started */
+	g_p2fc = 0;
 
 	if (ct_send( cmd ) != CS_SUCCEED)
 	{
 		fprintf( stderr, "\\do: Error sending command\n" );
 
-		sig_restore();
 		ct_cmd_drop( cmd );
+		sig_restore();
 		return(CMD_FAIL);
 	}
 
@@ -368,6 +374,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 		{
 			ct_cancel( conn, (CS_COMMAND*)NULL, CS_CANCEL_ALL );
 			ct_cmd_drop( cmd );
+			sig_restore();
 			return(CMD_INTERRUPTED);
 		}
 
@@ -382,6 +389,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 				{
 					ct_cancel( conn, (CS_COMMAND*)NULL, CS_CANCEL_ALL );
 					ct_cmd_drop( cmd );
+					sig_restore();
 
 					if (retcode == CS_CANCELED)
 					{
@@ -400,6 +408,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 				{
 					ct_cancel( conn, (CS_COMMAND*)NULL, CS_CANCEL_ALL );
 					ct_cmd_drop( cmd );
+					sig_restore();
 					return(CMD_FAIL);
 				}
 
@@ -408,6 +417,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 					ct_cancel( conn, (CS_COMMAND*)NULL, CS_CANCEL_ALL );
 					ct_cmd_drop( cmd );
 					dsp_desc_destroy( desc );
+					sig_restore();
 					return(CMD_INTERRUPTED);
 				}
 
@@ -444,6 +454,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 						*/
 						if (ret == CMD_BREAK)
 						{
+							sig_restore();
 							return(CMD_LEAVEBUF);
 						}
 
@@ -451,6 +462,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 						ct_cmd_drop( cmd );
 						dsp_desc_destroy( desc );
 						--g_do_ncols;
+						sig_restore();
 						return(ret);
 					}
 
@@ -461,6 +473,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 						ct_cancel( conn, (CS_COMMAND*)NULL, CS_CANCEL_ALL );
 						ct_cmd_drop( cmd );
 						dsp_desc_destroy( desc );
+						sig_restore();
 						return(CMD_INTERRUPTED);
 					}
 				}
@@ -472,6 +485,7 @@ static int cmd_do_exec( conn, sql, dobuf )
 				{
 					ct_cancel( conn, (CS_COMMAND*)NULL, CS_CANCEL_ALL );
 					ct_cmd_drop( cmd );
+					sig_restore();
 
 					if (retcode == CS_CANCELED)
 					{
@@ -490,10 +504,12 @@ static int cmd_do_exec( conn, sql, dobuf )
 	{
 		ct_cancel( conn, (CS_COMMAND*)NULL, CS_CANCEL_ALL );
 		ct_cmd_drop( cmd );
+		sig_restore();
 		return(CMD_FAIL);
 	}
 
 	ct_cmd_drop( cmd );
+	sig_restore();
 	return(CMD_RESETBUF);
 }
 

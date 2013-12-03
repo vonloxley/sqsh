@@ -147,7 +147,7 @@ extern char       *g_version ;
 
 /*
  * g_password & g_lock: Contains the current value of the regular database
- *              password and the session lock password. 
+ *              password and the session lock password.
  */
 extern int         g_password_set;
 extern char       *g_password;
@@ -166,5 +166,12 @@ extern int         g_interactive;
 #else
     extern void *g_lconv;
 #endif
+
+/*
+ * sqsh-2.5 - New feature: Print to file from message handler after $p2faxm
+ * number of printed messages to screen.
+ */
+extern FILE       *g_p2f_fp; /* Print to file filepointer */
+extern int         g_p2fc;   /* Print to file count */
 
 #endif

@@ -28,7 +28,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_global.c,v 1.8 2013/02/19 18:06:42 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_global.c,v 1.9 2013/07/20 16:18:35 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -55,11 +55,18 @@ char       *g_version      = SQSH_VERSION;
 dsp_desc_t *g_do_cols[64];
 int         g_do_ncols     = 0;
 funcarg_t   g_func_args[64];
-int         g_func_nargs   = 0;  
-int         g_interactive  = False;  
+int         g_func_nargs   = 0;
+int         g_interactive  = False;
 
 #if defined(HAVE_LOCALE_H)
     struct lconv  *g_lconv = NULL;
 #else
     void *g_lconv = NULL;
 #endif
+
+/*
+ * sqsh-2.5 - Initialize variables for p2f feature.
+ */
+FILE       *g_p2f_fp       = NULL;
+int         g_p2fc         = 0;
+

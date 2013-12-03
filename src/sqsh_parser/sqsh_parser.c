@@ -17,7 +17,7 @@ void* def_root = NULL;
 aliascallback callback = NULL;
 long callbacklparam = 0;
 
-void* xmalloc(size_t size) {
+static void* xmalloc(size_t size) {
     void* m = malloc(size);
     if (m == NULL) {
         exit(0);
@@ -26,7 +26,7 @@ void* xmalloc(size_t size) {
     return m;
 }
 
-void free_node(void *nodep) {
+static void free_node(void *nodep) {
     t_tdef* datap;
     datap = (t_tdef*) nodep;
 
@@ -36,7 +36,7 @@ void free_node(void *nodep) {
 
 }
 
-int def_compare(const void *pa, const void *pb) {
+static int def_compare(const void *pa, const void *pb) {
     return strcmp(((t_tdef*) pa)->alias, ((t_tdef*) pb)->alias);
 }
 
@@ -59,7 +59,7 @@ void* addTableDefNode(char* table, char* alias) {
     return p;
 }
 
-void callback_walker(const void *nodep, const VISIT which, const int depth) {
+static void callback_walker(const void *nodep, const VISIT which, const int depth) {
     t_tdef* datap;
 
     datap = *(t_tdef**) nodep;
@@ -75,7 +75,7 @@ void callback_walker(const void *nodep, const VISIT which, const int depth) {
     }
 }
 
-void print_walker(const void *nodep, const VISIT which, const int depth) {
+static void print_walker(const void *nodep, const VISIT which, const int depth) {
     t_tdef* datap;
 
     datap = *(t_tdef**) nodep;

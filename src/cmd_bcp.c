@@ -40,7 +40,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.16 2013/04/26 09:16:34 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.17 2013/05/05 19:50:43 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -454,6 +454,9 @@ int cmd_bcp( argc, argv )
         fprintf( stderr, "\\bcp: Unable to initialize command structure\n" );
         goto return_fail;
     }
+
+    /* sqsh-2.5 - Feature p2f, reset g_p2fc before a new batch is started */
+    g_p2fc = 0;
 
     /*-- Send command to server --*/
     if (ct_send( bcp_cmd ) != CS_SUCCEED)

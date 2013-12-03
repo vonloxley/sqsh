@@ -23,7 +23,7 @@ ws [ \t\r\n]
 <INITIAL>(?i:insert|update|delete)/{ws}+       {BEGIN INDML; KW(INSUP);}
 <INITIAL>(?i:insert{ws}+into)/{ws}+            {BEGIN INDML; KW(INSUP);}
 <INITIAL,INFROM>(?i:join)/{ws}+                {BEGIN INFROM; KW(JOIN);}
-<INFROM>(?i:left|right|outer)/{ws}+            {BEGIN INITIAL;}
+<INFROM>(?i:inner|left|right|outer)/{ws}+      {BEGIN INITIAL;}
 <INFROM>(?i:where|on)/{ws}+                    {BEGIN INITIAL;}
 <INFROM>{alpha}{anum}*                         {KW(TOKEN);}
 <INFROM>\"{alpha}{anumsp}*\"                   {KW(TOKEN);}

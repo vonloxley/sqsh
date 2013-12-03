@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp.c,v 1.3 2008/05/21 17:51:24 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp.c,v 1.4 2013/02/19 18:06:42 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -50,7 +50,7 @@ int         g_dsp_interrupted  = False;
 static CS_COMMAND *sg_cmd = NULL;
 
 /*
- * g_dsp_props: This data structure contains the current set of 
+ * g_dsp_props: This data structure contains the current set of
  *      properties defined for the display sub-system. Be careful
  *      when editing this data strcuture.
  */
@@ -178,6 +178,9 @@ int dsp_cmd( output, cmd, sql, flags )
 	sig_install( SIGINT, dsp_signal, (void*)NULL, 0 );
 	sig_install( SIGPIPE, dsp_signal, (void*)NULL, 0 );
 
+	/* sqsh-2.5 - Feature p2f, reset g_p2fc before a new batch is started */
+	g_p2fc = 0;
+
 	if (ct_send( cmd ) != CS_SUCCEED)
 		ret = DSP_FAIL;
 
@@ -188,7 +191,7 @@ int dsp_cmd( output, cmd, sql, flags )
 	 * All that is left is to process the results of the current
 	 * query, reinstall the old signal handlers, and return!
 	 */
-	if (ret == DSP_SUCCEED) 
+	if (ret == DSP_SUCCEED)
 	{
 		if ((flags & DSP_F_NOTHING) != 0)
 		{
@@ -324,7 +327,7 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 
 		case DSP_COLWIDTH:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_COLWDTH, %d)\n", *((int*)ptr));)
 
 			if (*((int*)ptr) < 1)
@@ -337,7 +340,7 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 		
 		case DSP_FLOAT_PREC:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_FLOAT_PREC, %d)\n", *((int*)ptr));)
 
 			if (*((int*)ptr) < 0 || *((int*)ptr) < g_dsp_props.p_flt_scale)
@@ -350,7 +353,7 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 
 		case DSP_FLOAT_SCALE:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_FLOAT_SCALE, %d)\n",
 				*((int*)ptr));)
 
@@ -364,7 +367,7 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 
 		case DSP_REAL_PREC:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_REAL_PREC, %d)\n", *((int*)ptr));)
 
 			if (*((int*)ptr) < 0 || *((int*)ptr) < g_dsp_props.p_real_scale)
@@ -377,7 +380,7 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 
 		case DSP_REAL_SCALE:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_REAL_SCALE, %d)\n",
 				*((int*)ptr));)
 
@@ -391,7 +394,7 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 
 		case DSP_STYLE:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_STYLE, %d)\n", *((int*)ptr));)
 
 			if (!(DSP_VALID_STYLE( *((int*)ptr) )))
@@ -403,8 +406,8 @@ static int dsp_prop_set( prop, ptr, len )
 			g_dsp_props.p_style = *((int*)ptr);
 			break;
 
-		case DSP_WIDTH: 
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
+		case DSP_WIDTH:
+			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_WIDTH, %d)\n", *((int*)ptr));)
 
 			if (*((int*)ptr) >= 30)
@@ -418,8 +421,8 @@ static int dsp_prop_set( prop, ptr, len )
 			}
 			break;
 
-		case DSP_OUTPUTPARMS: 
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
+		case DSP_OUTPUTPARMS:
+			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_OUTPUTPARMS, %d)\n",
 				*((int*)ptr));)
 
@@ -435,8 +438,8 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 		
 		case DSP_COLSEP:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_SET, DSP_COLSEP, '%s')\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_SET, DSP_COLSEP, '%s')\n",
 				(ptr == NULL)?"NULL":((char*)ptr));)
 
 			if (len == DSP_NULLTERM)
@@ -446,7 +449,7 @@ static int dsp_prop_set( prop, ptr, len )
 
 			if (len > MAX_SEPLEN || len < 0)
 			{
-				sqsh_set_error( SQSH_E_INVAL, 
+				sqsh_set_error( SQSH_E_INVAL,
 					"Invalid length of column separator (between 0 and %d allowed)",
 					MAX_SEPLEN );
 				return DSP_FAIL;
@@ -460,8 +463,8 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 
 		case DSP_BCP_COLSEP:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_SET, DSP_BCP_COLSEP, '%s')\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_SET, DSP_BCP_COLSEP, '%s')\n",
 				(ptr == NULL)?"NULL":((char*)ptr));)
 
 			if (len == DSP_NULLTERM)
@@ -471,7 +474,7 @@ static int dsp_prop_set( prop, ptr, len )
 
 			if (len > MAX_SEPLEN || len < 0)
 			{
-				sqsh_set_error( SQSH_E_INVAL, 
+				sqsh_set_error( SQSH_E_INVAL,
 					"Invalid length of bcp col separator (between 0 and %d allowed)",
 					MAX_SEPLEN );
 				return DSP_FAIL;
@@ -485,8 +488,8 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 
 		case DSP_BCP_ROWSEP:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_SET, DSP_BCP_ROWSEP, '%s')\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_SET, DSP_BCP_ROWSEP, '%s')\n",
 				(ptr == NULL)?"NULL":((char*)ptr));)
 
 			if (len == DSP_NULLTERM)
@@ -496,7 +499,7 @@ static int dsp_prop_set( prop, ptr, len )
 
 			if (len > MAX_SEPLEN || len < 0)
 			{
-				sqsh_set_error( SQSH_E_INVAL, 
+				sqsh_set_error( SQSH_E_INVAL,
 					"Invalid length of bcp row separator (between 0 and %d allowed)",
 					MAX_SEPLEN );
 				return DSP_FAIL;
@@ -510,8 +513,8 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 
 		case DSP_BCP_TRIM:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_SET, DSP_BCP_TRIM, '%d')\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_SET, DSP_BCP_TRIM, '%d')\n",
 				(ptr == NULL)?-1:*((int*)ptr));)
 
 			if (*((int*)ptr) == 0)
@@ -525,8 +528,8 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 		
 		case DSP_LINESEP:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_SET, DSP_LINESEP, '%s')\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_SET, DSP_LINESEP, '%s')\n",
 				(ptr == NULL)?"NULL":((char*)ptr));)
 
 			if (len == DSP_NULLTERM)
@@ -536,7 +539,7 @@ static int dsp_prop_set( prop, ptr, len )
 
 			if (len > MAX_SEPLEN || len < 0)
 			{
-				sqsh_set_error( SQSH_E_INVAL, 
+				sqsh_set_error( SQSH_E_INVAL,
 					"Invalid length of line separator (between 0 and %d allowed)",
 					MAX_SEPLEN );
 				return DSP_FAIL;
@@ -549,8 +552,8 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 
 		case DSP_XGEOM:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_SET, DSP_XGEOM, '%s')\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_SET, DSP_XGEOM, '%s')\n",
 				(ptr == NULL)?"NULL":((char*)ptr));)
 
 			if (len == DSP_NULLTERM)
@@ -560,7 +563,7 @@ static int dsp_prop_set( prop, ptr, len )
 
 			if (len > MAX_XGEOM || len < 0)
 			{
-				sqsh_set_error( SQSH_E_INVAL, 
+				sqsh_set_error( SQSH_E_INVAL,
 					"Invalid length of X geometry (between 0 and %d allowed)",
 					MAX_XGEOM );
 				return DSP_FAIL;
@@ -571,7 +574,7 @@ static int dsp_prop_set( prop, ptr, len )
 			break;
 
 		case DSP_MAXLEN:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_MAXLEN, %d)\n", *((int*)ptr));)
 
 			if (*((int*)ptr) < 0)
@@ -612,48 +615,48 @@ static int dsp_prop_get( prop, ptr, len )
 		 * This feature request was filed as bugreport 3603409 on Sourceforge.
 		 */
 		case DSP_COLWIDTH:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_COLWIDTH) = %d\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_COLWIDTH) = %d\n",
 			   g_dsp_props.p_colwidth);)
 
 			*((int*)ptr) = g_dsp_props.p_colwidth;
 			break;
 
 		case DSP_FLOAT_PREC:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_FLOAT_PREC) = %d\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_FLOAT_PREC) = %d\n",
 			   g_dsp_props.p_flt_prec);)
 
 			*((int*)ptr) = g_dsp_props.p_flt_prec;
 			break;
 
 		case DSP_FLOAT_SCALE:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_FLOAT_SCALE) = %d\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_FLOAT_SCALE) = %d\n",
 			   g_dsp_props.p_flt_scale);)
 
 			*((int*)ptr) = g_dsp_props.p_flt_scale;
 			break;
 
 		case DSP_REAL_PREC:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_REAL_PREC) = %d\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_REAL_PREC) = %d\n",
 			   g_dsp_props.p_real_prec);)
 
 			*((int*)ptr) = g_dsp_props.p_real_prec;
 			break;
 
 		case DSP_REAL_SCALE:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_REAL_SCALE) = %d\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_REAL_SCALE) = %d\n",
 			   g_dsp_props.p_real_scale);)
 
 			*((int*)ptr) = g_dsp_props.p_real_scale;
 			break;
 
 		case DSP_DATETIMEFMT:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_DATETIMEFMT) = %s\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_DATETIMEFMT) = %s\n",
 				dsp_datetimefmt_get());)
 
 			if (len <= 0)
@@ -666,8 +669,8 @@ static int dsp_prop_get( prop, ptr, len )
 			break;
 
 		case DSP_DATEFMT:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_DATEFMT) = %s\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_DATEFMT) = %s\n",
 				dsp_datefmt_get());)
 
 			if (len <= 0)
@@ -680,8 +683,8 @@ static int dsp_prop_get( prop, ptr, len )
 			break;
 
 		case DSP_TIMEFMT:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_TIMEFMT) = %s\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_TIMEFMT) = %s\n",
 				dsp_timefmt_get());)
 
 			if (len <= 0)
@@ -694,72 +697,72 @@ static int dsp_prop_get( prop, ptr, len )
 			break;
 			
 		case DSP_STYLE:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_STYLE) = %d\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_STYLE) = %d\n",
 				g_dsp_props.p_style);)
 		
 			*((int*)ptr) = g_dsp_props.p_style;
 			break;
 
-		case DSP_WIDTH: 
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_WIDTH) = %d\n", 
+		case DSP_WIDTH:
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_WIDTH) = %d\n",
 				g_dsp_props.p_width);)
 
 			*((int*)ptr) = g_dsp_props.p_width;
 			break;
 
-		case DSP_OUTPUTPARMS: 
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_OUTPUTPARMS) = %d\n", 
+		case DSP_OUTPUTPARMS:
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_OUTPUTPARMS) = %d\n",
 				g_dsp_props.p_outputparms);)
 
 			*((int*)ptr) = g_dsp_props.p_outputparms;
 			break;
 		
 		case DSP_COLSEP:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_COLSEP) = %s\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_COLSEP) = %s\n",
 				g_dsp_props.p_colsep);)
 
 			strncpy( (char*)ptr, g_dsp_props.p_colsep, len );
 			break;
 
 		case DSP_BCP_COLSEP:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_BCP_COLSEP) = %s\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_BCP_COLSEP) = %s\n",
 				g_dsp_props.p_bcp_colsep);)
 
 			strncpy( (char*)ptr, g_dsp_props.p_bcp_colsep, len );
 			break;
 
 		case DSP_BCP_ROWSEP:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_BCP_ROWSEP) = %s\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_BCP_ROWSEP) = %s\n",
 				g_dsp_props.p_bcp_rowsep);)
 
 			strncpy( (char*)ptr, g_dsp_props.p_bcp_rowsep, len );
 			break;
 
 		case DSP_BCP_TRIM:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_BCP_TRIM) = %d\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_BCP_TRIM) = %d\n",
 				g_dsp_props.p_bcp_trim);)
 
 			*((int*)ptr) = g_dsp_props.p_bcp_trim;
 			break;
 		
 		case DSP_LINESEP:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_LINESEP) = %s\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_LINESEP) = %s\n",
 				g_dsp_props.p_linesep);)
 
 			strncpy( (char*)ptr, g_dsp_props.p_linesep, len );
 			break;
 
 		case DSP_XGEOM:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_XGEOM) = %s\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_XGEOM) = %s\n",
 				g_dsp_props.p_xgeom);)
 
 			if (len <= 0)
@@ -772,8 +775,8 @@ static int dsp_prop_get( prop, ptr, len )
 			break;
 
 		case DSP_MAXLEN:
-			DBG(sqsh_debug(DEBUG_DISPLAY, 
-				"dsp_prop: dsp_prop(DSP_GET, DSP_MAXLEN) = %d\n", 
+			DBG(sqsh_debug(DEBUG_DISPLAY,
+				"dsp_prop: dsp_prop(DSP_GET, DSP_MAXLEN) = %d\n",
 			   g_dsp_props.p_maxlen);)
 
 			*((int*)ptr) = g_dsp_props.p_maxlen;

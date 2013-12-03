@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_meta.c,v 1.3 2004/04/11 15:14:32 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_meta.c,v 1.4 2013/07/20 16:18:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -613,6 +613,10 @@ static CS_CHAR* dsp_meta_datatype( t )
 #if defined(CS_BIGTIME_TYPE)
 	case CS_BIGTIME_TYPE:
 	    return "CS_BIGTIME_TYPE";
+#endif
+#if defined(CS_UNIQUE_TYPE)
+	case CS_UNIQUE_TYPE:
+	    return "CS_UNIQUE_TYPE";
 #endif
         default:
             break;

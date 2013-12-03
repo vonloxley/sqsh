@@ -48,7 +48,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_init.c,v 1.7 2013/07/20 16:18:35 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_init.c,v 1.8 2013/07/23 20:57:28 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -375,6 +375,14 @@ void sqsh_exit( exit_status )
 		env_get( g_env, "term_title", &term_title );
 		if (term_title != NULL && *term_title != '\0')
 		    fprintf (stdout, "%c]0;%c", '\033', '\007' );
+	}
+
+	/*
+	 * sqsh-2.5 - Close file $p2fname
+	 */
+	if (g_p2f_fp != NULL) {
+		fclose (g_p2f_fp);
+		g_p2f_fp = NULL;
 	}
 
 	if( g_env != NULL ) {

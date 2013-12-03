@@ -30,10 +30,11 @@
 #include "sqsh_stdin.h"
 #include "var.h"
 #include "sqsh_global.h"
+#include "sqsh_fd.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_misc.c,v 1.2 2013/07/20 16:18:35 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: var_misc.c,v 1.3 2013/07/23 20:57:28 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -287,7 +288,7 @@ int var_set_int( env, var_name, var_value )
 	char     **var_value ;
 {
 	/*-- Can't set it a NULL value --*/
-	if( var_value == NULL || *var_value == NULL ) {
+	if( var_value == NULL || *var_value == NULL || strcmp(*var_value, "NULL") == 0) {
 		sqsh_set_error( SQSH_E_INVAL, "Invalid integer expression" ) ;
 		return False ;
 	}
@@ -470,5 +471,39 @@ int var_set_lconv( env, var_name, var_value )
 
 	sqsh_set_error( SQSH_E_INVAL, "Invalid boolean value" ) ;
 	return False ;
+}
+
+/*
+ * sqsh-2.5 - New feature p2f (Print to File)
+ *            Assume var_name == "p2fname"
+ */
+int var_set_p2fname( env, var_name, var_value )
+	env_t    *env ;
+	char     *var_name ;
+	char     **var_value ;
+{
+
+	if ( strcmp(var_name, "p2fname") != 0 ) {
+		sqsh_set_error( SQSH_E_INVAL, "Unexpected variable name %s", var_name ) ;
+		return False;
+	}
+
+	if (g_p2f_fp != NULL) {
+		fclose (g_p2f_fp);
+		g_p2f_fp = NULL;
+	}
+
+	if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 ) {
+		*var_value = NULL ;
+	}
+	else {
+		if( (g_p2f_fp = fopen( *var_value, "a" )) == NULL) {
+			sqsh_set_error( SQSH_E_INVAL, "Unable to open file %s", *var_value ) ;
+			*var_value = NULL ;
+			return False;
+		}
+	}
+
+	return True ;
 }
 

@@ -32,9 +32,18 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.11 2013/07/20 16:18:35 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.12 2013/07/22 14:02:23 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
+
+/*
+ * sqsh-2.5 : FreeTDS defines a datatype CS_UNIQUE_TYPE for the MSSQL uniqueidentifier.
+ * In order to compile correctly and make coding somewhat easier we define the type here,
+ * in case it was not defined already.
+*/
+#if !defined(CS_UNIQUE_TYPE)
+#define CS_UNIQUE_TYPE 40
+#endif
 
 /*-- Local Prototypes --*/
 static CS_INT dsp_dlen           _ANSI_ARGS(( CS_DATAFMT* ));
@@ -75,6 +84,7 @@ static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
      || ((t) == CS_USMALLINT_TYPE)  \
      || ((t) == CS_UINT_TYPE)       \
      || ((t) == CS_UBIGINT_TYPE)    \
+     || ((t) == CS_UNIQUE_TYPE)     \
     )
 #else
 #define LET_CTLIB_CONV(t) ( \
@@ -93,6 +103,7 @@ static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
      || ((t) == CS_VARCHAR_TYPE)    \
      || ((t) == CS_VARBINARY_TYPE)  \
      || ((t) == CS_UNICHAR_TYPE)    \
+     || ((t) == CS_UNIQUE_TYPE)     \
     )
 #endif
 
@@ -908,6 +919,8 @@ static CS_INT dsp_dlen( fmt )
         case CS_UBIGINT_TYPE:
             return 20;
 #endif
+        case CS_UNIQUE_TYPE:
+            return 36;
         default:
             break;
     }
