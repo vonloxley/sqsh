@@ -31,10 +31,11 @@
 #include "var.h"
 #include "sqsh_global.h"
 #include "sqsh_fd.h"
+#include "sqsh_expand.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_misc.c,v 1.3 2013/07/23 20:57:28 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: var_misc.c,v 1.4 2013/12/03 09:22:23 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -115,7 +116,7 @@ int var_set_esc( env, var_name, var_value )
 	/*
 	 * Allow them to set the string to a null value.
 	 */
-	if( *var_value == NULL || strcmp(*var_value,"NULL") == 0 ) {
+	if( var_value == NULL || *var_value == NULL || strcmp(*var_value,"NULL") == 0 ) {
 		*var_value = NULL ;
 		return True ;
 	}
@@ -246,7 +247,7 @@ int var_set_nullint( env, var_name, var_value )
 {
 	char *cptr ;
 
-	if( *var_value == NULL || strcmp(*var_value, "NULL") == 0 )
+	if( var_value == NULL || *var_value == NULL || strcmp(*var_value, "NULL") == 0 )
 		*var_value = "0" ;
 
 	/*-- Skip whitespace --*/
@@ -271,7 +272,7 @@ int var_set_nullstr( env, var_name, var_value )
 	char     *var_name ;
 	char     **var_value ;
 {
-	if( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 )
+	if( var_value == NULL || *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 )
 		*var_value = NULL ;
 
 	return True ;
@@ -482,27 +483,56 @@ int var_set_p2fname( env, var_name, var_value )
 	char     *var_name ;
 	char     **var_value ;
 {
+	varbuf_t  *exp_buf = NULL;
+	char      *exp_fn;
 
-	if ( strcmp(var_name, "p2fname") != 0 ) {
-		sqsh_set_error( SQSH_E_INVAL, "Unexpected variable name %s", var_name ) ;
+
+	if ( var_name == NULL || strcmp(var_name, "p2fname") != 0 )
+       	{
+		sqsh_set_error( SQSH_E_INVAL, "var_set_p2fname: Unexpected variable name %s", var_name == NULL ? "NULL" : var_name ) ;
 		return False;
 	}
 
-	if (g_p2f_fp != NULL) {
+	if (g_p2f_fp != NULL)
+       	{
 		fclose (g_p2f_fp);
 		g_p2f_fp = NULL;
 	}
 
-	if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 ) {
+	if ( var_value == NULL || *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 )
+       	{
 		*var_value = NULL ;
 	}
 	else {
-		if( (g_p2f_fp = fopen( *var_value, "a" )) == NULL) {
-			sqsh_set_error( SQSH_E_INVAL, "Unable to open file %s", *var_value ) ;
+		if ((exp_buf = varbuf_create( 512 )) == NULL)
+		{
+			fprintf( stderr, "sqsh: %s\n", sqsh_get_errstr() );
+			sqsh_set_error( SQSH_E_INVAL, "Unable to expand filename %s", *var_value ) ;
+			*var_value = NULL ;
+			return False;
+		}
+		if (sqsh_expand( *var_value, exp_buf, 0 ) != False)
+		{
+			exp_fn = varbuf_getstr( exp_buf );
+		}
+		else
+		{
+			sqsh_set_error( SQSH_E_INVAL, "Unable to expand filename %s", *var_value ) ;
+			*var_value = NULL ;
+			varbuf_destroy( exp_buf );
+			return False;
+		}
+
+		if( (g_p2f_fp = fopen( exp_fn, "a" )) == NULL)
+	       	{
+			sqsh_set_error( SQSH_E_INVAL, "Unable to open file %s", exp_fn ) ;
 			*var_value = NULL ;
 			return False;
 		}
 	}
+
+	if ( exp_buf != NULL)
+		varbuf_destroy( exp_buf );
 
 	return True ;
 }
