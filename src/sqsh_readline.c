@@ -38,7 +38,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.12 2013/08/21 11:16:39 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_readline.c,v 1.13 2013/08/26 13:29:09 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -158,8 +158,8 @@ int sqsh_readline_init()
     (void) sqsh_readline_load ();
 
     rl_readline_name                 = "sqsh" ;
-    rl_completion_entry_function     = (rl_compentry_func_t*)sqsh_completion ;
-    rl_attempted_completion_function = (CPPFunction*)sqsh_completion ;
+    rl_completion_entry_function     = (rl_compentry_func_t  *) sqsh_completion ;
+    rl_attempted_completion_function = (rl_completion_func_t *) sqsh_completion ;
 
     /*
      * sqsh-2.1.8 - Remove '@' and '$' from the readline default list of word break
@@ -974,12 +974,13 @@ static char* sqsh_generator( text, state )
              * If we failed to find anything, then give up and return
              * NULL to the caller indicating that we are all done or
              * have not found a match.
+             * sqsh-2.5 : No results? Then try filename completion.
              */
             if (cur == NULL)
             {
                 if (sg_colname_start != NULL)
                     sqsh_readline_clearcol();
-                return NULL;
+                return ( rl_filename_completion_function (text, state) );
             }
 
             /*
@@ -1016,9 +1017,10 @@ static char* sqsh_generator( text, state )
             /*
              * If we couldn't even find a partial match, then give up
              * and return NULL.
+             * sqsh-2.5 - Try filename completion instead.
              */
             if (low > high)
-                return NULL;
+                return( rl_filename_completion_function (text, state) );
 
             /*
              * Now, we have found an entry which matches (at least partially)
@@ -1047,12 +1049,13 @@ static char* sqsh_generator( text, state )
             /*
              * If we are already at the end of the list then don't
              * bother to return anything.
+             * sqsh-2.5 : Try filename completion instead.
              */
             if (cur == NULL)
             {
                 if (sg_colname_start != NULL)
                     sqsh_readline_clearcol();
-                return NULL;
+                return( rl_filename_completion_function (text, state) );
             }
 
             /*
@@ -1075,12 +1078,13 @@ static char* sqsh_generator( text, state )
             /*
              * If we hit the end, then we let the caller know that
              * we are all done.
+             * sqsh-2.5 : Try filename completion instead.
              */
             if (cur == NULL)
             {
                 if (sg_colname_start != NULL)
                     sqsh_readline_clearcol();
-                return NULL;
+                return( rl_filename_completion_function (text, state) );
             }
 
             word = cur->k_word;
@@ -1094,7 +1098,7 @@ static char* sqsh_generator( text, state )
              */
             ++idx;
             if (idx >= nitems || strncasecmp(sqsh_statements[idx],text,len) != 0)
-                return NULL;
+                return( rl_filename_completion_function (text, state) );
             word = sqsh_statements[idx];
         }
     }
@@ -1106,9 +1110,7 @@ static char* sqsh_generator( text, state )
      * requested the 'keyword_completion' variable and return
      * it.
      */
-    str = (char*)malloc( (strlen(word) + 1) * sizeof(char) );
-
-    if (str == NULL)
+    if ((str = (char*) malloc( (strlen(word) + 1) * sizeof(char) )) == NULL)
     {
         if (sg_colname_start != NULL)
             sqsh_readline_clearcol();
