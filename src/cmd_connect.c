@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.34 2013/08/22 19:54:34 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.35 2013/12/03 09:22:23 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -90,6 +90,15 @@ static CS_RETCODE syb_cs_cb
     __attribute__ ((stdcall))
 #endif /* _CYGWIN32_ */
     ;
+
+#if defined(CS_SSLVALIDATE_CB)
+static CS_RETCODE validate_srvname_cb
+    _ANSI_ARGS(( CS_VOID*, CS_SSLCERT*, CS_INT, CS_INT ))
+#if defined(_CYGWIN32_)
+    __attribute__ ((stdcall))
+#endif /* _CYGWIN32_ */
+    ;
+#endif
 
 static int wrap_print _ANSI_ARGS(( FILE*, char* )) ;
 static int check_opt_capability _ANSI_ARGS(( CS_CONNECTION * ));
@@ -191,7 +200,7 @@ int cmd_connect( argc, argv )
     varbuf_t  *exp_buf = NULL;
 
     /* sqsh-2.2.0 - New variables for TDS debugging with ct_debug() */
-#if defined (DEBUG) && defined (CS_SET_DBG_FILE) && defined (CS_SET_PROTOCOL_FILE)
+#if defined(DEBUG) && defined(CS_SET_DBG_FILE) && defined(CS_SET_PROTOCOL_FILE)
     char      *debug_tds_logdata;
     char      *debug_tds_capture;
 #endif
@@ -904,7 +913,7 @@ int cmd_connect( argc, argv )
                         ) != CS_SUCCEED)
             goto connect_fail;
 
-#if defined (CS_SEC_EXTENDED_ENCRYPTION)
+#if defined(CS_SEC_EXTENDED_ENCRYPTION)
         /*
          * sqsh-2.1.9: Enable extended password encryption to be able to
          * connect to ASE servers with 'net password encryption reqd'
@@ -980,25 +989,47 @@ int cmd_connect( argc, argv )
         goto connect_fail;
 
     /* Handle case where server is defined as host:port */
-#if defined(CS_SERVERADDR)
-    if(server && (cp = strchr(server, ':'))) {
-        if(*cp)
-            *cp = ' ';
+    /*
+     * sqsh-2.5 - Work around a bug in FreeTDS and do not call ct_con_props
+     * for server:port connections but let ct_connect handle it.
+     * OpenClient supports an optional filter that can be specified as third
+     * parameter like host:port:filter. Filters are defined in libtcl.cfg.
+     */
+#if defined(CS_SERVERADDR) && defined(CS_TDS_50)
+    if ( server != NULL && (cp = strchr(server, ':')) != NULL )
+    {
+        char  *cp2;
 
-    /* fprintf(stderr, "Using %s for CS_SERVERADDR\n", server);*/
+        *cp = ' ';
+        if ( (cp2 = strchr(cp+1, ':')) != NULL) /* Optional filter specified? */
+            *cp2 = ' ';
 
-    if (ct_con_props( g_connection,
-                      CS_SET,
-                      CS_SERVERADDR,
-                      (CS_VOID*)server,
-                      CS_NULLTERM,
-                      (CS_INT*)NULL
-                    ) != CS_SUCCEED)
-        goto connect_fail;
+        if (ct_con_props( g_connection,
+                          CS_SET,
+                          CS_SERVERADDR,
+                          (CS_VOID*)server,
+                          CS_NULLTERM,
+                          (CS_INT*)NULL
+                        ) != CS_SUCCEED)
+            goto connect_fail;
+
+        if (cp2 != NULL)
+            *cp2 = '\0'; /* Remove optional filter from the servername */
+        *cp = ':';       /* Put a ':' back into the display servername */
+
+#if defined(CS_SSLVALIDATE_CB)
+        if (ct_callback( g_context,                    /* Context */
+                         (CS_CONNECTION*)NULL,         /* Connection */
+                         CS_SET,                       /* Action */
+                         CS_SSLVALIDATE_CB,            /* Type */
+                         (CS_VOID*)validate_srvname_cb /* Callback Pointer */
+                       ) != CS_SUCCEED)
+            goto connect_fail;
+#endif
     }
 #endif
 
-#if defined (DEBUG) && defined (CS_SET_DBG_FILE) && defined (CS_SET_PROTOCOL_FILE)
+#if defined(DEBUG) && defined(CS_SET_DBG_FILE) && defined(CS_SET_PROTOCOL_FILE)
     /*
      * sqsh-2.2.0 - Setup TDS debugging using a logdata file and or a capture file
      * for tracing TDS packets.
@@ -1083,7 +1114,7 @@ int cmd_connect( argc, argv )
             }
         }
     }
-#elif defined (DEBUG)
+#elif defined(DEBUG)
     if ( sqsh_debug_show (DEBUG_TDS) )
     {
         fprintf( stderr, "\\connect: ct_debug - TDS debugging is not supported in this version of CT-lib\n" );
@@ -1838,8 +1869,7 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
  *
  * Return :  CS_FAIL or CS_SUCCEED
 */
-static CS_RETCODE
-SetNetAuth (conn, principal, keytab_file, secmech, req_options)
+static CS_RETCODE SetNetAuth (conn, principal, keytab_file, secmech, req_options)
     CS_CONNECTION *conn;
     CS_CHAR       *principal;
     CS_CHAR       *keytab_file;
@@ -1936,7 +1966,7 @@ SetNetAuth (conn, principal, keytab_file, secmech, req_options)
     }
 
     /*
-     * Always set the CS_SEC_NETWORKAUTH option. (Option defined in nss[0]).
+     * Always set the CS_SEC_NETWORKAUTH option. (Option efined in nss[0]).
     */
     OptSupported = CS_TRUE;
     if (ct_con_props(conn, CS_SET, nss[0].service, &OptSupported,
@@ -2019,8 +2049,7 @@ SetNetAuth (conn, principal, keytab_file, secmech, req_options)
  *
  * Show the credential expiration timeout period of a network authenticated session.
  */
-static CS_RETCODE
-ShowNetAuthCredExp (conn, cmdname)
+static CS_RETCODE ShowNetAuthCredExp (conn, cmdname)
     CS_CONNECTION *conn;
     CS_CHAR       *cmdname;
 {
@@ -2122,9 +2151,35 @@ ShowNetAuthCredExp (conn, cmdname)
  * This function is called whenever a SIGINT signal is received while processing cmd_connect.
  * Its only real job is to return to the point where the SETJMP function was executed.
  */
-static void connect_run_sigint (int sig, void *user_data )
+static void connect_run_sigint (sig, user_data )
+    int   sig;
+    void *user_data;
 {
     sg_interrupted = True;
     LONGJMP (sg_jmp_buf, 1);
 }
+
+
+#if defined(CS_SSLVALIDATE_CB)
+/*
+ * sqsh-2.5 - Validate the servername in a host:port:ssl type of connection
+ *            to be valid for the choosen certificate if the servername does
+ *            not match the CN in the certificate.
+ */
+static CS_RETCODE validate_srvname_cb (userdata, certptr, certcount, valid)
+    CS_VOID    *userdata;
+    CS_SSLCERT *certptr;
+    CS_INT      certcount;
+    CS_INT      valid;
+{
+    if (valid == CS_SSL_INVALID_MISMATCHNAME)
+    {
+        return CS_SSL_VALID_CERT;
+    }
+    else
+    {
+        return valid;
+    }
+}
+#endif
 
