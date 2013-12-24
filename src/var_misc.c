@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_misc.c,v 1.4 2013/12/03 09:22:23 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: var_misc.c,v 1.5 2013/12/08 12:43:58 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -247,8 +247,10 @@ int var_set_nullint( env, var_name, var_value )
 {
 	char *cptr ;
 
-	if( var_value == NULL || *var_value == NULL || strcmp(*var_value, "NULL") == 0 )
-		*var_value = "0" ;
+	if( var_value == NULL || *var_value == NULL || strcmp(*var_value, "NULL") == 0 ) {
+		*var_value = NULL ;
+		return True;
+	}
 
 	/*-- Skip whitespace --*/
 	for( cptr = *var_value; *cptr != '\0' && isspace( (int)*cptr ); ++cptr ) ;

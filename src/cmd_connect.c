@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.35 2013/12/03 09:22:23 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.36 2013/12/19 20:21:59 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -1647,7 +1647,7 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
              * Note that global variable g_p2fc will be reset to zero for each new batch in dsp.c.
              */
             env_get( g_env, "p2faxm",  &p2faxm );
-            p2faxm_int = atoi(p2faxm);
+            p2faxm_int = (p2faxm != NULL) ? atoi(p2faxm) : 0;
             if (++g_p2fc       > p2faxm_int &&
                 p2faxm_int     > 0          &&
                 g_p2f_fp      != NULL       &&

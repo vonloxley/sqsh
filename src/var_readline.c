@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_readline.c,v 1.1.1.1 2004/04/07 12:35:04 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: var_readline.c,v 1.2 2012/03/14 09:17:51 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -48,7 +48,7 @@ int var_set_rl_histsize( env, var_name, var_value )
 		return False;
 	}
 
-	stifle_value = atoi(*var_value);
+	stifle_value = (*var_value != NULL) ? atoi(*var_value) : 0;
 
 #if defined(USE_READLINE)
 	if (stifle_value <= 0)

@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_dsp.c,v 1.3 2009/12/23 12:47:46 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: var_dsp.c,v 1.4 2013/02/19 18:06:43 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -363,7 +363,7 @@ int var_set_colwidth( env, var_name, var_value )
 		return False;
 	}
 
-	width = atoi(*var_value);
+	width = (*var_value != NULL) ? atoi(*var_value) : 30;
 
 	if (dsp_prop( DSP_SET,
 	              DSP_COLWIDTH, 
@@ -443,7 +443,7 @@ int var_set_width( env, var_name, var_value )
 		return False;
 	}
 
-	width = atoi(*var_value);
+	width = (*var_value != NULL) ? atoi(*var_value) : 0;
 
 	if (dsp_prop( DSP_SET,
 	              DSP_WIDTH, 
@@ -800,7 +800,7 @@ int var_set_maxlen( env, var_name, var_value )
 		return False;
 	}
 
-	maxlen = atoi(*var_value);
+	maxlen = (*var_value != NULL) ? atoi(*var_value) : 0;
 
 	if (dsp_prop( DSP_SET, DSP_MAXLEN, (void*)&maxlen, DSP_UNUSED )
 		!= DSP_SUCCEED)

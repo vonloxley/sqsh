@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_ctlib.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $" ;
+static char RCS_Id[] = "$Id: var_ctlib.c,v 1.2 2009/04/14 10:22:18 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -107,12 +107,15 @@ int var_set_packet( env, var_name, var_value )
 		return False;
 	}
 
+	if (*var_value == NULL)
+		return True;
+
 	packet_size = atoi(*var_value);
 
 	if (packet_size <= 0 || (packet_size % 512) != 0)
 	{
 		sqsh_set_error( SQSH_E_INVAL,
-			"Invalid packet size.  Must a multiple of 512 bytes" );
+			"Invalid packet size. Must be a multiple of 512 bytes" );
 		return False;
 	}
 
