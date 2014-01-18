@@ -41,7 +41,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_go.c,v 1.3 2010/01/26 15:03:50 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_go.c,v 1.4 2010/02/25 10:50:47 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -121,7 +121,7 @@ int cmd_go( argc, argv )
 		fprintf( stderr, "\\go: Unbalanced comment tokens encountered\n" );
 		have_error = True;
 	}
-	else while ((ch = sqsh_getopt( argc, argv, "nfhps:m:x;w:d:t;T:" )) != EOF) 
+	else while ((ch = sqsh_getopt( argc, argv, "nfhps:m:x;w:d:t;T:l" )) != EOF) 
 	{
 		switch (ch) 
 		{
@@ -174,6 +174,9 @@ int cmd_go( argc, argv )
 			case 'f' :
 				dsp_flags |= DSP_F_NOFOOTERS;
 				break;
+			case 'l' :
+				dsp_flags |= DSP_F_NOSEPLINE;
+				break;
 			case 'm' :
 				dsp_name = sqsh_optarg;
 				break;
@@ -218,11 +221,12 @@ int cmd_go( argc, argv )
 	if( (argc - sqsh_optind) > 1 || have_error) 
 	{
 	    fprintf( stderr, 
-		"Use: \\go [-d display] [-h] [-f] [-n] [-p] [-m mode] [-s sec]\n"
+		"Use: \\go [-d display] [-h] [-f] [-l] [-n] [-p] [-m mode] [-s sec]\n"
 		"          [-t [filter]] [-w width] [-x [xgeom]] [-T title] [xacts]\n"
 		"     -d display  When used with -x, send result to named display\n"
 		"     -h          Suppress headers\n"
 		"     -f          Suppress footers\n"
+		"     -l          Suppress line separators with pretty style output mode\n"
 		"     -n          Do not expand variables\n"
 		"     -p          Report runtime statistics\n"
 		"     -m mode     Switch display mode for result set\n"

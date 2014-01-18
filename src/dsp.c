@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp.c,v 1.4 2013/02/19 18:06:42 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp.c,v 1.5 2013/12/03 09:22:23 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -442,6 +442,9 @@ static int dsp_prop_set( prop, ptr, len )
 				"dsp_prop: dsp_prop(DSP_SET, DSP_COLSEP, '%s')\n",
 				(ptr == NULL)?"NULL":((char*)ptr));)
 
+			if (ptr == NULL || strcasecmp (ptr, "default") == 0)
+				ptr = " ";        /* sqsh-2.5 - Set to default when ptr is NULL */
+
 			if (len == DSP_NULLTERM)
 			{
 				len = strlen( (char*)ptr );
@@ -467,6 +470,9 @@ static int dsp_prop_set( prop, ptr, len )
 				"dsp_prop: dsp_prop(DSP_SET, DSP_BCP_COLSEP, '%s')\n",
 				(ptr == NULL)?"NULL":((char*)ptr));)
 
+			if (ptr == NULL || strcasecmp (ptr, "default") == 0)
+				ptr = "|";        /* sqsh-2.5 - Set to default when ptr is NULL */
+
 			if (len == DSP_NULLTERM)
 			{
 				len = strlen( (char*)ptr );
@@ -491,6 +497,9 @@ static int dsp_prop_set( prop, ptr, len )
 			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_BCP_ROWSEP, '%s')\n",
 				(ptr == NULL)?"NULL":((char*)ptr));)
+
+			if (ptr == NULL || strcasecmp (ptr, "default") == 0)
+				ptr = "|";        /* sqsh-2.5 - Set to default when ptr is NULL */
 
 			if (len == DSP_NULLTERM)
 			{
@@ -531,6 +540,9 @@ static int dsp_prop_set( prop, ptr, len )
 			DBG(sqsh_debug(DEBUG_DISPLAY,
 				"dsp_prop: dsp_prop(DSP_SET, DSP_LINESEP, '%s')\n",
 				(ptr == NULL)?"NULL":((char*)ptr));)
+
+			if (ptr == NULL || strcasecmp (ptr, "default") == 0)
+				ptr = "\n\t";        /* sqsh-2.5 - Set to default when ptr is NULL */
 
 			if (len == DSP_NULLTERM)
 			{

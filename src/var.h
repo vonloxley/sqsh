@@ -143,7 +143,7 @@ static var_entry_t  sg_var_entry[] = {
     { "keyword_file",     SQSH_WORDS,    var_set_nullstr,     NULL            },
     { "language",         NULL,          var_set_nullstr,     NULL            },
     { "lineno",           "1",           var_set_add,         NULL            },
-    { "linesep",          NULL,          var_set_linesep,     var_get_linesep },
+    { "linesep",          "\n\t",        var_set_linesep,     var_get_linesep },
     { "lock",             NULL,          var_set_lock,        NULL            },
     { "maxlen",           "32768",       var_set_maxlen,      var_get_maxlen  },
     { "newline_go",       "0",           var_set_bool,        NULL            },

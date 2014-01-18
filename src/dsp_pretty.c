@@ -34,7 +34,7 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_pretty.c,v 1.2 2004/04/11 15:14:32 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_pretty.c,v 1.3 2005/11/19 16:51:11 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -279,6 +279,8 @@ int dsp_pretty( o, cmd, flags )
 				/*
 				 * Then, while there is data to fetch, display the
 				 * data for each row as it comes back.
+				 * sqsh-2.5: Suppress printing of a separator line when the flag
+				 * DSP_F_NOSEPLINE is enabled using the -l option with \go -mpretty.
 				 */
 				while ((ret = dsp_desc_fetch( cmd, select_desc )) == CS_SUCCEED)
 				{
@@ -286,10 +288,14 @@ int dsp_pretty( o, cmd, flags )
 						goto dsp_interrupted;
 
 					dsp_prrow( o, select_desc );
+					if (!(flags & DSP_F_NOSEPLINE))
+						dsp_prsep( o, select_desc, (int)'-' );
 
 					if (g_dsp_interrupted)
 						goto dsp_interrupted;
 				}
+				if ((flags & DSP_F_NOSEPLINE) && !(flags & DSP_F_NOFOOTERS))
+					dsp_prsep( o, select_desc, (int)'-' );
 
 				if (ret != CS_END_DATA)
 				{
@@ -620,8 +626,6 @@ static void dsp_prrow( output, desc )
 		first_time = False;
 	}
 	while (done == False);
-
-	dsp_prsep( output, desc, (int)'-' );
 
 	return;
 }

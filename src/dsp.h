@@ -107,6 +107,7 @@ typedef struct _dsp_desc_t {
  */
 #define DSP_F_NOHEADERS     (1<<0)  /* Suppress headers */
 #define DSP_F_NOFOOTERS     (1<<1)  /* Suppress footers */
+#define DSP_F_NOSEPLINE     (1<<2)  /* Suppress seperator lines */
 #define DSP_F_NOTHING       (1<<3)  /* Everything */
 #define DSP_F_X             (1<<4)  /* Send output to X Window */
 

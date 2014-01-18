@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_dsp.c,v 1.4 2013/02/19 18:06:43 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: var_dsp.c,v 1.5 2013/12/24 13:23:19 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -80,36 +80,24 @@ int var_set_fltfmt( env, var_name, var_value )
 
 	if (strcmp( var_name, "float" ) == 0)
 	{
-		if (dsp_prop( DSP_SET,
-						  DSP_FLOAT_PREC, 
-						  (void*)&prec,
-						  DSP_UNUSED ) != DSP_SUCCEED)
+		if (dsp_prop( DSP_SET, DSP_FLOAT_PREC, (void*)&prec, DSP_UNUSED ) != DSP_SUCCEED)
 		{
 			return False;
 		}
 
-		if (dsp_prop( DSP_SET,
-						  DSP_FLOAT_SCALE, 
-						  (void*)&scale,
-						  DSP_UNUSED ) != DSP_SUCCEED)
+		if (dsp_prop( DSP_SET, DSP_FLOAT_SCALE, (void*)&scale, DSP_UNUSED ) != DSP_SUCCEED)
 		{
 			return False;
 		}
 	}
 	else
 	{
-		if (dsp_prop( DSP_SET,
-						  DSP_REAL_PREC, 
-						  (void*)&prec,
-						  DSP_UNUSED ) != DSP_SUCCEED)
+		if (dsp_prop( DSP_SET, DSP_REAL_PREC, (void*)&prec, DSP_UNUSED ) != DSP_SUCCEED)
 		{
 			return False;
 		}
 
-		if (dsp_prop( DSP_SET,
-						  DSP_REAL_SCALE, 
-						  (void*)&scale,
-						  DSP_UNUSED ) != DSP_SUCCEED)
+		if (dsp_prop( DSP_SET, DSP_REAL_SCALE, (void*)&scale, DSP_UNUSED ) != DSP_SUCCEED)
 		{
 			return False;
 		}
@@ -131,10 +119,7 @@ int var_set_datetime( env, var_name, var_value )
         if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
                 *var_value = NULL ;
 
-	if (dsp_prop( DSP_SET,
-	              DSP_DATETIMEFMT, 
-	              (void*)(*(var_value)),
-	              DSP_NULLTERM ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_DATETIMEFMT, (void*)(*(var_value)), DSP_NULLTERM ) != DSP_SUCCEED)
 	{
 		return False;
 	}
@@ -149,10 +134,7 @@ int var_get_datetime( env, var_name, var_value )
 {
 	static char date_str[64];
 
-	if (dsp_prop( DSP_GET,
-	              DSP_DATETIMEFMT, 
-	              (void*)date_str,
-	              sizeof(date_str) ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_DATETIMEFMT, (void*)date_str, sizeof(date_str) ) != DSP_SUCCEED)
 	{
 		return False;
 	}
@@ -169,10 +151,7 @@ int var_set_datefmt( env, var_name, var_value )
         if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
                 *var_value = NULL ;
 
-	if (dsp_prop( DSP_SET,
-	              DSP_DATEFMT, 
-	              (void*)(*(var_value)),
-	              DSP_NULLTERM ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_DATEFMT, (void*)(*(var_value)), DSP_NULLTERM ) != DSP_SUCCEED)
 	{
 		return False;
 	}
@@ -187,10 +166,7 @@ int var_get_datefmt( env, var_name, var_value )
 {
 	static char date_str[64];
 
-	if (dsp_prop( DSP_GET,
-	              DSP_DATEFMT, 
-	              (void*)date_str,
-	              sizeof(date_str) ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_DATEFMT, (void*)date_str, sizeof(date_str) ) != DSP_SUCCEED)
 	{
 		return False;
 	}
@@ -207,10 +183,7 @@ int var_set_timefmt( env, var_name, var_value )
         if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
                 *var_value = NULL ;
 
-	if (dsp_prop( DSP_SET,
-	              DSP_TIMEFMT, 
-	              (void*)(*(var_value)),
-	              DSP_NULLTERM ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_TIMEFMT, (void*)(*(var_value)), DSP_NULLTERM ) != DSP_SUCCEED)
 	{
 		return False;
 	}
@@ -225,10 +198,7 @@ int var_get_timefmt( env, var_name, var_value )
 {
 	static char date_str[64];
 
-	if (dsp_prop( DSP_GET,
-	              DSP_TIMEFMT, 
-	              (void*)date_str,
-	              sizeof(date_str) ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_TIMEFMT, (void*)date_str, sizeof(date_str) ) != DSP_SUCCEED)
 	{
 		return False;
 	}
@@ -242,7 +212,7 @@ int var_set_style( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	int  dsp_style;
+	int  style;
 
 	if (*var_value == NULL)
 	{
@@ -254,36 +224,36 @@ int var_set_style( env, var_name, var_value )
 	    strcmp( *var_value, "horiz" )      == 0 ||
 	    strcmp( *var_value, "horizontal" ) == 0)
 	{
-		dsp_style = DSP_HORIZ;
+		style = DSP_HORIZ;
 	}
 	else if (strcmp( *var_value, "vert" )     == 0 ||
 	         strcmp( *var_value, "vertical" ) == 0)
 	{
-		dsp_style = DSP_VERT;
+		style = DSP_VERT;
 	}
 	else if (strcmp( *var_value, "bcp" ) == 0)
 	{
-		dsp_style = DSP_BCP;
+		style = DSP_BCP;
 	}
 	else if (strcmp( *var_value, "csv" ) == 0)
 	{
-		dsp_style = DSP_CSV;
+		style = DSP_CSV;
 	}
 	else if (strcmp( *var_value, "html" ) == 0)
 	{
-		dsp_style = DSP_HTML;
+		style = DSP_HTML;
 	}
 	else if (strcmp( *var_value, "none" ) == 0)
 	{
-		dsp_style = DSP_NONE;
+		style = DSP_NONE;
 	}
 	else if (strcmp( *var_value, "meta" ) == 0)
 	{
-		dsp_style = DSP_META;
+		style = DSP_META;
 	}
 	else if (strcmp( *var_value, "pretty" ) == 0)
 	{
-		dsp_style = DSP_PRETTY;
+		style = DSP_PRETTY;
 	}
 	else
 	{
@@ -291,13 +261,12 @@ int var_set_style( env, var_name, var_value )
 		return False;
 	}
 
-	if (dsp_prop( DSP_SET,
-	              DSP_STYLE, 
-	              (void*)&dsp_style,
-	              DSP_UNUSED ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_STYLE, (void*)&style, DSP_UNUSED ) != DSP_SUCCEED)
 	{
 		return False;
 	}
+
+	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_style: Display style now set to %s\n", *var_value);)
 
 	return True;
 }
@@ -307,17 +276,14 @@ int var_get_style( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	int  dsp_style;
+	int  style;
 
-	if (dsp_prop( DSP_GET,
-	              DSP_STYLE, 
-	              (void*)&dsp_style,
-	              DSP_UNUSED ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_STYLE, (void*)&style, DSP_UNUSED ) != DSP_SUCCEED)
 	{
 		return False;
 	}
 
-	switch (dsp_style)
+	switch (style)
 	{
 		case DSP_HORIZ: 
 			*var_value = "horizontal";
@@ -356,27 +322,43 @@ int var_set_colwidth( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	int  width;
+	int  colwidth;
 
 	if (var_set_nullint( env, var_name, var_value ) == False)
 	{
 		return False;
 	}
 
-	width = (*var_value != NULL) ? atoi(*var_value) : 30;
+	colwidth = (*var_value != NULL) ? atoi(*var_value) : 30;
 
-	if (dsp_prop( DSP_SET,
-	              DSP_COLWIDTH, 
-	              (void*)&width,
-	              DSP_UNUSED ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_COLWIDTH, (void*)&colwidth, DSP_UNUSED ) != DSP_SUCCEED)
 	{
 		return False;
 	}
 
-	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_colwidth: Column width now set to %s\n",
-	               *var_value);)
+	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_colwidth: Column width now set to %s\n", *var_value);)
 
 	return True ;
+}
+
+int var_get_colwidth( env, var_name, var_value )
+	env_t    *env;
+	char     *var_name;
+	char     **var_value;
+{
+	static char nbr[16];
+	int   colwidth;
+
+	if (dsp_prop( DSP_GET, DSP_COLWIDTH, (void*)&colwidth, DSP_UNUSED ) != DSP_SUCCEED)
+	{
+		*var_value = NULL;
+		return False;
+	}
+
+	sprintf( nbr, "%d", colwidth );
+
+	*var_value = nbr;
+	return True;
 }
 
 int var_set_outputparms( env, var_name, var_value )
@@ -393,17 +375,12 @@ int var_set_outputparms( env, var_name, var_value )
 
 	outputparms = atoi(*var_value);
 
-	if (dsp_prop( DSP_SET,
-	              DSP_OUTPUTPARMS, 
-	              (void*)&outputparms,
-	              DSP_UNUSED ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_OUTPUTPARMS, (void*)&outputparms, DSP_UNUSED ) != DSP_SUCCEED)
 	{
 		return False;
 	}
 
-	DBG(sqsh_debug(DEBUG_SCREEN,
-		"var_set_output_parms: Column width now set to %s\n",
-		*var_value);)
+	DBG(sqsh_debug(DEBUG_SCREEN, "var_set_output_parms: Output parameters now set to %s\n", *var_value);)
 
 	return True;
 }
@@ -416,10 +393,7 @@ int var_get_outputparms( env, var_name, var_value )
 	static char nbr[4];
 	int   outputparms;
 
-	if (dsp_prop( DSP_GET,
-	              DSP_OUTPUTPARMS, 
-	              (void*)&outputparms,
-	              DSP_UNUSED ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_OUTPUTPARMS, (void*)&outputparms, DSP_UNUSED ) != DSP_SUCCEED)
 	{
 		*var_value = NULL;
 		return False;
@@ -445,16 +419,12 @@ int var_set_width( env, var_name, var_value )
 
 	width = (*var_value != NULL) ? atoi(*var_value) : 0;
 
-	if (dsp_prop( DSP_SET,
-	              DSP_WIDTH, 
-	              (void*)&width,
-	              DSP_UNUSED ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_WIDTH, (void*)&width, DSP_UNUSED ) != DSP_SUCCEED)
 	{
 		return False;
 	}
 
-	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_width: Width now set to %s\n",
-	               *var_value);)
+	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_width: Width now set to %s\n", *var_value);)
 
 	return True ;
 }
@@ -467,33 +437,7 @@ int var_get_width( env, var_name, var_value )
 	static char nbr[16];
 	int   width;
 
-	if (dsp_prop( DSP_GET,
-	              DSP_WIDTH, 
-	              (void*)&width,
-	              DSP_UNUSED ) != DSP_SUCCEED)
-	{
-		*var_value = NULL;
-		return False;
-	}
-
-	sprintf( nbr, "%d", width );
-
-	*var_value = nbr;
-	return True;
-}
-
-int var_get_colwidth( env, var_name, var_value )
-	env_t    *env;
-	char     *var_name;
-	char     **var_value;
-{
-	static char nbr[16];
-	int   width;
-
-	if (dsp_prop( DSP_GET,
-	              DSP_COLWIDTH, 
-	              (void*)&width,
-	              DSP_UNUSED ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_WIDTH, (void*)&width, DSP_UNUSED ) != DSP_SUCCEED)
 	{
 		*var_value = NULL;
 		return False;
@@ -510,18 +454,17 @@ int var_set_colsep( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	if (var_set_nullstr( env, var_name, var_value ) == False)
+	if (var_set_esc( env, var_name, var_value ) == False)
 	{
 		return False;
 	}
 
-	if (dsp_prop( DSP_SET,
-	              DSP_COLSEP, 
-	              (void*)(*var_value),
-	              DSP_NULLTERM ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_COLSEP, (void*)(*var_value), DSP_NULLTERM ) != DSP_SUCCEED)
 	{
 		return False;
 	}
+
+	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_colsep: Column separator now set to %s\n", *var_value);)
 
 	return True ;
 }
@@ -533,10 +476,7 @@ int var_get_colsep( env, var_name, var_value )
 {
 	static char colsep[32];
 
-	if (dsp_prop( DSP_GET,
-	              DSP_COLSEP, 
-	              (void*)colsep,
-	              sizeof(colsep) ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_COLSEP, (void*)colsep, sizeof(colsep) ) != DSP_SUCCEED)
 	{
 		*var_value = NULL;
 		return False;
@@ -551,16 +491,17 @@ int var_set_bcp_colsep( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	if (var_set_nullstr( env, var_name, var_value ) == False)
+	if (var_set_esc( env, var_name, var_value ) == False)
 	{
 		return False;
 	}
 
-	if (dsp_prop( DSP_SET, DSP_BCP_COLSEP, (void*)(*var_value), DSP_NULLTERM )
-		!= DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_BCP_COLSEP, (void*)(*var_value), DSP_NULLTERM ) != DSP_SUCCEED)
 	{
 		return False;
 	}
+
+	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_bcp_colsep: BCP column separator now set to %s\n", *var_value);)
 
 	return True ;
 }
@@ -570,16 +511,15 @@ int var_get_bcp_colsep( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	static char colsep[32];
+	static char bcp_colsep[32];
 
-	if (dsp_prop( DSP_GET, DSP_BCP_COLSEP, (void*)colsep, sizeof(colsep) )
-		!= DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_BCP_COLSEP, (void*)bcp_colsep, sizeof(bcp_colsep) ) != DSP_SUCCEED)
 	{
 		*var_value = NULL;
 		return False;
 	}
 
-	*var_value = colsep;
+	*var_value = bcp_colsep;
 	return True ;
 }
 
@@ -588,16 +528,17 @@ int var_set_bcp_rowsep( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	if (var_set_nullstr( env, var_name, var_value ) == False)
+	if (var_set_esc( env, var_name, var_value ) == False)
 	{
 		return False;
 	}
 
-	if (dsp_prop( DSP_SET, DSP_BCP_ROWSEP, (void*)(*var_value), DSP_NULLTERM )
-		!= DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_BCP_ROWSEP, (void*)(*var_value), DSP_NULLTERM ) != DSP_SUCCEED)
 	{
 		return False;
 	}
+
+	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_bcp_rowsep: BCP row separator now set to %s\n", *var_value);)
 
 	return True ;
 }
@@ -607,16 +548,15 @@ int var_get_bcp_rowsep( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	static char rowsep[32];
+	static char bcp_rowsep[32];
 
-	if (dsp_prop( DSP_GET, DSP_BCP_ROWSEP, (void*)rowsep, sizeof(rowsep) )
-		!= DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_BCP_ROWSEP, (void*)bcp_rowsep, sizeof(bcp_rowsep) ) != DSP_SUCCEED)
 	{
 		*var_value = NULL;
 		return False;
 	}
 
-	*var_value = rowsep;
+	*var_value = bcp_rowsep;
 	return True ;
 }
 
@@ -625,7 +565,7 @@ int var_set_bcp_trim( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	int trim;
+	int bcp_trim;
 
 	if (var_set_bool( env, var_name, var_value ) == False)
 	{
@@ -635,18 +575,19 @@ int var_set_bcp_trim( env, var_name, var_value )
 	/* MW: Applied fix from patch 2061950 by Klaus-Martin Hansche. */
 	if (strcmp(*var_value , "1") == 0)
 	{
-		trim = True;
+		bcp_trim = True;
 	}
 	else
 	{
-		trim = False;
+		bcp_trim = False;
 	}
 
-	if (dsp_prop( DSP_SET, DSP_BCP_TRIM, (void*)&trim, DSP_UNUSED )
-		!= DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_BCP_TRIM, (void*)&bcp_trim, DSP_UNUSED ) != DSP_SUCCEED)
 	{
 		return False;
 	}
+
+	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_bcp_trim: BCP trim now set to %s\n", *var_value);)
 
 	return True ;
 }
@@ -656,15 +597,14 @@ int var_get_bcp_trim( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	int trim;
+	int bcp_trim;
 
-	if (dsp_prop( DSP_GET, DSP_BCP_TRIM, (void*)&trim, DSP_UNUSED )
-		!= DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_BCP_TRIM, (void*)&bcp_trim, DSP_UNUSED ) != DSP_SUCCEED)
 	{
 		return False;
 	}
 
-	if (trim == True)
+	if (bcp_trim == True)
 	{
 		*var_value = "1";
 	}
@@ -680,18 +620,17 @@ int var_set_linesep( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	if (var_set_nullstr( env, var_name, var_value ) == False)
+	if (var_set_esc( env, var_name, var_value ) == False)
 	{
 		return False;
 	}
 
-	if (dsp_prop( DSP_SET,
-	              DSP_LINESEP, 
-	              (void*)(*var_value),
-	              DSP_NULLTERM ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_LINESEP, (void*)(*var_value), DSP_NULLTERM ) != DSP_SUCCEED)
 	{
 		return False;
 	}
+
+	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_linesep: Line separator now set to %s\n", *var_value);)
 
 	return True ;
 }
@@ -703,10 +642,7 @@ int var_get_linesep( env, var_name, var_value )
 {
 	static char linesep[32];
 
-	if (dsp_prop( DSP_GET,
-	              DSP_LINESEP, 
-	              (void*)linesep,
-	              sizeof(linesep) ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_LINESEP, (void*)linesep, sizeof(linesep) ) != DSP_SUCCEED)
 	{
 		*var_value = NULL;
 		return False;
@@ -757,13 +693,12 @@ int var_set_xgeom( env, var_name, var_value )
 		return False;
 	}
 
-	if (dsp_prop( DSP_SET,
-	              DSP_XGEOM, 
-	              (void*)(*var_value),
-	              DSP_NULLTERM) != DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_XGEOM, (void*)(*var_value), DSP_NULLTERM) != DSP_SUCCEED)
 	{
 		return False;
 	}
+
+	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_xgeom: Xgeom now set to %s\n", *var_value);)
 
 	return True;
 }
@@ -775,10 +710,7 @@ int var_get_xgeom( env, var_name, var_value )
 {
 	static char xgeom[32];
 
-	if (dsp_prop( DSP_GET,
-	              DSP_XGEOM, 
-	              (void*)xgeom,
-	              sizeof(xgeom) ) != DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_XGEOM, (void*)xgeom, sizeof(xgeom) ) != DSP_SUCCEED)
 	{
 		*var_value = NULL;
 		return False;
@@ -802,14 +734,12 @@ int var_set_maxlen( env, var_name, var_value )
 
 	maxlen = (*var_value != NULL) ? atoi(*var_value) : 0;
 
-	if (dsp_prop( DSP_SET, DSP_MAXLEN, (void*)&maxlen, DSP_UNUSED )
-		!= DSP_SUCCEED)
+	if (dsp_prop( DSP_SET, DSP_MAXLEN, (void*)&maxlen, DSP_UNUSED ) != DSP_SUCCEED)
 	{
 		return False;
 	}
 
-	DBG(sqsh_debug(DEBUG_SCREEN,
-		"var_set_maxlen: Maximum column width now set to %s\n", *var_value);)
+	DBG(sqsh_debug(DEBUG_SCREEN, "var_set_maxlen: Maximum column width now set to %s\n", *var_value);)
 
 	return True ;
 }
@@ -822,8 +752,7 @@ int var_get_maxlen( env, var_name, var_value )
 	static char nbr[16];
 	int   maxlen;
 
-	if (dsp_prop( DSP_GET, DSP_MAXLEN, (void*)&maxlen, DSP_UNUSED)
-		!= DSP_SUCCEED)
+	if (dsp_prop( DSP_GET, DSP_MAXLEN, (void*)&maxlen, DSP_UNUSED) != DSP_SUCCEED)
 	{
 		*var_value = NULL;
 		return False;
