@@ -213,6 +213,10 @@ static var_entry_t  sg_var_entry[] = {
     /* sqsh-2.5 - New variables */
     { "p2faxm",           NULL,          var_set_nullint,     NULL            },
     { "p2fname",          NULL,          var_set_p2fname,     NULL            },
+#if defined(__ansi__)
+    { "builddate",      __DATE__,        var_set_readonly,    NULL            },
+    { "buildtime",      __TIME__,        var_set_readonly,    NULL            },
+#endif
 } ;
 
 #endif /* SQSH_INIT */

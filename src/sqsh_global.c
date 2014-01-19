@@ -28,7 +28,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_global.c,v 1.9 2013/07/20 16:18:35 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_global.c,v 1.10 2013/12/03 09:22:23 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -50,7 +50,7 @@ alias_t    *g_alias        = NULL;
 char       *g_password     = NULL;
 int         g_password_set = False;
 char       *g_lock         = NULL;
-char       *g_copyright    = "Copyright (C) 1995-2001 Scott C. Gray\nPortions Copyright (C) 2004-2013 Michael Peppler and Martin Wesdorp";
+char       *g_copyright    = "Copyright (C) 1995-2001 Scott C. Gray\nPortions Copyright (C) 2004-2014 Michael Peppler and Martin Wesdorp";
 char       *g_version      = SQSH_VERSION;
 dsp_desc_t *g_do_cols[64];
 int         g_do_ncols     = 0;
