@@ -41,7 +41,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_go.c,v 1.4 2010/02/25 10:50:47 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_go.c,v 1.5 2014/01/18 18:36:34 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -121,7 +121,7 @@ int cmd_go( argc, argv )
 		fprintf( stderr, "\\go: Unbalanced comment tokens encountered\n" );
 		have_error = True;
 	}
-	else while ((ch = sqsh_getopt( argc, argv, "nfhps:m:x;w:d:t;T:l" )) != EOF) 
+	else while ((ch = sqsh_getopt( argc, argv, "nfhps:m:x;w:d:t;T:el" )) != EOF) 
 	{
 		switch (ch) 
 		{
@@ -155,6 +155,14 @@ int cmd_go( argc, argv )
 				if (env_put( g_env, "DISPLAY", sqsh_optarg, ENV_F_TRAN ) == False)
 				{
 					fprintf( stderr, "\\go: -d: %s\n", sqsh_get_errstr() );
+					have_error = True;
+				}
+				break;
+
+			case 'e' :
+				if (env_put( g_env, "echo", "1", ENV_F_TRAN ) == False)
+				{
+					fprintf( stderr, "\\go: -e: %s\n", sqsh_get_errstr() );
 					have_error = True;
 				}
 				break;
@@ -221,9 +229,10 @@ int cmd_go( argc, argv )
 	if( (argc - sqsh_optind) > 1 || have_error) 
 	{
 	    fprintf( stderr, 
-		"Use: \\go [-d display] [-h] [-f] [-l] [-n] [-p] [-m mode] [-s sec]\n"
+		"Use: \\go [-d display] [-e] [-h] [-f] [-l] [-n] [-p] [-m mode] [-s sec]\n"
 		"          [-t [filter]] [-w width] [-x [xgeom]] [-T title] [xacts]\n"
 		"     -d display  When used with -x, send result to named display\n"
+		"     -e          Echo SQL buffer to output\n"
 		"     -h          Suppress headers\n"
 		"     -f          Suppress footers\n"
 		"     -l          Suppress line separators with pretty style output mode\n"
