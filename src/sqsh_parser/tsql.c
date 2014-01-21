@@ -8,7 +8,7 @@
 
     #include <string.h>
     #include <assert.h>
-    #include <malloc.h>
+    #include <stdlib.h>
     
     #include "sqsh_parser.h"
 #line 15 "tsql.c"

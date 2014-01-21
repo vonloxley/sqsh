@@ -32,15 +32,26 @@
  * Readline history functions - for some reason not all
  * readline installs have history.h available, so we do
  * this.
- * sqsh-2.1.9 - Fixed declaration of unstifle_history
  */
-extern void stifle_history   ();
-extern int  unstifle_history ();
-extern int  read_history     ();
-extern int  write_history    ();
-extern void add_history      ();
+#if !defined (PARAMS)
+#  if defined (__STDC__) || defined (__GNUC__) || defined (__cplusplus)
+#    define PARAMS(protos) protos
+#  else
+#    define PARAMS(protos) ()
+#  endif
+#endif /* PARAMS */
+
 extern void _rl_clear_screen PARAMS((void));
-#endif
+
+#if !defined (_HISTORY_H_)
+extern void stifle_history   PARAMS((int));
+extern int  unstifle_history PARAMS((void));
+extern int  read_history     PARAMS((const char *));
+extern int  write_history    PARAMS((const char *));
+extern void add_history      PARAMS((const char *));
+#endif /*_HISTORY_H_ */
+
+#endif /* USE_READLINE */
 
 /*-- Prototypes --*/
 int   sqsh_readline_init  _ANSI_ARGS(( void ));
