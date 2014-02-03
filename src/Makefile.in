@@ -182,7 +182,7 @@ CMDS           =  \
 	cmd_help.o cmd_history.o cmd_if.o cmd_input.o cmd_jobs.o \
 	cmd_kill.o cmd_lock.o cmd_loop.o cmd_misc.o cmd_read.o \
 	cmd_reconnect.o cmd_redraw.o cmd_reset.o cmd_return.o cmd_rpc.o \
-	cmd_set.o cmd_shell.o cmd_show.o cmd_sleep.o cmd_wait.o \
+	cmd_run.o cmd_set.o cmd_shell.o cmd_show.o cmd_sleep.o cmd_wait.o \
 	cmd_warranty.o cmd_while.o
 
 DISPLAYS       = \
@@ -341,6 +341,11 @@ cmd_rpc.o: cmd_rpc.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
  sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_getopt.h sqsh_sig.h \
  sqsh_stdin.h cmd.h
+cmd_run.o: cmd_run.c sqsh_config.h config.h sqsh_compat.h \
+ sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
+ sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
+ sqsh_alias.h dsp.h sqsh_func.h sqsh_error.h sqsh_getopt.h \
+ sqsh_readline.h sqsh_stdin.h cmd.h cmd_misc.h cmd_input.h
 cmd_set.o: cmd_set.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
  sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \

@@ -96,6 +96,10 @@ int  cmd_return     _ANSI_ARGS(( int, char** )) ;
 int  cmd_break      _ANSI_ARGS(( int, char** )) ;
 int  cmd_for        _ANSI_ARGS(( int, char** )) ;
 int  cmd_snace      _ANSI_ARGS(( int, char** )) ;
+int  cmd_run        _ANSI_ARGS(( int, char** )) ;
+int  cmd_lcd        _ANSI_ARGS(( int, char** )) ; /* sqsh-2.5 local change dir */
+int  cmd_pwd        _ANSI_ARGS(( int, char** )) ; /* sqsh-2.5 show current dir */
+int  cmd_ls         _ANSI_ARGS(( int, char** )) ; /* sqsh-2.5 list files in current dir */
 
 #ifdef SQSH_INIT
 /*
@@ -164,6 +168,10 @@ static cmd_entry_t  sg_cmd_entry[] = {
 	{ "\\buf-append",NULL,          cmd_buf_append   },
 	{ "\\buf-del",   NULL,          cmd_buf_del      }, /* sqsh-2.1.6 feature */
 	{ "\\snace",     NULL,          cmd_snace        }, /* sqsh-2.1.7 */
+	{ "\\run",       NULL,          cmd_run          }, /* sqsh-2.5 */
+	{ "\\lcd",       NULL,          cmd_lcd          }, /* sqsh-2.5 */
+	{ "\\pwd",       NULL,          cmd_pwd          }, /* sqsh-2.5 */
+	{ "\\ls",        NULL,          cmd_ls           }, /* sqsh-2.5 */
 	{ ":r",          NULL,          cmd_buf_load     },
 	{ "vi",          NULL,          cmd_buf_edit     },
 	{ "emacs",       NULL,          cmd_buf_edit     },
