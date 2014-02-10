@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_run.c,v 1.0 2014/02/02 11:54:43 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_run.c,v 1.1 2014/02/03 10:42:02 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -49,6 +49,7 @@ int cmd_run( argc, argv )
 	FILE        *input_file    = NULL; /* Where input is coming from      */
 	int          fn_optind;            /* argv index of filename argument */
 	char        *swap_ptr;             /* Used for swapping strings       */
+	int          exit_status;
 
 	/*-- Variables settable by command line options --*/
 	char        *file_name     = NULL;
@@ -148,6 +149,16 @@ int cmd_run( argc, argv )
 	}
 
 	/*
+	 * Make sure we have a valid connection.
+	 */
+	if ((jobset_run( g_jobset, "\\connect", &exit_status )) == -1 || exit_status == CMD_FAIL)
+	{
+		fprintf( stderr, "\\run: %s\n", sqsh_get_errstr() );
+		env_rollback( g_env );
+		return CMD_FAIL;
+	}
+
+	/*
 	 * Open the file for input and make it stdin.
 	 */
 	if ((input_file = fopen( (char*) file_name, "r" )) == NULL)
@@ -177,6 +188,7 @@ int cmd_run( argc, argv )
 	/*
 	 * Start processing the batch file. Ignore the return value.
 	 */
+
 	(void) cmd_input();
 
 	/*

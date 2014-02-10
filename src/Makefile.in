@@ -232,9 +232,9 @@ distclean : realclean
 # automatically generated via 'gcc -MM'
 #
 cmd_alias.o: cmd_alias.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h cmd.h
+ sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
+ sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
+ sqsh_alias.h dsp.h sqsh_func.h cmd.h
 cmd_bcp.o: cmd_bcp.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
@@ -242,204 +242,203 @@ cmd_bcp.o: cmd_bcp.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
 cmd_buf.o: cmd_buf.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
- sqsh_func.h sqsh_error.h sqsh_getopt.h sqsh_buf.h sqsh_stdin.h cmd.h
+ sqsh_func.h sqsh_error.h sqsh_getopt.h sqsh_buf.h sqsh_stdin.h \
+ sqsh_expand.h sqsh_init.h cmd.h
 cmd_connect.o: cmd_connect.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_getopt.h \
- sqsh_init.h sqsh_stdin.h cmd.h
+ sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
+ sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
+ sqsh_alias.h dsp.h sqsh_func.h sqsh_getopt.h sqsh_init.h sqsh_sig.h \
+ sqsh_stdin.h cmd.h sqsh_expand.h
 cmd_do.o: cmd_do.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
  sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_sig.h sqsh_buf.h \
- sqsh_readline.h sqsh_getopt.h sqsh_stdin.h cmd.h cmd_misc.h \
- cmd_input.h
-cmd_echo.o: cmd_echo.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h cmd.h
-cmd_exit.o: cmd_exit.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_cmd.h sqsh_avl.h cmd.h sqsh_varbuf.h
+ sqsh_readline.h sqsh_getopt.h sqsh_stdin.h cmd.h cmd_misc.h cmd_input.h
+cmd_echo.o: cmd_echo.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h cmd.h
+cmd_exit.o: cmd_exit.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h cmd.h
 cmd_for.o: cmd_for.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
  sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_sig.h sqsh_buf.h \
- sqsh_readline.h sqsh_getopt.h sqsh_stdin.h cmd.h cmd_misc.h \
- cmd_input.h
-cmd_func.o: cmd_func.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_sig.h \
- sqsh_getopt.h sqsh_buf.h sqsh_stdin.h sqsh_readline.h cmd.h \
- cmd_misc.h cmd_input.h
+ sqsh_readline.h sqsh_getopt.h sqsh_stdin.h cmd.h cmd_misc.h cmd_input.h
+cmd_func.o: cmd_func.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_sig.h sqsh_getopt.h \
+ sqsh_buf.h sqsh_stdin.h sqsh_readline.h cmd.h cmd_misc.h cmd_input.h
 cmd_go.o: cmd_go.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
  sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_getopt.h sqsh_buf.h \
  sqsh_filter.h sqsh_stdin.h cmd.h cmd_misc.h
-cmd_help.o: cmd_help.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_error.h cmd.h
+cmd_help.o: cmd_help.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h sqsh_error.h cmd.h
 cmd_history.o: cmd_history.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h cmd.h
+ sqsh_debug.h sqsh_error.h sqsh_getopt.h sqsh_global.h sqsh_env.h \
+ sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
+ sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h cmd.h sqsh_expand.h
 cmd_if.o: cmd_if.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
  sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_sig.h sqsh_getopt.h \
  sqsh_buf.h sqsh_stdin.h sqsh_readline.h cmd.h cmd_misc.h cmd_input.h
 cmd_input.o: cmd_input.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_sig.h \
- sqsh_readline.h sqsh_stdin.h cmd.h cmd_misc.h cmd_input.h
-cmd_jobs.o: cmd_jobs.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h cmd.h
-cmd_kill.o: cmd_kill.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h cmd.h
-cmd_lock.o: cmd_lock.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_cmd.h sqsh_avl.h sqsh_global.h sqsh_env.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_error.h cmd.h
-cmd_loop.o: cmd_loop.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_error.h sqsh_getopt.h \
- sqsh_readline.h sqsh_stdin.h cmd.h cmd_misc.h cmd_input.h
-cmd_misc.o: cmd_misc.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_expand.h sqsh_error.h cmd.h \
- cmd_misc.h
-cmd_read.o: cmd_read.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_error.h sqsh_getopt.h \
- sqsh_readline.h sqsh_stdin.h cmd.h
+ sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_sig.h sqsh_readline.h \
+ sqsh_stdin.h cmd.h cmd_misc.h cmd_input.h
+cmd_jobs.o: cmd_jobs.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h cmd.h
+cmd_kill.o: cmd_kill.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h cmd.h
+cmd_lock.o: cmd_lock.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_cmd.h sqsh_avl.h sqsh_global.h sqsh_env.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h sqsh_error.h cmd.h
+cmd_loop.o: cmd_loop.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h sqsh_error.h sqsh_getopt.h sqsh_readline.h sqsh_stdin.h \
+ cmd.h cmd_misc.h cmd_input.h
+cmd_misc.o: cmd_misc.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h sqsh_expand.h sqsh_error.h cmd.h cmd_misc.h
+cmd_read.o: cmd_read.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h sqsh_error.h sqsh_getopt.h sqsh_readline.h sqsh_stdin.h \
+ cmd.h
 cmd_reconnect.o: cmd_reconnect.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h cmd.h
+ sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h cmd.h
 cmd_redraw.o: cmd_redraw.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_cmd.h sqsh_avl.h cmd.h sqsh_varbuf.h
 cmd_reset.o: cmd_reset.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h cmd.h
+ sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h cmd.h
 cmd_return.o: cmd_return.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_cmd.h sqsh_avl.h sqsh_env.h sqsh_global.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h cmd.h
+ sqsh_debug.h sqsh_cmd.h sqsh_avl.h sqsh_env.h sqsh_global.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h cmd.h
 cmd_rpc.o: cmd_rpc.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
  sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_getopt.h sqsh_sig.h \
  sqsh_stdin.h cmd.h
-cmd_run.o: cmd_run.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_error.h sqsh_getopt.h \
- sqsh_readline.h sqsh_stdin.h cmd.h cmd_misc.h cmd_input.h
+cmd_run.o: cmd_run.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h sqsh_error.h sqsh_getopt.h sqsh_readline.h sqsh_stdin.h \
+ cmd.h cmd_misc.h cmd_input.h
 cmd_set.o: cmd_set.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
- sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h cmd.h
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h cmd.h
 cmd_shell.o: cmd_shell.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h sqsh_varbuf.h sqsh_global.h sqsh_env.h \
  sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h \
  sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h cmd.h
-cmd_show.o: cmd_show.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h cmd.h
+cmd_show.o: cmd_show.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h cmd.h
 cmd_sleep.o: cmd_sleep.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_cmd.h sqsh_avl.h cmd.h sqsh_varbuf.h
-cmd_wait.o: cmd_wait.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_stdin.h cmd.h
+cmd_wait.o: cmd_wait.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h sqsh_stdin.h cmd.h
 cmd_warranty.o: cmd_warranty.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h cmd.h
+ sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h cmd.h
 cmd_while.o: cmd_while.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_sig.h \
- sqsh_getopt.h sqsh_buf.h sqsh_stdin.h sqsh_readline.h sqsh_tok.h \
- cmd.h cmd_misc.h cmd_input.h
+ sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h sqsh_expand.h sqsh_error.h sqsh_sig.h sqsh_getopt.h \
+ sqsh_buf.h sqsh_stdin.h sqsh_readline.h sqsh_tok.h cmd.h cmd_misc.h \
+ cmd_input.h
+dsp_bcp.o: dsp_bcp.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h
 dsp.o: dsp.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
  sqsh_func.h sqsh_error.h sqsh_sig.h
-dsp_bcp.o: dsp_bcp.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
- sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h
+dsp_conv.o: dsp_conv.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h dsp.h
 dsp_csv.o: dsp_csv.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
- sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h
-dsp_conv.o: dsp_conv.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h dsp.h
-dsp_desc.o: dsp_desc.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h
+dsp_desc.o: dsp_desc.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h
 dsp_horiz.o: dsp_horiz.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h
-dsp_html.o: dsp_html.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h
-dsp_meta.o: dsp_meta.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h dsp.h
-dsp_none.o: dsp_none.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h
+ sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
+ sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
+ sqsh_alias.h dsp.h sqsh_func.h
+dsp_html.o: dsp_html.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h
+dsp_meta.o: dsp_meta.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h dsp.h
+dsp_none.o: dsp_none.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h
 dsp_out.o: dsp_out.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
- sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h
 dsp_pretty.o: dsp_pretty.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h
-dsp_vert.o: dsp_vert.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h
-dsp_x.o: dsp_x.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
- sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
+ sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
  sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
  sqsh_alias.h dsp.h sqsh_func.h
+dsp_vert.o: dsp_vert.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h
+dsp_x.o: dsp_x.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_expand.h sqsh_varbuf.h sqsh_global.h sqsh_env.h \
+ sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h \
+ sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_init.h
 sqsh_alias.o: sqsh_alias.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h sqsh_alias.h sqsh_varbuf.h sqsh_avl.h
 sqsh_args.o: sqsh_args.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h sqsh_args.h
-sqsh_avl.o: sqsh_avl.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_avl.h
-sqsh_buf.o: sqsh_buf.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_error.h sqsh_stdin.h sqsh_buf.h
-sqsh_cmd.o: sqsh_cmd.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_avl.h sqsh_cmd.h
+sqsh_avl.o: sqsh_avl.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_avl.h
+sqsh_buf.o: sqsh_buf.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
+ sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
+ sqsh_func.h sqsh_error.h sqsh_stdin.h sqsh_buf.h sqsh_readline.h
+sqsh_cmd.o: sqsh_cmd.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_avl.h sqsh_cmd.h
 sqsh_compat.o: sqsh_compat.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h sqsh_sig.h
 sqsh_debug.o: sqsh_debug.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h
-sqsh_env.o: sqsh_env.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_env.h
+sqsh_env.o: sqsh_env.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_env.h
 sqsh_error.o: sqsh_error.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h
 sqsh_expand.o: sqsh_expand.c sqsh_config.h config.h sqsh_compat.h \
@@ -448,16 +447,16 @@ sqsh_expand.o: sqsh_expand.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_fd.h sqsh_expand.h \
  sqsh_strchr.h sqsh_sig.h
 sqsh_fd.o: sqsh_fd.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
- sqsh_sigcld.h sqsh_env.h sqsh_global.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
- dsp.h sqsh_func.h sqsh_error.h sqsh_fd.h
+ sqsh_sigcld.h sqsh_env.h sqsh_global.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h \
+ sqsh_error.h sqsh_fd.h
 sqsh_filter.o: sqsh_filter.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_fd.h sqsh_sig.h sqsh_varbuf.h sqsh_error.h \
  sqsh_filter.h
 sqsh_fork.o: sqsh_fork.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_error.h sqsh_fork.h
+ sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h sqsh_error.h sqsh_fork.h
 sqsh_func.o: sqsh_func.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h sqsh_avl.h sqsh_func.h
 sqsh_getopt.o: sqsh_getopt.c sqsh_config.h config.h sqsh_compat.h \
@@ -465,34 +464,35 @@ sqsh_getopt.o: sqsh_getopt.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h \
  sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_getopt.h
 sqsh_global.o: sqsh_global.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h
+ sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h
 sqsh_history.o: sqsh_history.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_history.h sqsh_varbuf.h
+ sqsh_debug.h sqsh_error.h sqsh_expand.h sqsh_varbuf.h sqsh_global.h \
+ sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h \
+ sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h
 sqsh_init.o: sqsh_init.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_expand.h \
- sqsh_readline.h sqsh_stdin.h sqsh_init.h cmd.h var.h alias.h
-sqsh_job.o: sqsh_job.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_fd.h sqsh_tok.h sqsh_varbuf.h \
- sqsh_cmd.h sqsh_avl.h sqsh_global.h sqsh_env.h sqsh_job.h sqsh_args.h \
- sqsh_sigcld.h sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h \
- sqsh_fork.h sqsh_expand.h sqsh_strchr.h sqsh_getopt.h sqsh_sig.h
+ sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
+ sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
+ sqsh_alias.h dsp.h sqsh_func.h sqsh_expand.h sqsh_readline.h \
+ sqsh_stdin.h sqsh_init.h cmd.h var.h alias.h
+sqsh_job.o: sqsh_job.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_fd.h sqsh_init.h sqsh_tok.h sqsh_varbuf.h sqsh_cmd.h \
+ sqsh_avl.h sqsh_global.h sqsh_env.h sqsh_job.h sqsh_args.h sqsh_sigcld.h \
+ sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_fork.h sqsh_expand.h \
+ sqsh_strchr.h sqsh_getopt.h sqsh_sig.h sqsh_readline.h
 sqsh_main.o: sqsh_main.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_error.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_getopt.h \
- sqsh_init.h sqsh_fd.h sqsh_readline.h sqsh_expand.h sqsh_sig.h \
- sqsh_stdin.h cmd.h
+ sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_getopt.h sqsh_init.h \
+ sqsh_fd.h sqsh_readline.h sqsh_expand.h sqsh_sig.h sqsh_stdin.h cmd.h
 sqsh_readline.o: sqsh_readline.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_global.h sqsh_env.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_stdin.h \
- sqsh_readline.h
-sqsh_sig.o: sqsh_sig.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_sig.h
+ sqsh_debug.h sqsh_env.h sqsh_error.h sqsh_expand.h sqsh_varbuf.h \
+ sqsh_global.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h \
+ sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_init.h \
+ sqsh_readline.h sqsh_stdin.h sqsh_parser/sqsh_parser.h
+sqsh_sig.o: sqsh_sig.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_sig.h
 sqsh_sigcld.o: sqsh_sigcld.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h sqsh_sig.h sqsh_sigcld.h
 sqsh_stdin.o: sqsh_stdin.c sqsh_config.h config.h sqsh_compat.h \
@@ -503,37 +503,39 @@ sqsh_strchr.o: sqsh_strchr.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_strchr.h sqsh_error.h
 sqsh_test.o: sqsh_test.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_varbuf.h sqsh_filter.h
-sqsh_tok.o: sqsh_tok.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_error.h sqsh_tok.h sqsh_varbuf.h
+sqsh_tok.o: sqsh_tok.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_error.h sqsh_tok.h sqsh_varbuf.h
 sqsh_varbuf.o: sqsh_varbuf.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_varbuf.h sqsh_error.h
 var_ctlib.o: var_ctlib.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_error.h sqsh_fd.h var.h
-var_date.o: var_date.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_env.h sqsh_error.h sqsh_global.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h var.h
+ sqsh_debug.h sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h sqsh_error.h sqsh_fd.h var.h sqsh_expand.h
+var_date.o: var_date.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_env.h sqsh_error.h sqsh_global.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h var.h
 var_debug.o: var_debug.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_env.h sqsh_error.h sqsh_global.h sqsh_cmd.h \
- sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h var.h
+ sqsh_debug.h sqsh_env.h sqsh_error.h sqsh_global.h sqsh_cmd.h sqsh_avl.h \
+ sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
+ sqsh_alias.h dsp.h sqsh_func.h var.h
 var_dsp.o: var_dsp.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h \
  sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h \
  sqsh_func.h sqsh_error.h sqsh_fd.h var.h
-var_hist.o: var_hist.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_env.h sqsh_error.h sqsh_global.h sqsh_cmd.h \
+var_hist.o: var_hist.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_env.h sqsh_error.h sqsh_global.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h var.h
+var_misc.o: var_misc.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
+ sqsh_env.h sqsh_error.h sqsh_stdin.h var.h sqsh_global.h sqsh_cmd.h \
  sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h \
- sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h var.h
-var_misc.o: var_misc.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_env.h sqsh_error.h sqsh_stdin.h var.h
+ sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_fd.h sqsh_expand.h
 var_passwd.o: var_passwd.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_env.h sqsh_global.h sqsh_cmd.h sqsh_avl.h \
- sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h \
- sqsh_alias.h dsp.h sqsh_func.h sqsh_error.h var.h
+ sqsh_debug.h sqsh_env.h sqsh_global.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
+ sqsh_args.h sqsh_sigcld.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h \
+ dsp.h sqsh_func.h sqsh_error.h var.h
 var_readline.o: var_readline.c sqsh_config.h config.h sqsh_compat.h \
- sqsh_debug.h sqsh_env.h sqsh_error.h var.h
+ sqsh_debug.h sqsh_env.h sqsh_error.h sqsh_readline.h var.h
 var_thresh.o: var_thresh.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_env.h sqsh_error.h var.h
