@@ -28,7 +28,7 @@
 #define HAVE_TIME_H 1
 #define HAVE_SYS_PARAM_H 1
 #define HAVE_LIMITS_H 1
-#define HAVE_CRYPT_H 1
+/* #undef HAVE_CRYPT_H */
 /* #undef HAVE_SHADOW_H */
 /* #undef HAVE_STROPTS_H */
 
@@ -60,8 +60,8 @@
 #define HAVE_STRERROR 1
 /* #undef HAVE_CFTIME */
 #define HAVE_STRFTIME 1
-/* #undef HAVE_MEMCPY */
-/* #undef HAVE_MEMMOVE */
+#define HAVE_MEMCPY 1
+#define HAVE_MEMMOVE 1
 #define HAVE_LOCALTIME 1
 #define HAVE_TIMELOCAL 1
 #define HAVE_STRCHR 1
