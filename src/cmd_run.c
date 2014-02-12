@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_run.c,v 1.2 2014/02/10 11:39:08 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_run.c,v 1.3 2014/02/10 14:28:45 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -142,33 +142,11 @@ int cmd_run( argc, argv )
 		fprintf( stderr, "     -h          Suppress headers\n" );
 		fprintf( stderr, "     -n          Disable SQL buffer variable expansion\n" );
 		fprintf( stderr, "     -p          Report runtime statistics\n" );
-		fprintf( stderr, "     -m style    Specify output style {bcp|pretty|horizontal|vertical|html}\n" );
+		fprintf( stderr, "     -m style    Specify output style {bcp|csv|horiz|html|meta|none|pretty|vert}\n" );
 		fprintf( stderr, "     -i filename SQL file to run\n" );
 		env_rollback( g_env );
 		return CMD_FAIL;
 	}
-
-	/*
-	 * Make sure we have a valid connection.
-	 */
-	if ((jobset_run( g_jobset, "\\connect", &exit_status )) == -1 || exit_status == CMD_FAIL)
-	{
-		fprintf( stderr, "\\run: Unable to (re)connect\n" );
-		env_rollback( g_env );
-		return CMD_FAIL;
-	}
-
-	/*
-	 * Open the file for input and make it stdin.
-	 */
-	if ((input_file = fopen( (char*) file_name, "r" )) == NULL)
-	{
-		fprintf( stderr, "\\run: %s: %s\n", (char*) file_name, strerror( errno ) );
-		env_rollback( g_env );
-		return CMD_FAIL;
-	}
-	env_put ( g_env, "script", file_name, ENV_F_TRAN);
-	sqsh_stdin_file( input_file );
 
 	/*
 	 * If there are any arguments left on the command line, they need to be put on the
@@ -186,9 +164,34 @@ int cmd_run( argc, argv )
 	g_func_nargs++;
 
 	/*
+	 * Open the file for input and make it stdin.
+	 */
+	if ((input_file = fopen( (char*) file_name, "r" )) == NULL)
+	{
+		fprintf( stderr, "\\run: %s: %s\n", (char*) file_name, strerror( errno ) );
+		g_func_nargs--;
+		env_rollback( g_env );
+		return CMD_FAIL;
+	}
+	env_put ( g_env, "script", file_name, ENV_F_TRAN);
+	sqsh_stdin_file( input_file );
+
+	/*
+	 * Make sure we have a valid connection.
+	 */
+	if ((jobset_run( g_jobset, "\\connect", &exit_status )) == -1 || exit_status == CMD_FAIL)
+	{
+		fprintf( stderr, "\\run: Unable to (re)connect\n" );
+		sqsh_stdin_pop();
+		fclose( input_file );
+		g_func_nargs--;
+		env_rollback( g_env );
+		return CMD_FAIL;
+	}
+
+	/*
 	 * Start processing the batch file. Ignore the return value.
 	 */
-
 	(void) cmd_input();
 
 	/*
@@ -197,9 +200,9 @@ int cmd_run( argc, argv )
 	 * Close the open batch file.
 	 * Rollback the global environment to its original state.
 	 */
-	g_func_nargs--;
 	sqsh_stdin_pop();
 	fclose( input_file );
+	g_func_nargs--;
 	env_rollback( g_env );
 
 	/*

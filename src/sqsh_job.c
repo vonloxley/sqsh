@@ -44,7 +44,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_job.c,v 1.8 2013/05/07 21:18:02 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_job.c,v 1.9 2013/07/20 16:18:35 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -430,6 +430,7 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 				 */
 				while (sig_restore() >= 0);
 				sig_install ( SIGINT, SIG_H_IGN, NULL, 0 );
+				sqsh_getopt_reset();
 				ret = cmd->cmd_ptr( args_argc(job->job_args), 
 					args_argv(job->job_args) );
 				sqsh_exit(0);
