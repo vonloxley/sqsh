@@ -136,7 +136,7 @@ X_LIBS       = @ATHENA_LIBS@ $(MOTIF_LIBS) @X_LIBS@
 #  unless you are debugging a problem or are interested in what is
 #  going on under the hood.
 #
-#DEF_DEBUG       = -DDEBUG
+DEF_DEBUG      = @DEF_DEBUG@
 
 #
 #  End of user configuration section.
@@ -160,15 +160,14 @@ INSTALL_DATA   = $(INSTALL) -c -m 644
 INSTALL_MAN    = $(src_dir)/autoconf/install-man
 
 CC             = @CC@
-DEBUG          =
 DEFINES        = -DSQSH_RC='${SQSHRC_PATH}' $(DEF_READLINE) \
                  $(DEF_NOBCP) $(DEF_DEBUG) $(DEF_INSECURE) $(DEF_X11) \
                  $(DEF_MOTIF) $(DEF_BUGFIX) @DEF_POSIX@ @DEF_AIX_FIX@
 INCLUDE_DIRS   = $(X_INCDIR) $(MOTIF_INCDIR) $(SYBASE_INCDIR) $(READLINE_INCDIR)
 LIB_DIRS       = $(X_LIBDIR) $(MOTIF_INCDIR) $(SYBASE_LIBDIR) $(READLINE_LIBDIR)
-CFLAGS         = @CFLAGS@ $(DEBUG) $(DEFINES) $(INCLUDE_DIRS)
+CFLAGS         = @CFLAGS@ $(DEFINES) $(INCLUDE_DIRS)
 CPPFLAGS       = @CPPFLAGS@
-LDFLAGS        = $(DEBUG) $(LIB_DIRS) @LDFLAGS@
+LDFLAGS        = @LDFLAGS@ $(LIB_DIRS)
 LIBS           = $(SYBASE_LIBS) $(X_LIBS) $(READLINE_LIBS) @LIBS@ @SQSH_PARSE_LIB@
 
 # The follow define information about the components that make up

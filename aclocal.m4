@@ -159,6 +159,36 @@ AC_DEFUN(AC_FIND_LIB, [
 ])
 
 
+dnl #   AC_BIT_MODE  (M Wesdorp)
+dnl #
+dnl #   Determines whether we are compiling and running code in 32 or 64 bit mode
+dnl #
+AC_DEFUN(AC_BIT_MODE,
+[
+	AC_MSG_CHECKING(Compiling 32/64 bit mode)
+	AC_CACHE_VAL(ac_cv_bit_mode,
+	[
+		AC_TRY_RUN(
+		[
+main() {
+#if defined (__LP64__) || defined (__LP64) || defined (_LP64) || defined (__arch64__)
+    exit (0);
+#else
+    exit (1);
+#endif
+}
+		], ac_cv_bit_mode=64, ac_cv_bit_mode=32)
+	])
+
+	AC_MSG_RESULT($ac_cv_bit_mode)
+
+	if (test "$ac_cv_bit_mode" = "64"); then
+		CPPFLAGS="-DSYB_LP64 $CPPFLAGS"
+	fi
+	AC_SUBST(CPPFLAGS)
+])
+
+
 dnl #   AC_SYSV_SIGNALS  (Scott C. Gray gray@voicenet.com)
 dnl #
 dnl #   Determines behaviour of signals, if they need to be reinstalled
@@ -204,7 +234,7 @@ AC_DEFUN([AC_SYBASE_ASE], [
 	#  Is $SYBASE defined?
 	#
 	AC_MSG_CHECKING(Open Client installation)
-		if test "$SYBASE" = ""; then
+		if [[ "$SYBASE" = "" ]]; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([Unable to locate Sybase installation. Check your SYBASE environment variable setting.])
 		fi
@@ -212,76 +242,97 @@ AC_DEFUN([AC_SYBASE_ASE], [
 		SYBASE_OCOS=
 		for subdir in $SYBASE $SYBASE/OCS $SYBASE/OCS-[[0-9]]*
 		do
-			if test -d $subdir/include; then
+			if [[ -d $subdir/include ]]; then
 				SYBASE_OCOS=$subdir
 				break
 			fi
 		done
 
-		if test "$SYBASE_OCOS" = ""; then
+		if [[ "$SYBASE_OCOS" = "" ]]; then
 			AC_MSG_RESULT(fail)
 			AC_MSG_ERROR([Sybase include files not found in \$SYBASE. Check your SYBASE environment variable setting.])
 		fi
+
 	AC_MSG_RESULT($SYBASE_OCOS)
 
 	AC_MSG_CHECKING(Open Client libraries)
 
-		if test "$with_devlib" = "yes"
-		then
-			SYBASE_LIBDIR="$SYBASE_OCOS/devlib"
-		else
+		#SYBASE_VERSION=`strings $SYBASE_OCOS/lib/lib*ct*.a 2>/dev/null | \
+		#	cut -c1-80 | fgrep 'Sybase Client-Library' | cut -d '/' -f 2 | uniq`
+		SYBASE_VERSION=`$SYBASE_OCOS/bin/isql -v 2>/dev/null | cut -c1-80 | fgrep 'Sybase CTISQL Utility' | cut -d '/' -f 2`
+		SYBASE_VERSION=`echo $SYBASE_VERSION | cut -d . -f 1`
+
+		if [[ "$SYBASE_VERSION" = "" ]]; then
+			SYBASE_VERSION="FreeTDS"
 			SYBASE_LIBDIR="$SYBASE_OCOS/lib"
-		fi
+			case "${host_os}" in
+	                        *cygwin)
+					SYBASE_LIBS="-lct -liconv"
+					CPPFLAGS="-D_MSC_VER=800 $CPPFLAGS"
+					;;
+				*)
+					SYBASE_LIBS="-lct"
+					;;
+			esac
+		else
+			if [[ "$with_devlib" = "yes" ]]; then
+				SYBASE_LIBDIR="$SYBASE_OCOS/devlib"
+			else
+				SYBASE_LIBDIR="$SYBASE_OCOS/lib"
+			fi
 
-		SYBASE_LIBS=
+			SYBASE_LIBS=
 
-		for i in blk cs ct tcl comn intl unic
-		do
-			x=
-			if test -f $SYBASE_LIBDIR/lib${i}.a; then
-				x="-l${i}"
-			else if test -f $SYBASE_LIBDIR/lib${i}64.a; then
-				x="-l${i}64"
-			else if test -f $SYBASE_LIBDIR/libsyb${i}.a; then
-				x="-lsyb${i}"
-			else if test -f $SYBASE_LIBDIR/libsyb${i}64.a; then
-				x="-lsyb${i}64"
-			fi
-			fi
-			fi
-			fi
-			if test -n $x ; then
-				SYBASE_LIBS="$SYBASE_LIBS $x"
-			fi
-		done
-		#
-		# Check for -ltds (FreeTDS project)
-		#
-		if test -f $SYBASE_LIBDIR/libtds.a; then
-			SYBASE_LIBS="$SYBASE_LIBS -ltds"
+			case "${host_os}" in
+				*cygwin)
+					if [[ $SYBASE_VERSION -ge 15 -a $ac_cv_bit_mode = "64" ]]; then
+						SYBASE_LIBS="-L../cygwin -lsybcs64 -lsybct64 -lsybblk64"
+					else if [[ $SYBASE_VERSION -ge 15 -a $ac_cv_bit_mode = "32" ]]; then
+						SYBASE_LIBS="-L../cygwin -lsybcs -lsybct -lsybblk"
+					else
+						SYBASE_LIBS="-L../cygwin -lcs -lct -lblk"
+					fi
+					fi
+					CPPFLAGS="-D_MSC_VER=800 $CPPFLAGS"
+					;;
+				*)
+					for i in blk cs ct tcl comn intl unic
+					do
+						x=
+						if [[ -f $SYBASE_LIBDIR/lib${i}.a ]]; then
+							x="-l${i}"
+						else if [[ -f $SYBASE_LIBDIR/lib${i}64.a -a $ac_cv_bit_mode = "64" ]]; then
+							x="-l${i}64"
+						else if [[ -f $SYBASE_LIBDIR/libsyb${i}.a ]]; then
+							x="-lsyb${i}"
+						else if [[ -f $SYBASE_LIBDIR/libsyb${i}64.a -a $ac_cv_bit_mode = "64" ]]; then
+							x="-lsyb${i}64"
+						fi
+						fi
+						fi
+						fi
+						if test -n $x ; then
+							SYBASE_LIBS="$SYBASE_LIBS $x"
+						fi
+					done
+					;;
+			esac
 		fi
 
 	AC_MSG_RESULT($SYBASE_LIBS)
 
 	AC_MSG_CHECKING(Open Client needs net libraries)
 
-		SYBASE_VERSION=`strings $SYBASE_LIBDIR/lib*ct.a 2>/dev/null | \
-			cut -c1-80 | fgrep 'Sybase Client-Library' | cut -d '/' -f 2`
-		SYBASE_VERSION=`echo $SYBASE_VERSION | cut -d . -f 1`
-
-		if [[ "$SYBASE_VERSION" = "" ]]; then
-			SYBASE_VERSION="FreeTDS"
-		fi
-
 		if [[ "$SYBASE_VERSION" = "10" ]]; then
 			if [[ -f $SYBASE_LIBDIR/libinsck.a ]]; then
 				SYBASE_LIBS="$SYBASE_LIBS -linsck"
 				AC_MSG_RESULT([yes [(]-linsck[)]])
-			elif [[ -f $SYBASE_LIBDIR/libtli.a ]]; then
+			else if [[ -f $SYBASE_LIBDIR/libtli.a ]]; then
 				SYBASE_LIBS="$SYBASE_LIBS -ltli"
 				AC_MSG_RESULT([yes [(]-ltli[)]])
 			else
 				AC_MSG_RESULT([yes [(]version 10.x[)]])
+			fi
 			fi
 		else
 			AC_MSG_RESULT([no [(]version $SYBASE_VERSION[)]])
@@ -310,6 +361,8 @@ AC_DEFUN([AC_SYBASE_ASE], [
 				SYBASE_OS="-lm -ldl -ldgc";;
 			aix*)
 				SYBASE_OS="-lm";;
+			*cygwin)
+				SYBASE_OS="";;
 			*)
 				SYBASE_OS="-lm -ldl";;
 		esac
@@ -319,21 +372,18 @@ AC_DEFUN([AC_SYBASE_ASE], [
 	if test "$with_static" = "yes"
 	then
 		SYBASE_LIBS=`echo $SYBASE_LIBS | \
-			sed -e 's,-l\([[a-z]]*\),\$(SYBASE_OCOS)/lib/lib\1.a,g'`
+			sed -e 's,-l\([[a-z,0-9]]*\),\$(SYBASE_OCOS)/lib/lib\1.a,g'`
 	fi
 
-	if test "$with_devlib" = "yes"; then
-		SYBASE_LIBDIR='-L$(SYBASE_OCOS)/devlib'
-	else
-		SYBASE_LIBDIR='-L$(SYBASE_OCOS)/lib'
-	fi
-	SYBASE_INCDIR='-I$(SYBASE_OCOS)/include'
+	SYBASE_INCDIR="-I${SYBASE_OCOS}/include"
+	SYBASE_LIBDIR="-L${SYBASE_LIBDIR}"
 
-	AC_SUBST(SYBASE_OCOS)
-	AC_SUBST(SYBASE_LIBS)
-	AC_SUBST(SYBASE_LIBDIR)
-	AC_SUBST(SYBASE_INCDIR)
-	AC_SUBST(SYBASE_OS)
+	AC_SUBST(CPPFLAGS)
 	AC_SUBST(SYBASE)
+	AC_SUBST(SYBASE_INCDIR)
+	AC_SUBST(SYBASE_LIBDIR)
+	AC_SUBST(SYBASE_LIBS)
+	AC_SUBST(SYBASE_OCOS)
+	AC_SUBST(SYBASE_OS)
 ])
 

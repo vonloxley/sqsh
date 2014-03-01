@@ -62,7 +62,7 @@ cp COPYING doc/README.bin $tmp_dir
 # Documentation files.
 #
 cp ChangeLog doc/FAQ doc/global.sqshrc doc/sample.sqsh_m4 \
-   doc/sqsh.1 doc/sqsh.html doc/sqshrc-2.4 doc/CHANGES-2.* \
+   doc/sqsh.1 doc/sqsh.html doc/sqshrc-2.5 doc/CHANGES* \
 	$tmp_dir/doc
 
 #

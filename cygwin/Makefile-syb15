@@ -1,4 +1,4 @@
-#  $Id: Makefile,v 1.0 2013/02/25 10:54:25 mwesdorp Exp $
+#  $Id: Makefile-syb15,v 1.4 2014/02/12 16:42:32 mwesdorp Exp $
 #
 #  Makefile for sqsh on Cygwin 32 bits for Sybase OC 15.0
 #
@@ -71,7 +71,7 @@ READLINE_LIBS   = -lreadline
 DEF_MOTIF    = # -DUSE_MOTIF
 MOTIF_INCDIR =
 MOTIF_LIBDIR =
-MOTIF_LIBS   =
+MOTIF_LIBS   = # -lXm
 
 #
 #  X Windows Support
@@ -170,14 +170,14 @@ LIB_DIRS       = $(X_LIBDIR) $(MOTIF_INCDIR) $(SYBASE_LIBDIR) $(READLINE_LIBDIR)
 CFLAGS         = -g -Wall $(DEBUG) $(DEFINES) $(INCLUDE_DIRS)
 CPPFLAGS       = -D_MSC_VER=800
 LDFLAGS        = $(DEBUG) $(LIB_DIRS)
-LIBS           = $(SYBASE_LIBS) $(X_LIBS) $(READLINE_LIBS)  sqsh_parser/sqsh_parser.a
+LIBS           = $(SYBASE_LIBS) $(X_LIBS) $(READLINE_LIBS) sqsh_parser/sqsh_parser.a
 
 # The follow define information about the components that make up
 # the actual program.
 
 TARGET         = sqsh
 
-CMDS           =  \
+CMDS           = \
 	cmd_alias.o cmd_bcp.o cmd_buf.o cmd_connect.o cmd_do.o \
 	cmd_echo.o cmd_exit.o cmd_for.o cmd_func.o cmd_go.o \
 	cmd_help.o cmd_history.o cmd_if.o cmd_input.o cmd_jobs.o \

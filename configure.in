@@ -5,8 +5,8 @@ dnl
 AC_INIT(src/sqsh_main.c)
 AC_CONFIG_HEADER(src/config.h)
 AC_CONFIG_AUX_DIR(autoconf)
-
 AC_CANONICAL_HOST
+AC_BIT_MODE
 
 dnl
 dnl  Enable workarounds for various operating system bugs.
@@ -21,16 +21,17 @@ case "$host_os" in
 		;;
 esac
 	
-
 AC_ARG_WITH([gcc],
 	[  --with-gcc              Use gcc, regardless of path],
-	[with_gcc="yes"], [])
+	[], [with_gcc="yes"])
 
-AC_ARG_WITH([x], [], [],[with_x="no"])
+AC_ARG_WITH([debug],
+	[  --with-debug            Enable sqsh debugging options],
+	[], [with_debug="no"])
 
 AC_ARG_WITH([readline], 
 	[  --with-readline         support fancy command line editing],
-	[], [with_readline="no"])
+	[], [with_readline="yes"])
 
 AC_ARG_WITH([old-readline], 
 	[  --with-old-readline     Force readline backwards compatibilty],
@@ -43,6 +44,10 @@ AC_ARG_WITH([static],
 AC_ARG_WITH([devlib], 
 	[  --with-devlib           Compile against Open Client devlibs],
 	[], [with_devlib="no"])
+
+AC_ARG_WITH([x],
+	[],
+       	[], [with_x="no"])
 
 AC_ARG_WITH([motif], 
 	[  --with-motif            support X11/Motif widgets],
@@ -75,6 +80,13 @@ AC_SUBST(DEF_MOTIF)
 AC_SUBST(MOTIF_PATH)
 AC_SUBST(MOTIF_INCDIR)
 AC_SUBST(MOTIF_LIBDIR)
+
+if test "x$with_debug" != "xno"
+then
+	DEF_DEBUG="-DDEBUG"
+	CFLAGS="-g -Wall"
+fi
+AC_SUBST(DEF_DEBUG)
 
 if test "x$with_x" != "xno"
 then
@@ -114,7 +126,7 @@ fi
 if test "$with_readline" = "no"; then
 	DEF_READLINE="# -DUSE_READLINE"
 	READLINE_INCDIR="# -I/usr/local/include"
-	READLINE_LIBDIR="# -I/usr/local/lib"
+	READLINE_LIBDIR="# -L/usr/local/lib"
 	READLINE_LIBS="# -lreadline -lcurses"
 else
 	DEF_READLINE="-DUSE_READLINE"
@@ -154,11 +166,11 @@ else
 		fi
 
 		if test "${READLINE_LIBDIR}" != ""; then
-			CPPFLAGS="${CPPFLAGS} -L${READLINE_LIBDIR}"
+			LDFLAGS="${LDFLAGS} -L${READLINE_LIBDIR}"
 		fi
 
 		for lib in "-lHcurses" "-lcurses" "-lncurses" "-ltermcap" \
-			"-ltermcap -lucb"
+			"-ltermcap" "-lucb" "-lhistory"
 		do
 			LIBS="${ORIG_LIBS} -lreadline ${lib}"
 			AC_TRY_LINK([
@@ -322,6 +334,8 @@ AC_C_CONST
 AC_TYPE_MODE_T
 AC_TYPE_PID_T
 AC_TYPE_UID_T
+
+AC_FIND_LIB(crypt, [$LIBDIRS], [ LIBS="${LIBS} -lcrypt" ],[ ])
 
 dnl Checks for library functions.
 AC_TYPE_SIGNAL

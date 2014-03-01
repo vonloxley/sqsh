@@ -160,7 +160,6 @@ static var_entry_t  sg_var_entry[] = {
     { "semicolon_hack",   "0",           var_set_bool,        NULL            },
     { "semicolon_cmd",    "\\go",        var_set_nullstr,     NULL            },
     { "session",          SQSH_SESSION,  var_set_nullstr,     NULL            },
-    { "start_connected",  "1",           var_set_bool,        NULL            },
     { "statistics",       "0",           var_set_bool,        NULL            },
     { "style",            "horizontal",  var_set_style,       var_get_style   },
     { "thresh_display",   "0",           var_set_severity,    NULL            },

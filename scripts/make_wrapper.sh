@@ -9,7 +9,7 @@ prefix=/usr/local
 exec_prefix=${prefix}/bin
 sybase=/opt/sybase/OCS-15_0
 
-readline_libdir='# -L/lib'
+readline_libdir=''
 motif_libdir=''
 x_libdir='# -L/usr/X11R6/lib'
 
