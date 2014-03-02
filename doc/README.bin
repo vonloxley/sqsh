@@ -1,10 +1,9 @@
-
-                     SQSH 2.4 BINARY RELEASE
+                     SQSH 2.5 BINARY RELEASE
 
 Welcome
 -=-=-=-=-
 
-Hello and welcome to the binary release of sqsh-2.4.  With this
+Hello and welcome to the binary release of sqsh-2.5.  With this
 release quite a bit of effort has gone into supplying handy
 pre-built binaries for those of you that are too lazy to type
 'configure' and 'make'. :)
@@ -27,11 +26,9 @@ functionality.
 Availability
 -=-=-=-=-=-=-
 
-Sqsh may be found on the following sites:
+Sqsh may be found on the following site:
 
-    http://www.sqsh.org/
     http://sourceforge.net/projects/sqsh
-
 
 Licensing
 -=-=-=-=-=-
@@ -60,7 +57,7 @@ Additional Files
 Note that there are some additional sample configuration files
 that are included in the doc/ directory that are not installed
 but are probably worth taking a look at.
-The doc/sqshrc-2.4 file may be copied to $HOME/.sqshrc
+The doc/sqshrc-2.5 file may be copied to $HOME/.sqshrc
 and make sure you have a .sqsh directory and $HOME/tmp directory.
 
 #!/bin/sh
@@ -70,5 +67,5 @@ fi
 if [ ! -d $HOME/tmp]; then
   mkdir $HOME/tmp
 fi
-cp doc/sqshrc-2.4 $HOME/.sqshrc && chmod 600 $HOME/.sqshrc
+cp doc/sqshrc-2.5 $HOME/.sqshrc && chmod 600 $HOME/.sqshrc
 

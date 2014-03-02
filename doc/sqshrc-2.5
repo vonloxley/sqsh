@@ -1,0 +1,266 @@
+#
+# Example $HOME/.sqshrc file for sqsh-2.5
+#
+\set username=sa
+# \set password=4MyEyesOnly
+# Note: Passwords can also be dynamically set in the session file
+# for example using: \read password < $HOME/.sqsh/sa.pwd
+
+\set banner=Off
+\set bcp_colsep='#'
+\set bcp_rowsep=''
+\set bcp_trim=Off
+\set charset='utf8'
+\set datefmt='%e %b %Y'
+\set timefmt='%H:%M:%S.%q'
+\set datetime='%e %b %Y %H:%M[:%S.%q]%p'
+\set encryption=Off
+\set hist_auto_save=10
+\set histmerge=On
+\set history='$HOME/.sqsh/sqshhist_$DSQUERY'
+\set histsize=100
+\set histunique=On
+\set hostname=`hostname`
+\set ignoreeof=On
+\set keyword_completion=exact
+\set keyword_dynamic=On
+\set keyword_file='$HOME/.sqsh/sqsh_words'
+\set keyword_query="\\
+  select name from sysobjects \\
+  where type in ('U','V','P','S') at isolation 0 \\
+  select name from sybsystemprocs..sysobjects \\
+  where type='P' at isolation 0"
+\set localeconv=Off
+\set login_timeout=10
+# \set p2faxm=1000
+# \set p2fname='$HOME/.sqsh/p2fmsg.out'
+
+#
+# Variable readline_histignore defines a list of keywords separated by a colon
+# or a regular expression if the variable starts with RE: .
+# If the keyword or regular expression matches a line of input,
+# then that line will not be added to the readline history. (interactive mode)
+# Put the string in single quotes to prevent early expansion. Put the
+# regular expression itself between double quotes to prevent pipe
+# execution when the variable is queried with \echo for example.
+#
+# \set readline_histignore='go:lo:mo:exit:quit:vi:!!:GO'
+#
+\set readline_histignore='"RE:^[glm]o$|^cd |^exit$|^quit$|^vi$"'
+\set readline_history='$HOME/.sqsh/sqsh_readline'
+\set readline_histsize=500
+\set semicolon_hack2=On
+\set session='$HOME/.sqsh/sqsh_session'
+\if [ "$TERM" != "linux" -a "$TERM" != "console" ]
+  \set term_title='$DSQUERY (on $hostname)'
+\fi
+\set tmp_dir='$HOME/tmp'
+\set usedbcheck=Off
+\set xgeom=100x30
+\set xwin_title='$DSQUERY result $histnum'
+
+#
+# \set debug="ENV|TDS|HIST"
+# \set debug_tds_capture='$HOME/tmp/sqsh_tds_capture_'
+# \set debug_tds_logdata='$HOME/tmp/sqsh_tds_logdata.out'
+
+#
+# Set a color prompt
+#
+# Color codes are presented in a string between {}. If sqsh encounters a {
+# in the prompt string it will assume a colorcode is supplied and will act
+# as such. The color definition consists of three values separated by ;
+# The last colorcode for the background may be ommitted.
+#
+# Color definitions byte 1,2,3
+# The first code defines the Color Attribute Code with possible values:
+#   0=none 1=bold
+# The second value defines the Text Color Code:
+#   30=black 31=red 32=green 33=yellow 34=blue 35=magenta 36=cyan 37=white
+# The third value defines the Background Color Code:
+#   40=black 41=red 42=green 43=yellow 44=blue 45=magenta 46=cyan 47=white
+#
+# Example:
+# Cyan text in white background "{0;36;47}"
+# Bold yellow text              "{1;33}"
+#
+# sqsh will translate the colorcodes to an actual colorcode string that
+# is presented to readline: for example "\001\033[0;36;47m\002"
+#
+# Note that if you want to use curly brackets in your prompt, you have to
+# escape colorization by specifying a double brace, like {{...}}.
+# Using color codes is only usefull if readline support is compiled in sqsh.
+#
+\set prompt_color='{0;34;47}'
+\set text_color='{0}'
+\set prompt='$prompt_color[$histnum] $DSQUERY.$username.$database.$lineno>$text_color '
+\set prompt2='$prompt_color[sqsh-2.5]-->$text_color '
+
+#
+# Prompt without colors
+#
+# \set prompt='[$histnum] $DSQUERY.$username.$database.$lineno> '
+# \set prompt2='[sqsh-2.5]--> '
+
+#
+# cd <database>
+#
+# Replacement for issuing a 'use <db>' with the following
+# exceptions:
+#  o  There is no need to issue a 'go' (that is done for you)
+#  o  Issuing a 'cd -' will return you to the previous
+#     database you were using (provided that you switched to
+#     this database using cd as well).
+#  o  Just 'cd' will return you to the master database.
+#
+\func -x cd
+  \if [ $# -gt 1 ]
+    \echo "usage: cd [ db | - ]"
+    \return 1
+  \fi
+
+  \if [ $# -eq 1 ]
+    \set parm=${1}
+  \else
+    \set parm=master
+  \fi
+
+  \if [ "${parm}" = "-" ]
+    \set db=${prev_db}
+  \else
+    \set db=${parm}
+  \fi
+
+  \if [ -z "${db}" ]
+    \set db=master
+  \fi
+
+  \set cur_db=$database
+
+  use $db
+  go
+
+  \if [ $? -eq 0 ]
+    \set prev_db=$cur_db
+  \fi
+  \return 0
+\done
+
+#
+# \db
+#
+# Lists the names of all databases in the system.
+#
+\func -x \db
+  select name = convert(varchar(30),name)
+  from master..sysdatabases
+  order by name
+  go -f
+\done
+
+#
+# \logins
+#
+# Show logins
+#
+\func -x \logins
+
+  declare @allauth int
+  select @allauth = low
+  from master.dbo.spt_values
+  where type="ua" and upper(name) = 'ANY'
+
+  select "Suid"             = l.suid
+        ,"Name"             = convert(varchar(25),l.name)
+        ,"Pwdate"           = l.pwdate
+        ,"Auth mech"        = convert(char(12), isnull(v.name,'NONE'))
+        ,"Default database" = convert(varchar(30),l.dbname)
+  from master.dbo.spt_values v
+      ,master.dbo.syslogins  l
+  where v.low   =* (l.status & @allauth)
+  and   v.type  ="ua"
+  order by l.suid
+  go
+\done
+
+#
+# \obj <type>
+#
+# Where <type> is a valid type as defined in the type column
+# of sysobjects. This function will list the name of all
+# objects matching that type.
+#
+\func -x \obj
+  \if [ $# -ne 1 ]
+    \echo "Use: \obj [U|V|S|TR|P|...]"
+    \return 1
+  \fi
+
+  set quoted_identifier off
+
+  select name = convert(varchar(30),name)
+  from   sysobjects
+  where  type = "${1}"
+  order by name
+  go
+\done
+
+#
+# \switch
+#
+# Reconnect to another server using the same username and password as the
+# current connection and take care of the history buffers of the old and new
+# server.
+#
+\func -x \switch
+  \if [ $# -eq 0 ]
+    \echo "Use: \switch server_name [...]"
+    \return 1
+  \fi
+
+  \hist-save
+  \set history=""
+  \buf-del 1-$histnum
+  \echo "Switch connection to server ${1}"
+  \reconnect -S ${*}
+  \if [ "${DSQUERY}" != "${1}" ]
+    \echo "Switch to server ${1} failed"
+  \fi
+  \set history='$HOME/.sqsh/sqshhist_$DSQUERY'
+  \hist-load
+\done
+
+#
+# \v
+#
+# Show the ASE version string.
+#
+\func -x \v
+  print @@version
+  go -h -f
+\done
+
+#
+# Set shortcut \h to display all history buffers
+# Set shortcut \hi to display last 20 history buffers with extended info
+#
+\alias \h='\history'
+\alias \hi='\history -i -x20'
+
+#
+# Set short aliases for style
+#
+\alias \hori='\set style=horizontal'
+\alias \vert='\set style=vertical'
+
+#
+# Add uppercase alias GO for \go
+# Add alias 'lo' for go | less
+#
+\alias GO=\go
+\alias lo='\go !* -w2048 | less -S'
+
+#
+# Start a bash login shell from sqsh
+#
+\alias \s='\shell bash -l'

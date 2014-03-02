@@ -1,3 +1,58 @@
+$Id: ReleaseNotes,v 1.8 2013/05/03 11:19:37 mwesdorp Exp $
+
+Release Notes
+
+sqsh 2.1.7 through 2.5
+
+Please read CHANGES for a detailed list of changes in these releases.
+
+sqsh 2.1.6
+
+Multiple changes contributed by Martin Wesdorp.
+This includes colorized output when using readline, handling of login and query
+timeouts, and most importantly updating the experimental kerberos
+support to be compatible with isql.
+
+sqsh 2.1.5
+
+Experimental support for kerberos network authentication, via the
+-K and -R command line flags.
+Various bug fixes.
+
+sqsh 2.1.4
+
+Various bug fixes.
+
+Command line -P argument hiding.
+Allow host:port syntax for the -S option if built with OpenClient
+12.5.1 or later.
+Experimental support for CSV output (\go -m csv).
+
+sqsh 2.1.3
+
+This is an incremental bug-fix release.
+
+Better library detection in the configure script (handles new OCS 15 library
+names)
+
+Cygwin build instructions and files.
+
+sqsh 2.1.2
+
+This is an incremental bug-fix release.
+
+Bugs fixed (bug IDs from SourceForge's bug tracker)
+
+1010901		Problems with -w ($width).
+1051672		Missing OCS libs for static build
+1010961		Can't provide multiple sqshrc's
+987494		Better version reporting
+
+Other fixes include fixing a segfault if "go" appears on its own in a
+comment block, and making sure that the \read command actually reads from
+the terminal even when using redirected input or the -i flag.
+
+
 For recent changes please read the files CHANGES-2.x.y in the doc directory.
 
 2005-12-30  Michael Peppler  <mpeppler@peppler.org>
@@ -12,14 +67,14 @@ For recent changes please read the files CHANGES-2.x.y in the doc directory.
 
 2005-04-09  Michael Peppler  <mpeppler@peppler.org>
 
-	* src/cmd_connect.c (check_opt_capability): Add this function 
+	* src/cmd_connect.c (check_opt_capability): Add this function
 	to check for ct_option() capability.
 
 	* src/var.h: Change "chained" to default to NULL.
 
 2004-12-08  Michael Peppler  <mpeppler@peppler.org>
 
-	* src/var_passwd.c (var_set_password): Add a check for NULL 
+	* src/var_passwd.c (var_set_password): Add a check for NULL
 	string (requested by Helmut Ruholl)
 
 2004-11-09  Michael Peppler  <mpeppler@peppler.org>
@@ -38,13 +93,13 @@ For recent changes please read the files CHANGES-2.x.y in the doc directory.
 
 2004-11-05  Michael Peppler  <mpeppler@peppler.org>
 
-	* src/sqsh_main.c (main): Don't set "width" to the terminal 
+	* src/sqsh_main.c (main): Don't set "width" to the terminal
 	width if it has been set via the .sqshrc file.
 
 	* src/cmd_connect.c (cmd_connect): Change sprintf() to strncpy()
 	to avoid possible buffer overflow problem.
 
-	* src/dsp_desc.c (dsp_desc_bind): Comment out code to limit 
+	* src/dsp_desc.c (dsp_desc_bind): Comment out code to limit
 	datafmt.maxlength to the column display max len. Avoids "bind
 	resulted in truncation" errors for text/image/varchar/varbinary
 	columns at the expense of disrupting the columnar display.
@@ -57,7 +112,7 @@ For recent changes please read the files CHANGES-2.x.y in the doc directory.
 	* src/sqsh_expand.c (expand_skip_comment): Fix bug 1046570
 	segv if a go is first on a line within a comment.
 
-	* src/cmd_connect.c (cmd_connect): First try at implementing 
+	* src/cmd_connect.c (cmd_connect): First try at implementing
 	optionally setting "chained" mode on connect.
 
 	* aclocal.m4 (AC_SYBASE_ASE): Change the order of the libraries
@@ -92,7 +147,7 @@ For recent changes please read the files CHANGES-2.x.y in the doc directory.
 	* src/sqsh_expand.c (expand_variable): Applied patch from Michael
 	Chepelev for core dumps when expanding $$ $, etc. This bit of code
 	is currently #ifdef'd pending complete testing of variable
-	expansion. 
+	expansion.
 
 	* src/cmd_func.c (cmd_call): Apply patch from Bin Mu to fix
 	segfault when using \call without a function name.
@@ -117,14 +172,14 @@ For recent changes please read the files CHANGES-2.x.y in the doc directory.
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
 
-$Id: ChangeLog,v 1.16 2013/02/25 11:04:50 mwesdorp Exp $
+$Id: ChangeLog,v 1.17 2013/05/03 11:19:37 mwesdorp Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against
       ASE 12.0 and FreeTDS now.
    o  Added support for varchar2() and varbinary2() for ASE 12.5
       (I don't have a 12.5 instance to test against yet though).
-   o  New $maxlen configuration variable controls the maximum 
+   o  New $maxlen configuration variable controls the maximum
       amount of data that will be displayed for a given column.
       The default value is 8192 (8K). This will automaticallly
       truncate large columns (i.e. TEXT columns) to 8K.
@@ -153,7 +208,7 @@ Changes from 1.8 to 2.0
       block once per row returned from statement. Also new
       #[0-9] variables may be used to refer to column names
       in result set.
-           SELECT name FROM SYSDATABASES 
+           SELECT name FROM SYSDATABASES
            \do
                USE #1
                go
@@ -184,19 +239,19 @@ Changes from 1.8 to 2.0
       statements.
    o  Added a directory of handy filter scripts.
    o  Fixed \rpc command with @variable names.
-   o  \exit now exits sqsh, no matter how many \loop nesting 
+   o  \exit now exits sqsh, no matter how many \loop nesting
       levels you are in.
    o  The user will now be re-prompted to enter a password if a
       "Login failed." message is received from the server. This
       may be disabled using the new $password_retry variable.
-   o  Fix for signal handling (usually puked on AIX) - Brian 
+   o  Fix for signal handling (usually puked on AIX) - Brian
       Bruns.
 
 Changes from 1.7 to 1.8
    o  Got rid of error message about ct_exit() not being called.
    o  Created new 'make distrib' option to build a self-contained
       sqsh binary distribution.
-   o  $rcfile and $SQSHRC may now be colon delimited lists of 
+   o  $rcfile and $SQSHRC may now be colon delimited lists of
       sqshrc files.  This allows for system-wide rc files to be
       loaded first before local files.  Also, the default $SQSHRC
       setting is now "/usr/local/etc/sqshrc:$HOME/.sqshrc" (the
@@ -230,7 +285,7 @@ Changes from 1.6 to 1.7
       output on certain platforms.
    o  Added new `meta' display style.  This style suppresses row
       data and only shows the behind-the-scenes meta information
-      returned instead.  I used this primarily for debugging 
+      returned instead.  I used this primarily for debugging
       Open Server passthrough gateways.
    o  Added new `pretty' display style.  This style prints its out-
       put in a nicely formatted table output.  Also added the
@@ -252,7 +307,7 @@ Changes from 1.6 to 1.7
    o  Added --with-devlib configure flag to allow linking with
       sybase devlib libraries.
    o  Got rid of some compiler warning messages.
-   o  Worked around AIX bug where periodically a 'go | more' would 
+   o  Worked around AIX bug where periodically a 'go | more' would
       stop displaying a prompt (this was a freaky problem).
    o  The $history environment will now have its contents expanded
       prior to loading the history file.  This allows for such
@@ -272,7 +327,7 @@ Changes from 1.6 to 1.7
    o  Added boolean $output_parms variable to enable to disable the
       display of output parameter result sets.
    o  Fixed small locale problem when determining the maximum
-      length of a datetime (thanks again to Vadim Beloborodov 
+      length of a datetime (thanks again to Vadim Beloborodov
       <bvr@cc.pib.alex-ua.com>).
 
 Changes from 1.5 to 1.6
@@ -287,7 +342,7 @@ Changes from 1.5 to 1.6
       around sqsh that automatically takes care of setting your
       LD_LIBRARY_PATH (thanks to Tod Olsen).
    o  Reverted back to the 1.5.2 version of the logic that determines
-      the set of libraries on a given platform.  1.5.3 had some 
+      the set of libraries on a given platform.  1.5.3 had some
       problems on certain Solaris installations.
    o  Fixed redirection problem with the html and bcp display styles
       when performed non-interactively (say via a sqsh script).
@@ -318,9 +373,9 @@ Changes from 1.5 to 1.6
       they shouldn't have, such as messages from dbcc's and database
       dumps.
    o  Added new $filter and $filter_prog variables, and -t flag to \go
-      command to allow the SQL buffer to be filtered through an external 
+      command to allow the SQL buffer to be filtered through an external
       program (such as cpp or m4) prior to being sent to SQL Server.
-   o  Added new $HOME/.sqsh_readline output which will save away 
+   o  Added new $HOME/.sqsh_readline output which will save away
       the readline line-by-line history buffer upon exit.  Also added
       new variables $readline_history which allows you to change the
       default filename, and $readline_histsize which allows you to
@@ -340,7 +395,7 @@ Changes from 1.5 to 1.6
       is set to On).
    o  PRINT statements and informational messages will no longer
       increment batch_failcount because $thresh_fail now defaults
-      to 11.  Any several level under 11 is now considered 
+      to 11.  Any several level under 11 is now considered
       informational.
    o  The -P option of \bcp no longer requires an argument
    o  The \bcp command should deal with transferring identity columns
@@ -355,7 +410,7 @@ Changes from 1.5 to 1.6
    o  Added -D option to \connect and \reconnect to allow switching
       of database context during establishing of a new connection.
    o  Return param result sets should now be displayed similar to
-      11.1 version of isql (anyway, they shouldn't cause sqsh to 
+      11.1 version of isql (anyway, they shouldn't cause sqsh to
       choke).
    o  Ran sqsh through Purify (a great tool!) and cleaned up a couple
       of minor memory leaks and array boundry read problems.
@@ -373,7 +428,7 @@ Changes from 1.5 to 1.6
    o  Cleaned up 'configure' logic to make it a little smarter in
       determining whether or not to use siglongjmp() or longjmp().
    o  Added -lsdna to link line for OSF/1.
-   o  On SGI machines using TLI, configure should now choose to 
+   o  On SGI machines using TLI, configure should now choose to
       include the -lnsl library as well.
    o  Got rid of test for -Xc flag on the SunPro compiler.  This
       was causing sigjmp_buf to be unavailable for use by sqsh.
@@ -398,9 +453,9 @@ Changes from 1.4 to 1.5
       amazed hasn't caused anyone to coredump during the last year
       that sqsh has been available.
    o  Fixed bug in signal handling during non-interactive mode.
-   o  Replaced entire signal handling mechanism in sqsh with a 
+   o  Replaced entire signal handling mechanism in sqsh with a
       centralized signal handler (quite an interesting piece of
-      work).  This handler will use POSIX signals if they are 
+      work).  This handler will use POSIX signals if they are
       available on the system, so -D_BSD_SIGNALS is no longer
       required on SGI IRIX.
    o  Added $batch_pause to cause a "Hit enter to continue" message
@@ -418,9 +473,9 @@ Changes from 1.4 to 1.5
    o  Cleaned up client and server error handlers to display
       more closely to the DB-Lib version of sqsh (they still
       don't quite match, but it looks much better then 1.4.2).
-   o  Added -B flag so that sqsh will now attempt to turn off 
-      buffering of stdin, stdout, and stderr upon start-up.  
-      This should allow it to be controlled by such libraries 
+   o  Added -B flag so that sqsh will now attempt to turn off
+      buffering of stdin, stdout, and stderr upon start-up.
+      This should allow it to be controlled by such libraries
       as 'expect'.
    o  Added --with-gcc flag, and INCDIRS and LIBDIRS environment
       variables (thanks to Tod Olson <ta-olson@uchicago.edu>).
@@ -429,7 +484,7 @@ Changes from 1.4 to 1.5
 
    o  Reworked autoconf stuff to determine the set/order of libraries
       used to link according to OS type; if this fails, autoconf
-      should now take a best guess.  Also, added check to define 
+      should now take a best guess.  Also, added check to define
       _POSIX_SOURCE. Added --with-x, --x-includes, --x-libraries
       options to configure.
    o  Got rid of extraneous error messages generated if a login
@@ -441,7 +496,7 @@ Changes from 1.4 to 1.5
       the contents of <statement> within its own SQL Buffer (thanks
       again to Dan Roitman for this patch).
    o  Horizontal output style (default isql style) will now attempt to
-      pack the data as tight as the current locale will allow. For 
+      pack the data as tight as the current locale will allow. For
       example, if the datetime format for the current locale uses at
       most 23 characters, then a 23 character column will be displayed.
    o  Added new X display style if X11 support is compiled in.  This
@@ -458,7 +513,7 @@ Changes from 1.4 to 1.5
    o  Converted all internal Sybase calls from db-lib to ct-lib (a
       major undertaking that is highly likely to break things, so
       watch out!).
-   o  Fixed faulty test in which sqsh would only abort if 
+   o  Fixed faulty test in which sqsh would only abort if
       $batch_failcount was exactly equal to $thresh_exit.
    o  Added new "html" display style, that generates HTML <TABLE>
       constructs, this should be useful for running sqsh through
@@ -468,7 +523,7 @@ Changes from 1.4 to 1.5
       Steve!), so sqsh should now automatically configure the
       appropriate include and lib directories as well as the
       required set of libraries.
-   o  Thanks to the kind sole that converted CT-Lib for Linux 
+   o  Thanks to the kind sole that converted CT-Lib for Linux
       (Steve again?), the -DNO_DB flag has been removed.
    o  Cleaned up many warning messages generated on stricter ANSI
       compilers (such as SunPro).
@@ -503,7 +558,7 @@ Changes from 1.2 to 1.3
       <djw@accessio.demon.co.uk>!).
    o  Fixed bug where \buf-edit attempted to launch an editor called
       \buf-edit.
-   o  Fixed bug where partial alias names were being expanded (for 
+   o  Fixed bug where partial alias names were being expanded (for
       example just typing the first character of an alias name caused
       the alias to expand).
    o  Added positional parameters when the -i flag is used, so now
@@ -561,7 +616,7 @@ Changes from 1.1 to 1.2
       for the sqsh session.  Note that "\set hostname=`hostname`" is
       a neat trick to put in your .sqshrc.
    o  The $autouse variable has been deprecated. Now, if the $database
-      variable is set, it will take precedence over the $autouse 
+      variable is set, it will take precedence over the $autouse
       variable.  Since the $database variable is automatically set
       after connecting to the database this fixes the bug where a
       background task was failing to connect to the same database
@@ -637,7 +692,7 @@ Changes from 0.8 to 1.0
    o  Added command substitution both withing SQL batches and
       in a command function, using the ` character, much in the
       same way a standard shell does.  This also necessitated the
-      creation of the $ifs variable to determine the internal 
+      creation of the $ifs variable to determine the internal
       field separator.
    o  Added new start-up configuration file ~/.sqsh_session to be
       executed immediatly prior to establishing a connection to the
@@ -653,7 +708,7 @@ Changes from 0.8 to 1.0
       that are currently in place.
    o  \help now displays its commands in alphabetical order.
    o  Added new \shell command to execute something in a sub-shell.
-   o  Added -i flag to \loop to supress error conditions if the 
+   o  Added -i flag to \loop to supress error conditions if the
       supplied file name could not be opened.
    o  Fixed problem with 'go 2>&1 | more' failing to redirect error
       messages to 'more'.
@@ -773,7 +828,7 @@ Changes from 0.4 to 0.5
 
    o  Fixed more signal handling problem (actually, some that I thought
       were fixed in the last release) in config.h.in and cmd_go.c.  Now,
-      if you have sigsetjmp() available, then it will be used in 
+      if you have sigsetjmp() available, then it will be used in
       preference to setjmp().  This solves many of the collisions with
       use with the readline library.
    o  Actually remembered to update the banner message with the
@@ -822,7 +877,7 @@ Changes from 0.2 to 0.3
       added security.
    o  Added more comments in Makefile.in to make life a little easier.  Also
       added default library -lm to SYBASE_LIBS.
-   o  File descriptor manipulation is more efficient; there is less 
+   o  File descriptor manipulation is more efficient; there is less
       juggling going on for files that are rapidly opened and closed
       (see sqsh_fd.c, fop_push()).
    o  Added the -b flag and the $banner variable to turn off the start-up

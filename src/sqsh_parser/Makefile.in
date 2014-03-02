@@ -26,4 +26,5 @@ clean:
 	rm -f sqsh_parser.o tsql.o tsql.yy.o sqsh_parser.a
 
 distclean:
-	rm -f Makefile sqsh_parser.o tsql.o tsql.yy.o tsql.c tsql.yy.c tsql.h sqsh_parser.a
+	rm -f Makefile sqsh_parser.o tsql.o tsql.yy.o sqsh_parser.a
+#	rm -f Makefile sqsh_parser.o tsql.o tsql.yy.o tsql.c tsql.yy.c tsql.h sqsh_parser.a

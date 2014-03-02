@@ -4,7 +4,7 @@ Description
 -=-=-=-=-=-
 
 The follow document describes how to build and install the Sqsh SQL
-shell, version 2.3. For an overall description of the package, please
+shell, version 2.5. For an overall description of the package, please
 refer to the file README.
 
 Supported Platforms
@@ -13,8 +13,8 @@ Supported Platforms
 This program has been built and tested (although by no means would I
 say thoroughly) on a whole slew of platforms, including Solaris 2.x,
 SunOS 4.x, HP-UX 10.x, HP-UX 11.x, IRIX 5.x, IRIX 6.x, NCR SVR4,
-Dynix/ptx 2.x, NeXT, AIX 3.x, AIX 4.x, Digital UNIX 3.x, DG/UX 5.4.x,
-Linux 2.x, and NetBSD (I am sure that there are more).
+Dynix/ptx 2.x, NeXT, AIX x.x, Digital UNIX 3.x, DG/UX 5.4.x,
+Linux 2.x, OS-X and NetBSD (I am sure that there are more).
 This package also builds in the Cygwin environment under Windows,
 see the cygwin directory for details.
 
@@ -25,30 +25,21 @@ In order to build this package, you will need:
 
    o  Sybase CT-Library
 
-      You'll need a full installation of Open Client 11.x or greater
-      to compile against (you only need the run-time to run sqsh 
-      however).  Sqsh may still compile against Open Client 10.x,
-      however that release is *very* old and I don't have a copy
+      You'll need a full installation of Open Client 12.5 or greater
+      to compile against (you only need the run-time to run sqsh
+      however).  Sqsh may still compile against Open Client 10.x, 11.x,
+      however these release are *very* old and I don't have a copy
       around to test with any more.
 
-      Note: If you have a 64 bit installation of ASE then you will
-      normally only have the 64bit version of Client Library. This means
-      that you either need to install the 32bit version of the SDK
-      (available from sybase.subscribenet.com), or you need to build
-      sqsh in 64 bit mode. This is NOT yet handled automatically - you
-      will need to add the proper flags for your C compiler to generate
-      64 bit code, and you will need to add -DSYB_LP64 to the CFLAGS
-      macro in src/Makefile. Note that any libraries that you want to 
-      link with (for example "readline" must also have the 64bit
-      objects - you can't link 32 bit and 64 bit code in the same 
-      binary).
+      Note: As of version 2.5 sqsh is trying to detect 64 bit compilation
+      mode and sets compiler flags accordingly.
 
    o  FreeTDS
 
-      If you don't have CT-Library, or you want to connect to a 
-      Microsoft SQL Server (7.0 or 2000), sqsh should now, 
+      If you don't have CT-Library, or you want to connect to a
+      Microsoft SQL Server (up to 2012), sqsh should now,
       out-of-the-box, compile and run against FreeTDS (I've
-      tested personally with 0.52 and the current CVS tree).
+      tested personally with 0.91 and the current CVS tree).
       You can get FreeTDS from http://www.freetds.org/.
 
       PLEASE: Unfortunately, I don't have much spare time available
@@ -62,52 +53,69 @@ In order to build this package, you will need:
 
    o  X11R4 or Later (optional)
 
-      To take advantage of the X Windowing System display style, you 
-      must have at least X11R4 (R5 or later recommended).  This may 
+      To take advantage of the X Windowing System display style, you
+      must have at least X11R4 (R5 or later recommended).  This may
       be found from ftp://ftp.x.org.
 
    o  GNU Readline library (optional)
 
       If you want emacs/vi style keyboard editing, this package is a must.
       I'll warn you though, it'll add some major bulk to the executable.
-      You can get it from 
+      You can get it from
 
-         http://cnswww.cns.cwru.edu/~chet/readline/rltop.html
-      
+         http://ftp.gnu.org/gnu/readline/
+
       Sqsh should work with versions of readline as old as 2.2,
-      but is currently being tested with version 6.1.
+      but is currently being tested with version 6.2.
 
 Problems
 -=-=-=-=-
 
 If you have any trouble while trying to build sqsh, first make sure
-that you read the FAQ supplied with the distribution.
+that you read the doc/FAQ supplied with this distribution.
 
 Building
 -=-=-=-=-
 
 Sqsh takes advantage of the GNU auto-configuration package (a truly
-nifty tool) so it should be relatively easy to make and build. 
+nifty tool) so it should be relatively easy to make and build.
 Just follow the following directions:
 
 1) Set $SYBASE
 
    In order for auto-configuration to work correctly, the environment
    variable SYBASE must be correctly set to point to your base SYBASE
-   directory.  For bourne shell users (sh, bash, zsh, etc.), simply
-   do:
+   directory.  For bourne shell users (sh, bash, zsh, etc.),
+   for exampl simply do:
 
-      % SYBASE=/usr/local/sybase
+      % SYBASE=/opt/sybase
       % export SYBASE
-   
+
    or for csh and that ilk, do:
 
-      % setenv SYBASE /usr/local/sybase
+      % setenv SYBASE /opt/sybase
 
    If you are using Sybase 12.0 or later, the simplest thing to do is
-   to "source" the SYBASE.sh or SYBASE.csh file located in the 
-   Sybase installation root directory - this will set all of the 
+   to "source" the SYBASE.sh or SYBASE.csh file located in the
+   Sybase installation root directory - this will set all of the
    necessary environment variables.
+
+   If you are building against FreeTDS then you have to set the SYBASE
+   variable to the prefix installation of freetds, i.e.:
+
+      % SYBASE=/usr/local
+      % export SYBASE
+
+   If you are building on Cygwin you need to specify the SYBASE path
+   using the unix directory style notation:
+
+      % SYBASE=/cygdrive/c/Sybase
+      % export SYBASE
+
+  Also make sure that when you run sqsh on Cygwin that you have environment
+  variables SYBASE and SYBASE_OCS defined for the local Windows user and not
+  only as system variables.
+  (Start->Control Panel->System->Advanced system settings->Environment variables)
 
 2) Run "configure"
 
@@ -117,7 +125,7 @@ Just follow the following directions:
    exactly what your machine looks like.  The script supports the
    following options:
 
-       --prefix=DIR
+       --prefix=DIR (/usr/local default)
 
          Specifies an alternate base directory in which to install
          the sqsh binary and man page (in DIR/{man,bin}). By default
@@ -128,11 +136,11 @@ Just follow the following directions:
          This option allows the binary to be installed in a directory
          other than the one specified with --prefix, instead the
          binary will be placed in DIR/bin.
-      
-      --with-readline
+
+      --with-readline[=yes|no] (yes is default)
 
          If you have the GNU Readline library available (see Requirements,
-         above), supply this flag to enable readline support in sqsh. 
+         above), supply this flag to enable readline support in sqsh.
          Supplying this option will cause 'configure' to attempt to
          automatically determine the location of your readline header
          files and libraries.  Hints may be supplied as to the location
@@ -150,20 +158,20 @@ Just follow the following directions:
 
          Disables X support.  This is the same as running configure
          without '-with-x'.
-      
+
       --x-includes=<incdir>
-      
+
          By default, if --with-x is supplied configure will auto-
-         matically attempt to find the location of your X11 
+         matically attempt to find the location of your X11
          include directory.  If it fails or chooses the wrong
          directory, this option may be supplied to force it to
          use <incdir>.
-   
+
       --x-libraries=<libdir>
 
          As with --x-includes, this will override configures attempts
          to automatically determine the location of your X11 libraries.
-      
+
       --with-motif[=<path>]
 
          Causes the X support for sqsh to use Motif widgets rather than
@@ -185,12 +193,16 @@ Just follow the following directions:
          Forces configure to chose gcc as the compiler of choice
          regardless of whether or not a different C compiler is
          found earlier in your path.
-      
+
+      --with-debug[=yes|no] (default is no)
+
+         Enables the sqsh -l flag to specify additional debugging options.
+
    Also, the following environment variables may be set prior to
    running 'configure' to alter its behavior (see conf.sh for an
    example on how to use these flags):
 
-      CC 
+      CC
          Forces configure to use the value of $CC as the default
          C compiler.  This variable may also specify flags to pass
          to the compiler, such as "cc -O -Wall" or just "gcc".
@@ -217,21 +229,24 @@ Just follow the following directions:
          As with INCDIRS, this variable is used to track down the
          location of the readline library.
 
-   When configure has finished it should have generated Makefile,
+   There is also a conf.sh script available that may be used to run
+   configure with some appropriate values. You need to read through
+   this file and uncomment the options you will need and then run
+   ./conf.sh
+   When configure has finished it should have generated Makefiles,
    and config.h.
 
 3) OPTIONAL: Edit the file 'src/Makefile' and read through the settings
-   that 'configure' chose. There are a couple of options (such as
-   additional built-in debugging) that can only be enabled by editing
-   the Makefile; it is pretty well commented.
+   that 'configure' chose. There are a couple of options you may need
+   to change if configure does not get it right.
 
-4) OPTIONAL: Browse through 'src/config.h'.  This file is generated by 
+4) OPTIONAL: Browse through 'src/config.h'.  This file is generated by
    configure as it makes guesses about the configuration of your systems,
    and will probably not have to be touched.  If you don't understand
    the meaning of a define, you should probably leave it alone.
 
-5) OPTIONAL: Browse through 'sqsh_config.h', you probably won't have 
-   to change many of these values, they are simply default values for 
+5) OPTIONAL: Browse through 'sqsh_config.h', you probably won't have
+   to change many of these values, they are simply default values for
    various items, such as temporary directories, etc.
 
 6) Now, attempt to build it:
@@ -245,23 +260,31 @@ Just follow the following directions:
    $ make install
 
    This will install the binary into ${prefix}/bin, or ${exec_prefix}/bin,
-   if --exec_prefix was specified. It will also make a copy of 
-   doc/global.sqshrc called ${prefix}/etc/sqshrc.
+   if --exec_prefix was specified. Use sudo to obtain root privileges for
+   installation (i.e. "sudo make install").  It will also make a copy of
+   doc/global.sqshrc called ${prefix}/etc/sqshrc. You may also want to
+   install the doc/sqshrc-2.5 file into $HOME/.sqshrc and create a $HOME/.sqsh
+   directory and a working directory $HOME/tmp.
+
+   cp doc/sqshrc-2.5 $HOME/.sqshrc
+   chmod 600 $HOME/.sqshrc
+   mkdir $HOME/.sqsh $HOME/tmp
+   chmod 700 $HOME/.sqsh
 
    Optionally, you may also execute:
 
    $ make install-wrapper
 
    This will install sqsh as ${prefix}/bin/sqsh.bin and install a shell
-   script called ${prefix}/bin/sqsh. This shell script will do the 
+   script called ${prefix}/bin/sqsh. This shell script will do the
    following:
 
        o  Automatically set your $SYBASE to the one used when
           'configure' was run.
        o  Automatically set your $LD_LIBRARY_PATH (or $SHLIB_PATH
           on HP-UX) to point to the Open Client (or FreeTDS) library.
-   
-   NOTE: Because this script overrides any other SYBASE or 
+
+   NOTE: Because this script overrides any other SYBASE or
    LD_LIBRARY_PATH setting you may already have in your environment,
    if you move your directories around, you may need to edit
    this script.
@@ -295,7 +318,7 @@ Building Binary Distribution
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 If you wish to build a binary distribution (a tar file that contains
-everything needed to install and run the binary you compile), simply 
+everything needed to install and run the binary you compile), simply
 perform steps 1 through 6, above, and then do a:
 
    % make dist
@@ -313,15 +336,15 @@ may have been set in the Makefile.
 Good Luck
 -=-=-=-=-
 
+=====================================================================
 Above text was originally written by Scott C. Gray and adapted by
 Martin Wesdorp where necessary to adhere to current versions.
-
 =====================================================================
-Well, hopefully everything went OK for you.  If you have any problems
-or you run across any bugs in the program, please contact us at:
 
-mpeppler@peppler.org
+Well, hopefully everything went OK for you.  If you have any problems
+or you run across any bugs in the program, please contact me at:
+
 mwesdorp@users.sourceforge.net
 
 Best regards,
-Martin Wesdorp, July 2013
+Martin Wesdorp, March 2014

@@ -16,17 +16,15 @@ Also, as a by-product of the design, it is remarkably easy to extend
 and add functionality.
 
 Sqsh was developped by Scott C. Gray, and is currently maintained by
-Michael Peppler (mpeppler@peppler.org) and also by Martin Wesdorp
+Michael Peppler (mpeppler@peppler.org) and Martin Wesdorp
 (mwesdorp@users.sourceforge.net).
 
 Availability
 -=-=-=-=-=-=-
 
-Sqsh may be found on the following sites:
+Sqsh may be found on the following site:
 
-    http://www.sqsh.org/
     http://sourceforge.net/projects/sqsh/
-
 
 Licensing
 -=-=-=-=-=-
