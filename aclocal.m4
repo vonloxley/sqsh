@@ -118,7 +118,11 @@ AC_DEFUN(AC_FIND_LIB, [
 	AC_MSG_CHECKING(for lib$1)
 	AC_CACHE_VAL(ac_cv_lib$1,
 		[
-			SEARCH_PATH="/lib:/usr/lib:/usr/local/lib:${HOME}/lib:${HOME}/usr/lib"
+			if test "$ac_cv_bit_mode" = "64"; then
+				SEARCH_PATH="/lib64:/usr/lib64:/usr/local/lib64:${HOME}/lib64:${HOME}/usr/lib64:/lib:/usr/lib:/usr/local/lib:${HOME}/lib:${HOME}/usr/lib"
+			else
+				SEARCH_PATH="/lib:/usr/lib:/usr/local/lib:${HOME}/lib:${HOME}/usr/lib"
+			fi
 			libdir=""
 
 			if test "${LD_LIBRARY_PATH}" != ""; then
@@ -299,13 +303,13 @@ AC_DEFUN([AC_SYBASE_ASE], [
 					for i in blk cs ct tcl comn intl unic
 					do
 						x=
-						if [[ -f $SYBASE_LIBDIR/lib${i}.a ]]; then
+						if      [[ $ac_cv_bit_mode = "32" -a -f $SYBASE_LIBDIR/lib${i}.a      ]]; then
 							x="-l${i}"
-						else if [[ -f $SYBASE_LIBDIR/lib${i}64.a -a $ac_cv_bit_mode = "64" ]]; then
+						else if [[ $ac_cv_bit_mode = "64" -a -f $SYBASE_LIBDIR/lib${i}64.a    ]]; then
 							x="-l${i}64"
-						else if [[ -f $SYBASE_LIBDIR/libsyb${i}.a ]]; then
+						else if [[ $ac_cv_bit_mode = "32" -a -f $SYBASE_LIBDIR/libsyb${i}.a   ]]; then
 							x="-lsyb${i}"
-						else if [[ -f $SYBASE_LIBDIR/libsyb${i}64.a -a $ac_cv_bit_mode = "64" ]]; then
+						else if [[ $ac_cv_bit_mode = "64" -a -f $SYBASE_LIBDIR/libsyb${i}64.a ]]; then
 							x="-lsyb${i}64"
 						fi
 						fi

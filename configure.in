@@ -84,7 +84,6 @@ AC_SUBST(MOTIF_LIBDIR)
 if test "x$with_debug" != "xno"
 then
 	DEF_DEBUG="-DDEBUG"
-	CFLAGS="-g -Wall"
 fi
 AC_SUBST(DEF_DEBUG)
 
@@ -134,7 +133,7 @@ else
 	AC_FIND_LIB(readline, [$LIBDIRS],
 		[
 			READLINE_LIBDIR="${libdir}"
-			inc_search="`echo ${libdir} | sed -e 's,/[^/]*$,,g'`/include"
+			inc_search="`echo ${libdir} | sed -e 's,/[[^/]]*$,,g'`/include"
 		],[
 			READLINE_LIBDIR=""
 			inc_search=""
@@ -144,10 +143,9 @@ else
 		if test "$inc_search" = ""; then
 			inc_search=$INCDIRS
 		else
-			inc_search=$INCDIRS:$inc_search
+			inc_search=$inc_search:$INCDIRS
 		fi
 	fi
-
 	AC_FIND_HDR([readline/readline.h],[$inc_search],
 		[READLINE_INCDIR="${include_dir}"],[READLINE_INCDIR=""])
 			
@@ -231,9 +229,12 @@ else
 	if [[ "$with_old_readline" = "yes" ]]; then
 		DEF_READLINE="${DEF_READLINE} -DOLD_READLINE"
 	else
+		ORIG_LDFLAGS=${LDFLAGS}		
+		LDFLAGS="${LDFLAGS} -L${READLINE_LIBDIR}"
 		AC_CHECK_LIB(readline,
 			rl_completion_matches,:,DEF_READLINE="${DEF_READLINE} -DOLD_READLINE",
 			${READLINE_LIBDIR} ${READLINE_LIBS})
+		LDFLAGS=${ORIG_LDFLAGS}		
 	fi
 
 	if [[ "$with_readline" = "yes" ]]; then
