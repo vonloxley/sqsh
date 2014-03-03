@@ -229,8 +229,10 @@ else
 	if [[ "$with_old_readline" = "yes" ]]; then
 		DEF_READLINE="${DEF_READLINE} -DOLD_READLINE"
 	else
-		ORIG_LDFLAGS=${LDFLAGS}		
-		LDFLAGS="${LDFLAGS} -L${READLINE_LIBDIR}"
+		ORIG_LDFLAGS=${LDFLAGS}
+		if test "$READLINE_LIBDIR" != ""; then
+			LDFLAGS="${LDFLAGS} -L${READLINE_LIBDIR}"
+		fi
 		AC_CHECK_LIB(readline,
 			rl_completion_matches,:,DEF_READLINE="${DEF_READLINE} -DOLD_READLINE",
 			${READLINE_LIBDIR} ${READLINE_LIBS})
