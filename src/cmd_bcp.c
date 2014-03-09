@@ -40,7 +40,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.17 2013/05/05 19:50:43 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.18 2013/12/03 09:22:23 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -121,16 +121,16 @@ static CS_INT      bcp_data_xfer    _ANSI_ARGS(( bcp_data_t*, CS_COMMAND*, CS_BL
 static void        bcp_data_destroy _ANSI_ARGS(( bcp_data_t* ));
 static CS_RETCODE  bcp_server_cb
     _ANSI_ARGS(( CS_CONTEXT*, CS_CONNECTION*, CS_SERVERMSG* ))
-#if defined(_CYGWIN32_)
+#if defined(__CYGWIN__)
    __attribute__ ((stdcall))
-#endif /* _CYGWIN32_ */
+#endif /* __CYGWIN__ */
    ;
 
 static CS_RETCODE  bcp_client_cb
     _ANSI_ARGS(( CS_CONTEXT*, CS_CONNECTION*, CS_CLIENTMSG* ))
-#if defined(_CYGWIN32_)
+#if defined(__CYGWIN__)
    __attribute__ ((stdcall))
-#endif /* _CYGWIN32_ */
+#endif /* __CYGWIN__ */
    ;
 
 int cmd_bcp( argc, argv )

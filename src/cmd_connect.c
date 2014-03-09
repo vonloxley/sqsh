@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.36 2013/12/19 20:21:59 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.37 2013/12/24 13:23:19 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -72,31 +72,31 @@ static int timeouts;
 /*-- Local Prototypes --*/
 static CS_RETCODE syb_server_cb
     _ANSI_ARGS(( CS_CONTEXT*, CS_CONNECTION*, CS_SERVERMSG* ))
-#if defined(_CYGWIN32_)
+#if defined(__CYGWIN__)
     __attribute__ ((stdcall))
-#endif /* _CYGWIN32_ */
+#endif /* __CYGWIN__ */
     ;
 
 static CS_RETCODE syb_client_cb
     _ANSI_ARGS(( CS_CONTEXT*, CS_CONNECTION*, CS_CLIENTMSG* ))
-#if defined(_CYGWIN32_)
+#if defined(__CYGWIN__)
     __attribute__ ((stdcall))
-#endif /* _CYGWIN32_ */
+#endif /* __CYGWIN__ */
     ;
 
 static CS_RETCODE syb_cs_cb
     _ANSI_ARGS(( CS_CONTEXT*, CS_CLIENTMSG* ))
-#if defined(_CYGWIN32_)
+#if defined(__CYGWIN__)
     __attribute__ ((stdcall))
-#endif /* _CYGWIN32_ */
+#endif /* __CYGWIN__ */
     ;
 
 #if defined(CS_SSLVALIDATE_CB)
 static CS_RETCODE validate_srvname_cb
     _ANSI_ARGS(( CS_VOID*, CS_SSLCERT*, CS_INT, CS_INT ))
-#if defined(_CYGWIN32_)
+#if defined(__CYGWIN__)
     __attribute__ ((stdcall))
-#endif /* _CYGWIN32_ */
+#endif /* __CYGWIN__ */
     ;
 #endif
 
@@ -105,19 +105,11 @@ static int check_opt_capability _ANSI_ARGS(( CS_CONNECTION * ));
 
 /* sqsh-2.1.6 - New function SetNetAuth */
 static CS_RETCODE SetNetAuth _ANSI_ARGS(( CS_CONNECTION *,
-               CS_CHAR *, CS_CHAR *, CS_CHAR *, CS_CHAR *))
-#if defined(_CYGWIN32_)
-    __attribute__ ((stdcall))
-#endif /* _CYGWIN32_ */
-    ;
+               CS_CHAR *, CS_CHAR *, CS_CHAR *, CS_CHAR *));
 
 /* sqsh-2.1.7 - New function ShowNetAuthCredExp */
 static CS_RETCODE ShowNetAuthCredExp _ANSI_ARGS((CS_CONNECTION *,
-               CS_CHAR *))
-#if defined(_CYGWIN32_)
-    __attribute__ ((stdcall))
-#endif /* _CYGWIN32_ */
-    ;
+               CS_CHAR *));
 
 /* sqsh-2.2.0 - Signal handler to respond to SIGINT during cmd_connect */
 static JMP_BUF sg_jmp_buf;
