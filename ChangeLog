@@ -1,10 +1,10 @@
-$Id: ReleaseNotes,v 1.8 2013/05/03 11:19:37 mwesdorp Exp $
+$Id: ChangeLog,v 1.18 2014/03/02 21:10:03 mwesdorp Exp $
 
 Release Notes
 
 sqsh 2.1.7 through 2.5
 
-Please read CHANGES for a detailed list of changes in these releases.
+Please read the file CHANGES for a detailed list of changes in these releases.
 
 sqsh 2.1.6
 
@@ -52,8 +52,6 @@ Other fixes include fixing a segfault if "go" appears on its own in a
 comment block, and making sure that the \read command actually reads from
 the terminal even when using redirected input or the -i flag.
 
-
-For recent changes please read the files CHANGES-2.x.y in the doc directory.
 
 2005-12-30  Michael Peppler  <mpeppler@peppler.org>
 
@@ -171,8 +169,6 @@ For recent changes please read the files CHANGES-2.x.y in the doc directory.
 	highest CS_VERSION_xxx value that is available at run-time. This
 	should enable wide varchar() columns to be retrieved correctly
 	when sqsh is built with 12.5.x OpenClient.
-
-$Id: ChangeLog,v 1.17 2013/05/03 11:19:37 mwesdorp Exp $
 
 Changes from 1.8 to 2.0
    o  New build system/directory structure. Should build against

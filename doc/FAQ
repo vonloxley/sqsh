@@ -1,7 +1,7 @@
-                     SQSH-FAQ Version 2.4
+                     SQSH-FAQ Version 2.5
 
 Name:      SQSH-FAQ
-Version:   $Id: FAQ,v 1.1.1.1 2004/04/07 12:34:59 chunkm0nkey Exp $
+Version:   $Id: FAQ,v 1.2 2013/08/27 10:40:07 mwesdorp Exp $
 Copyright: (C) 1996-2001 by Scott C. Gray
 
 This document contains of Frequently Asked Questions (or Frequently
@@ -74,7 +74,7 @@ Section 1:  Introduction to Sqsh and how to install it
 
 1.3  What is the current release?
 
-  The current release of sqsh is 2.4.
+  The current release of sqsh is 2.5.
 
 1.4  Basic requirements
 
@@ -83,7 +83,7 @@ Section 1:  Introduction to Sqsh and how to install it
   1.  A decent C compiler
       Theoretically, sqsh should compile on older K&R compilers, but
       this hasn't been confirmed.  Currently sqsh is developed using
-      gcc 2.95.3 using '-g -O -Wall'.
+      gcc 4.x using '-g -O -Wall'.
 
   2.  Open Client/C from Sybase or FreeTDS
       All versions of sqsh prior to 1.4.1 require the availability of
@@ -115,21 +115,18 @@ Section 1:  Introduction to Sqsh and how to install it
 
    The SQSH Homepage may be found at:
 
-              http://www.sqsh.org/
               http://sourceforge.net/projects/sqsh
 
    Sqsh comes with a pretty extensive set of documentation:
 
        README              -  Basic introducation to sqsh and its features
        INSTALL             -  Build and installation guide
-       README.SGI          -  SGI IRIX build Issues
        COPYING             -  GNU copyleft license
+       CHANGES             -  Documentation changes since sqsh-2.1.6
+       AUTHORS             -  Who wrote sqsh and who is maintaining it.
        doc/FAQ             -  This file
        doc/sqsh.1          -  Sqsh manual page in 'roff -man' format
-       doc/sample.sqshrc   -  Example configuration file
-       doc/advanced.sqshrc -  Example configuration with advanced features
-       doc/sqshrc-2.2.0    -  Another config example enabling recent features
-       doc/CHANGES-2.x.y   -  Documentation changes since sqsh-2.1.6
+       doc/sqshrc-2.5      -  Advanced config example enabling recent features
 
    Please make sure you read at least FAQ, README and INSTALL before asking
    building and installation questions, and read the manual page before
@@ -143,7 +140,7 @@ Section 1:  Introduction to Sqsh and how to install it
    IRIX, SunOS, NCR, Dynix, OSF/1, DEC Unix, SCO, NeXT.  Some systems 
    are a little trickier than others to get sqsh to build (such as Dynix),
    but it gets a little better with every release.  Also, with release 1.7
-   sqsh will now run on NT with the help of the Cygwin32 porting kit.
+   sqsh will now run on NT with the help of the Cygwin porting kits.
 
 1.7  Unsupported Platforms
 
@@ -155,14 +152,13 @@ Section 1:  Introduction to Sqsh and how to install it
 
    Currently, the only available location to get sqsh from is
    the Sourceforge project page:
-   http://sourceforge.net/projects/sqsh
 
-   The original home page also contains lots of information:
-   http://www.sqsh.org/
+   http://sourceforge.net/projects/sqsh
 
 Section 2:  Features
 
-This section is currently under construction.
+This section is currently under construction. Check the man page or the file
+CHANGES for a comprehensive explanation of all features and possibilities.
 
 Section 3:  Common build and installation problems
 

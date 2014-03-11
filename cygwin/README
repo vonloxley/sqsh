@@ -1,4 +1,4 @@
-$Id: README,v 1.5 2013/08/26 15:33:18 mwesdorp Exp $
+$Id: README,v 1.6 2014/03/02 21:10:04 mwesdorp Exp $
 
 Building sqsh on Windows in the Cygwin environment
 
@@ -121,9 +121,8 @@ the Sybase DLLs directly.
    SYBASE_OCOS macro (near the top of the file) to point at your 
    OpenClient installation - it defaults to c:/sybase/OCS-12_5/
    The SYBASE_LIBS macro points at the .a files in this directory,
-   and the CPPFLAGS include the extra defines
-   (-D_MSC_VER=800 -D_CYGWIN32_) that are needed to build sqsh in
-   this environment.
+   and the CPPFLAGS include the extra define (-D_MSC_VER=800) that
+   is needed to build sqsh in this environment.
 
 Building:
 

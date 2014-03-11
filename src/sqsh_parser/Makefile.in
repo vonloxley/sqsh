@@ -1,11 +1,12 @@
 CC       = @CC@
 CFLAGS   = -c @CFLAGS@ 
 CPPFLAGS = @CPPFLAGS@
+OBJMODE  = @OBJMODE@
 LEX      = flex -Cm
 LEMON    = lemon -q
 
 libsqsh: sqsh_parser.o tsql.o tsql.yy.o
-	ar rcs sqsh_parser.a sqsh_parser.o tsql.o tsql.yy.o
+	ar -rcsv ${OBJMODE} sqsh_parser.a sqsh_parser.o tsql.o tsql.yy.o
 
 sqsh_parser.o: sqsh_parser.c sqsh_parser.h
 	${CC} $(CFLAGS) -o $@ sqsh_parser.c

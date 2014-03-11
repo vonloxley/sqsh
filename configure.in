@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.1 2014/03/09 00:05:42 mwesdorp Exp $
+dnl $Id: configure.in,v 1.10 2014/03/09 20:58:51 mwesdorp Exp $
 dnl
 dnl Copyright (C) 2000-2002 Free Software Foundation, Inc.
 dnl This file is free software, distributed under the terms of the GNU
@@ -103,13 +103,14 @@ if test "${ISC}" = "yes"; then
 fi
 
 dnl
-dnl Enable workarounds for various operating system bugs.
-dnl Right now, the only known one has to do with AIX.
+dnl Set flags and variables depending on host_os
 dnl
 case "$host_os" in
 	aix*)
 		DEF_AIX_FIX="-DUSE_AIX_FIX"
 		AC_SUBST(DEF_AIX_FIX)
+		OBJMODE="-X32_64"
+		AC_SUBST(OBJMODE)
 		;;
 	*)
 		;;

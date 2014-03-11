@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_misc.c,v 1.5 2013/12/08 12:43:58 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: var_misc.c,v 1.6 2013/12/24 13:23:19 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -192,7 +192,7 @@ int var_set_notempty( env, var_name, var_value )
 		sqsh_set_error( SQSH_E_INVAL, "Invalid value" ) ;
 		return False ;
 	}
-		
+
 	return True ;
 }
 
@@ -486,6 +486,7 @@ int var_set_p2fname( env, var_name, var_value )
 	char     **var_value ;
 {
 	varbuf_t  *exp_buf = NULL;
+	FILE      *nfp     = NULL;
 	char      *exp_fn;
 
 
@@ -493,12 +494,6 @@ int var_set_p2fname( env, var_name, var_value )
        	{
 		sqsh_set_error( SQSH_E_INVAL, "var_set_p2fname: Unexpected variable name %s", var_name == NULL ? "NULL" : var_name ) ;
 		return False;
-	}
-
-	if (g_p2f_fp != NULL)
-       	{
-		fclose (g_p2f_fp);
-		g_p2f_fp = NULL;
 	}
 
 	if ( var_value == NULL || *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 )
@@ -513,6 +508,7 @@ int var_set_p2fname( env, var_name, var_value )
 			*var_value = NULL ;
 			return False;
 		}
+
 		if (sqsh_expand( *var_value, exp_buf, 0 ) != False)
 		{
 			exp_fn = varbuf_getstr( exp_buf );
@@ -525,16 +521,26 @@ int var_set_p2fname( env, var_name, var_value )
 			return False;
 		}
 
-		if( (g_p2f_fp = fopen( exp_fn, "a" )) == NULL)
+		if( (nfp = fopen( exp_fn, "a" )) == NULL)
 	       	{
 			sqsh_set_error( SQSH_E_INVAL, "Unable to open file %s", exp_fn ) ;
 			*var_value = NULL ;
+			varbuf_destroy( exp_buf );
 			return False;
 		}
+		varbuf_destroy( exp_buf );
 	}
 
-	if ( exp_buf != NULL)
-		varbuf_destroy( exp_buf );
+	/*
+	 * If we come here, the fopen of the new file was successfull, or the p2fname variable is
+	 * set to NULL. Either way, we can close the original file pointer if it is open
+	 * and assign g_p2f_fp the new file pointer value (that still might be NULL).
+	 */
+	if (g_p2f_fp != NULL)
+       	{
+		fclose (g_p2f_fp);
+	}
+	g_p2f_fp = nfp;
 
 	return True ;
 }

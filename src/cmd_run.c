@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_run.c,v 1.3 2014/02/10 14:28:45 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_run.c,v 1.4 2014/02/12 16:48:24 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -69,7 +69,7 @@ int cmd_run( argc, argv )
 	/*
 	 * Parse the command line options.
 	 */
-	while ((c = sqsh_getopt( argc, argv, "efhnpm:i:" )) != EOF)
+	while ((c = sqsh_getopt( argc, argv, "efhlnpm:i:" )) != EOF)
 	{
 		switch (c)
 		{
@@ -93,6 +93,14 @@ int cmd_run( argc, argv )
 				if (env_put( g_env, "headers", "0", ENV_F_TRAN ) == False)
 				{
 					fprintf( stderr, "\\run: -h: %s\n", sqsh_get_errstr() );
+					have_error = True;
+				}
+				break;
+
+			case 'l' :
+				if (env_put( g_env, "nosepline", "1", ENV_F_TRAN ) == False)
+				{
+					fprintf( stderr, "\\run: -l: %s\n", sqsh_get_errstr() );
 					have_error = True;
 				}
 				break;
@@ -140,6 +148,7 @@ int cmd_run( argc, argv )
 		fprintf( stderr, "     -e          Run the script file with echo on\n" );
 		fprintf( stderr, "     -f          Suppress footers\n" );
 		fprintf( stderr, "     -h          Suppress headers\n" );
+		fprintf( stderr, "     -l          Suppress separator lines with pretty output\n" );
 		fprintf( stderr, "     -n          Disable SQL buffer variable expansion\n" );
 		fprintf( stderr, "     -p          Report runtime statistics\n" );
 		fprintf( stderr, "     -m style    Specify output style {bcp|csv|horiz|html|meta|none|pretty|vert}\n" );

@@ -16,7 +16,7 @@ SunOS 4.x, HP-UX 10.x, HP-UX 11.x, IRIX 5.x, IRIX 6.x, NCR SVR4,
 Dynix/ptx 2.x, NeXT, AIX x.x, Digital UNIX 3.x, DG/UX 5.4.x,
 Linux 2.x, OS-X and NetBSD (I am sure that there are more).
 This package also builds in the Cygwin environment under Windows,
-see the cygwin directory for details.
+see the file cygwin/README for details.
 
 Requirements
 -=-=-=-=-=-=-
@@ -46,7 +46,7 @@ In order to build this package, you will need:
       these days, so if you are having problems (core dumps,
       connectivity, etc.) when using FreeTDS, please try posting
       to the FreeTDS mailing list before proclaiming it a sqsh
-      issue.  ALSO, note that FreeTDS does not currently support
+      issue.  Also, note that FreeTDS does not currently support
       all of features of Open Client, so many of the flags that
       sqsh supports (such as locale and charset changes) will
       not work.
@@ -60,7 +60,6 @@ In order to build this package, you will need:
    o  GNU Readline library (optional)
 
       If you want emacs/vi style keyboard editing, this package is a must.
-      I'll warn you though, it'll add some major bulk to the executable.
       You can get it from
 
          http://ftp.gnu.org/gnu/readline/
@@ -86,7 +85,7 @@ Just follow the following directions:
    In order for auto-configuration to work correctly, the environment
    variable SYBASE must be correctly set to point to your base SYBASE
    directory.  For bourne shell users (sh, bash, zsh, etc.),
-   for exampl simply do:
+   for example simply do:
 
       % SYBASE=/opt/sybase
       % export SYBASE
@@ -115,7 +114,17 @@ Just follow the following directions:
   Also make sure that when you run sqsh on Cygwin that you have environment
   variables SYBASE and SYBASE_OCS defined for the local Windows user and not
   only as system variables.
-  (Start->Control Panel->System->Advanced system settings->Environment variables)
+  Check "Start->Control Panel->System->Advanced system settings->Environment variables"
+  and add the SYBASE and SYBASE_OCS variables in the upper area or check that registry
+  keys do exist for SYBASE and SYBASE_OCS as string values in
+  "Computer\HKEY_CURRENT_USER\Environment".  If you are getting messages like this:
+
+      The context allocation routine failed when it tried to load localization files!!
+      One or more following problems may caused the failure
+      Your sybase home directory is c:\sql10. Check the environment variable SYBASE if it is not the one you want!
+      Cannot access file c:\sql10\ini\objectid.dat
+
+  then you most likely lack those variables in your Windows user environment.
 
 2) Run "configure"
 
@@ -137,7 +146,7 @@ Just follow the following directions:
          other than the one specified with --prefix, instead the
          binary will be placed in DIR/bin.
 
-      --with-readline[=yes|no] (yes is default)
+      --with-readline[=yes|no] (yes is default in sqsh-2.5)
 
          If you have the GNU Readline library available (see Requirements,
          above), supply this flag to enable readline support in sqsh.
@@ -198,6 +207,13 @@ Just follow the following directions:
 
          Enables the sqsh -l flag to specify additional debugging options.
 
+      --with-devlib[=yes|no] (default is no)
+
+         Will link against the $SYBASE/$SYBASE_OCS/devlib libraries.
+         You may also need to set LD_LIBRARY_PATH to put this directory
+         in front of the normal lib directory in order to load the requested
+         development libraries.
+
    Also, the following environment variables may be set prior to
    running 'configure' to alter its behavior (see conf.sh for an
    example on how to use these flags):
@@ -229,12 +245,15 @@ Just follow the following directions:
          As with INCDIRS, this variable is used to track down the
          location of the readline library.
 
+   You may also run "./configure --help" for more information on
+   available options.
    There is also a conf.sh script available that may be used to run
    configure with some appropriate values. You need to read through
-   this file and uncomment the options you will need and then run
+   this file and uncomment the options you will need or you may
+   set/unset additional gcc compiler flags and then run
    ./conf.sh
    When configure has finished it should have generated Makefiles,
-   and config.h.
+   and src/config.h.
 
 3) OPTIONAL: Edit the file 'src/Makefile' and read through the settings
    that 'configure' chose. There are a couple of options you may need
@@ -247,7 +266,8 @@ Just follow the following directions:
 
 5) OPTIONAL: Browse through 'sqsh_config.h', you probably won't have
    to change many of these values, they are simply default values for
-   various items, such as temporary directories, etc.
+   various items, such as temporary directories, etc. Most of them may
+   be dynamically changed through the Sqsh environment variables.
 
 6) Now, attempt to build it:
 

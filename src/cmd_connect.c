@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.37 2013/12/24 13:23:19 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.38 2014/03/09 22:45:37 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -1647,8 +1647,8 @@ static CS_RETCODE syb_server_cb (ctx, con, msg)
             {
                 if (g_p2fc == p2faxm_int + 1) {
                     env_get( g_env, "p2fname", &p2fname );
-                    fprintf (stderr, "Warning: Number of printed server messages exceeds p2faxm=%d limit for current batch.\n", p2faxm_int);
-                    fprintf (stderr,"          Remaining server messages will be printed to file: %s\n", p2fname);
+                    fprintf (stderr,"Warning: Number of printed server messages exceeds p2faxm=%d limit for current batch.\n", p2faxm_int);
+                    fprintf (stderr,"         Remaining server messages will be printed to file: %s\n", p2fname);
                     fflush  (stderr );
                     fprintf (g_p2f_fp, "--------\n");
                 }
@@ -1958,7 +1958,7 @@ static CS_RETCODE SetNetAuth (conn, principal, keytab_file, secmech, req_options
     }
 
     /*
-     * Always set the CS_SEC_NETWORKAUTH option. (Option efined in nss[0]).
+     * Always set the CS_SEC_NETWORKAUTH option. (Option defined in nss[0]).
     */
     OptSupported = CS_TRUE;
     if (ct_con_props(conn, CS_SET, nss[0].service, &OptSupported,
@@ -2155,7 +2155,7 @@ static void connect_run_sigint (sig, user_data )
 #if defined(CS_SSLVALIDATE_CB)
 /*
  * sqsh-2.5 - Validate the servername in a host:port:ssl type of connection
- *            to be valid for the choosen certificate if the servername does
+ *            to be valid for the chosen certificate if the servername does
  *            not match the CN in the certificate.
  */
 static CS_RETCODE validate_srvname_cb (userdata, certptr, certcount, valid)

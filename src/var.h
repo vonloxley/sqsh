@@ -210,6 +210,7 @@ static var_entry_t  sg_var_entry[] = {
     /* sqsh-2.4 - New variable */
     { "usedbcheck",       "0",           var_set_bool,        NULL            },
     /* sqsh-2.5 - New variables */
+    { "nosepline",        "0",           var_set_bool,        NULL            },
     { "p2faxm",           NULL,          var_set_nullint,     NULL            },
     { "p2fname",          NULL,          var_set_p2fname,     NULL            },
 #if defined(__ansi__)

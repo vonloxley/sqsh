@@ -40,7 +40,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.18 2013/12/03 09:22:23 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_bcp.c,v 1.19 2014/03/09 22:45:37 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -133,6 +133,15 @@ static CS_RETCODE  bcp_client_cb
 #endif /* __CYGWIN__ */
    ;
 
+#if defined(CS_SSLVALIDATE_CB)
+static CS_RETCODE validate_srvname_cb
+    _ANSI_ARGS(( CS_VOID*, CS_SSLCERT*, CS_INT, CS_INT ))
+#if defined(__CYGWIN__)
+    __attribute__ ((stdcall))
+#endif /* __CYGWIN__ */
+    ;
+#endif
+
 int cmd_bcp( argc, argv )
     int     argc ;
     char   *argv[] ;
@@ -166,6 +175,7 @@ int cmd_bcp( argc, argv )
     CS_BOOL           bcp_on = CS_TRUE; /* Flag to turn on bulk login */
     CS_INT            i;
     CS_INT            con_status;
+    char             *cp;
 
     /*
      * The following variables need to be initialized to check if
@@ -724,6 +734,40 @@ int cmd_bcp( argc, argv )
         fprintf( stderr, "\\bcp: Unable to set locale for BCP connection\n" );
         goto return_fail;
     }
+
+#if defined(CS_SERVERADDR) && defined(CS_TDS_50)
+    if ( server != NULL && (cp = strchr(server, ':')) != NULL )
+    {
+        char  *cp2;
+
+        *cp = ' ';
+        if ( (cp2 = strchr(cp+1, ':')) != NULL) /* Optional filter specified? */
+            *cp2 = ' ';
+
+        if (ct_con_props( bcp_con,
+                          CS_SET,
+                          CS_SERVERADDR,
+                          (CS_VOID*)server,
+                          CS_NULLTERM,
+                          (CS_INT*)NULL
+                        ) != CS_SUCCEED)
+            goto return_fail;
+
+        if (cp2 != NULL)
+            *cp2 = '\0'; /* Remove optional filter from the servername */
+        *cp = ':';       /* Put a ':' back into the display servername */
+
+#if defined(CS_SSLVALIDATE_CB)
+        if (ct_callback( g_context,                    /* Context */
+                         (CS_CONNECTION*)NULL,         /* Connection */
+                         CS_SET,                       /* Action */
+                         CS_SSLVALIDATE_CB,            /* Type */
+                         (CS_VOID*)validate_srvname_cb /* Callback Pointer */
+                       ) != CS_SUCCEED)
+            goto return_fail;
+#endif
+    }
+#endif
 
     /*-- Now, connect --*/
     if (ct_connect( bcp_con,
@@ -1466,3 +1510,27 @@ static CS_RETCODE bcp_client_cb ( ctx, con, msg )
 
     return CS_SUCCEED ;
 }
+
+#if defined(CS_SSLVALIDATE_CB)
+/*
+ * sqsh-2.5 - Validate the servername in a host:port:ssl type of connection
+ *            to be valid for the chosen certificate if the servername does
+ *            not match the CN in the certificate.
+ */
+static CS_RETCODE validate_srvname_cb (userdata, certptr, certcount, valid)
+    CS_VOID    *userdata;
+    CS_SSLCERT *certptr;
+    CS_INT      certcount;
+    CS_INT      valid;
+{
+    if (valid == CS_SSL_INVALID_MISMATCHNAME)
+    {
+        return CS_SSL_VALID_CERT;
+    }
+    else
+    {
+        return valid;
+    }
+}
+#endif
+

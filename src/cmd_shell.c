@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_shell.c,v 1.1.1.1 2004/04/07 12:35:05 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: cmd_shell.c,v 1.2 2014/02/03 10:49:28 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -172,7 +172,7 @@ int cmd_pwd( argc, argv )
 }
 
 /*
- * cmd_pwd: Show files in current directory.
+ * cmd_ls: Show files in current directory.
  * sqsh-2.5 - New feature.
  */
 int cmd_ls( argc, argv )

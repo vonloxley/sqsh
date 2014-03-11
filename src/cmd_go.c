@@ -41,7 +41,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_go.c,v 1.5 2014/01/18 18:36:34 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_go.c,v 1.6 2014/01/21 20:29:49 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -78,6 +78,7 @@ int cmd_go( argc, argv )
 	char             *repeat_batch;         /* Dito. */
 	char             *filter;               /* Dito. */
 	char             *filter_prog;          /* Dito. */
+	char             *nosepline;            /* Dito. */
 	char             *sql;
 	int               sql_len;
 	char              pause_buf[5];         /* Buffer for "hit enter" */
@@ -319,14 +320,15 @@ int cmd_go( argc, argv )
 	 * Retrieve any variables that may affect the way in which
 	 * we process or display data.
 	 */
-	env_get( g_env, "headers", &headers );
-	env_get( g_env, "footers", &footers );
-	env_get( g_env, "echo", &echo );
-	env_get( g_env, "expand",  &expand );
-	env_get( g_env, "statistics",  &statistics );
-	env_get( g_env, "clear_on_fail",  &clear_on_fail );
-	env_get( g_env, "batch_pause",  &batch_pause );
-	env_get( g_env, "filter",  &filter );
+	env_get( g_env, "batch_pause",   &batch_pause );
+	env_get( g_env, "clear_on_fail", &clear_on_fail );
+	env_get( g_env, "echo",          &echo );
+	env_get( g_env, "expand",        &expand );
+	env_get( g_env, "filter",        &filter );
+	env_get( g_env, "footers",       &footers );
+	env_get( g_env, "headers",       &headers );
+	env_get( g_env, "nosepline",     &nosepline );
+	env_get( g_env, "statistics",    &statistics );
 
 	/*
 	 * If the user didn't request for statistics via the flag, but
@@ -335,10 +337,12 @@ int cmd_go( argc, argv )
 	if( show_stats == False && (statistics != NULL && *statistics == '1') )
 		show_stats = True;
 
-	if( !(dsp_flags & DSP_F_NOHEADERS) && headers != NULL && *headers == '0' )
+	if( !(dsp_flags & DSP_F_NOHEADERS) && headers   != NULL && *headers   == '0' )
 		dsp_flags |= DSP_F_NOHEADERS;
-	if( !(dsp_flags & DSP_F_NOFOOTERS) && footers != NULL && *footers == '0' )
+	if( !(dsp_flags & DSP_F_NOFOOTERS) && footers   != NULL && *footers   == '0' )
 		dsp_flags |= DSP_F_NOFOOTERS;
+	if( !(dsp_flags & DSP_F_NOSEPLINE) && nosepline != NULL && *nosepline == '1' )
+		dsp_flags |= DSP_F_NOSEPLINE;
 
 
 	/*

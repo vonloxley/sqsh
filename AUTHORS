@@ -1,14 +1,18 @@
-$Id: AUTHORS,v 1.6 2013/07/24 08:04:18 mwesdorp Exp $
+$Id: AUTHORS,v 1.7 2014/03/02 21:10:03 mwesdorp Exp $
 
 Sqsh was originally written by Scott C. Gray. Scott did all the work through
 release 2.1.
 
-Sqsh is currently maintained by Michael Peppler (mpeppler@peppler.org) 
-with the principal aim to keep sqsh's features and behavior in sync with
-Sybase's capabilities as new features are added to ASE.
+Sqsh is currently maintained by Michael Peppler (mpeppler@peppler.org) and
+Martin Wesdorp (mwesdorp@users.sourceforge.net).  Releases 2.1.2 through 2.1.5
+were mainly covered by Michael. Releases 2.1.6 up to 2.5 include a lot of code
+contributions and bug fixes by Martin.
 
-Sqsh is also maintained by Martin Wesdorp (mwesdorp@users.sourceforge.net)
-Releases 2.1.6 up to 2.5 includes a lot of code contributions and bug fixes
-by Martin like color prompts, better kerberos support, better timeout handling,
-etc. For each of these versions there is a CHANGE description in the doc
-directory available.
+It is our main goal to keep sqsh's features and behavior in sync with the
+SAP Sybase's isql and bcp utilities.
+
+A big thank you to all the users of Sqsh who have reported problems,
+have contributed their bug fixes and patches or have offered new functionality to
+the project and thus helped us to make Sqsh what it is today, a very valuable
+productivity tool for the demanding SAP Sybase ASE, RepServer, IQ or
+Microsoft SQL Server DBA.
