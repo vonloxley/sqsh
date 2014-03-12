@@ -31,7 +31,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_passwd.c,v 1.1.1.1 2004/04/07 12:35:06 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: var_passwd.c,v 1.2 2005/04/05 16:17:42 mpeppler Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -45,7 +45,7 @@ int var_set_lock( env, var_name, var_value )
 	/*
 	 * Allow them to set the string to a null value.
 	 */
-	if ( *var_value == NULL || strcmp(*var_value,"NULL") == 0 ) {
+	if ( *var_value == NULL || strcasecmp(*var_value,"NULL") == 0 ) {
 
 		/*-- Free up the old value --*/
 		if (g_lock != NULL)
@@ -105,11 +105,11 @@ int var_set_password( env, var_name, var_value )
 	/*
 	 * Allow them to set the string to a null value.
 	 */
-	if ( *var_value == NULL || strcmp(*var_value,"NULL") == 0 ) {
+	if ( *var_value == NULL || strcasecmp(*var_value,"NULL") == 0 ) {
 
-	    /* Helmut Ruholl adds the strcmp() to handle password
+	    /* Helmut Ruholl adds the strcasecmp() to handle password
 	       resets in .sqsh_session. mpeppler 2004-12-07 */
-	    if (*var_value != NULL && strcmp(*var_value, "NULL"))
+	    if (*var_value != NULL && strcasecmp(*var_value, "NULL"))
 		{
 			g_password_set = False;
 		}

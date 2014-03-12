@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_debug.c,v 1.3 2013/04/18 11:54:43 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: var_debug.c,v 1.4 2013/04/25 14:09:48 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -94,7 +94,7 @@ int var_set_debug( env, var_name, var_value )
 	int     nitems ;
 	char    error_msg[256];
 
-	if( *var_value == NULL || strcmp(*var_value, "NULL") == 0 ) {
+	if( *var_value == NULL || strcasecmp(*var_value, "NULL") == 0 ) {
 		sqsh_debug_level( 0 ) ;
 		*var_value="0" ;
 		return True ;

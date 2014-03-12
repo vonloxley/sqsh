@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_misc.c,v 1.6 2013/12/24 13:23:19 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: var_misc.c,v 1.7 2014/03/11 21:49:04 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -116,7 +116,7 @@ int var_set_esc( env, var_name, var_value )
 	/*
 	 * Allow them to set the string to a null value.
 	 */
-	if( var_value == NULL || *var_value == NULL || strcmp(*var_value,"NULL") == 0 ) {
+	if( var_value == NULL || *var_value == NULL || strcasecmp(*var_value,"NULL") == 0 ) {
 		*var_value = NULL ;
 		return True ;
 	}
@@ -247,7 +247,7 @@ int var_set_nullint( env, var_name, var_value )
 {
 	char *cptr ;
 
-	if( var_value == NULL || *var_value == NULL || strcmp(*var_value, "NULL") == 0 ) {
+	if( var_value == NULL || *var_value == NULL || strcasecmp(*var_value, "NULL") == 0 ) {
 		*var_value = NULL ;
 		return True;
 	}
@@ -274,7 +274,7 @@ int var_set_nullstr( env, var_name, var_value )
 	char     *var_name ;
 	char     **var_value ;
 {
-	if( var_value == NULL || *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 )
+	if( var_value == NULL || *var_value == NULL || strcasecmp( *var_value, "NULL" ) == 0 )
 		*var_value = NULL ;
 
 	return True ;
@@ -291,7 +291,7 @@ int var_set_int( env, var_name, var_value )
 	char     **var_value ;
 {
 	/*-- Can't set it a NULL value --*/
-	if( var_value == NULL || *var_value == NULL || strcmp(*var_value, "NULL") == 0) {
+	if( var_value == NULL || *var_value == NULL || strcasecmp(*var_value, "NULL") == 0) {
 		sqsh_set_error( SQSH_E_INVAL, "Invalid integer expression" ) ;
 		return False ;
 	}
@@ -496,7 +496,7 @@ int var_set_p2fname( env, var_name, var_value )
 		return False;
 	}
 
-	if ( var_value == NULL || *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 )
+	if ( var_value == NULL || *var_value == NULL || strcasecmp( *var_value, "NULL" ) == 0 )
        	{
 		*var_value = NULL ;
 	}

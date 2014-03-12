@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_dsp.c,v 1.5 2013/12/24 13:23:19 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: var_dsp.c,v 1.6 2014/01/18 18:36:34 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -116,7 +116,7 @@ int var_set_datetime( env, var_name, var_value )
 	char     *var_name ;
 	char     **var_value ;
 {
-        if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
+        if ( *var_value == NULL || strcasecmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
                 *var_value = NULL ;
 
 	if (dsp_prop( DSP_SET, DSP_DATETIMEFMT, (void*)(*(var_value)), DSP_NULLTERM ) != DSP_SUCCEED)
@@ -148,7 +148,7 @@ int var_set_datefmt( env, var_name, var_value )
 	char     *var_name ;
 	char     **var_value ;
 {
-        if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
+        if ( *var_value == NULL || strcasecmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
                 *var_value = NULL ;
 
 	if (dsp_prop( DSP_SET, DSP_DATEFMT, (void*)(*(var_value)), DSP_NULLTERM ) != DSP_SUCCEED)
@@ -180,7 +180,7 @@ int var_set_timefmt( env, var_name, var_value )
 	char     *var_name ;
 	char     **var_value ;
 {
-        if ( *var_value == NULL || strcmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
+        if ( *var_value == NULL || strcasecmp( *var_value, "NULL" ) == 0 || **var_value == '\0' )
                 *var_value = NULL ;
 
 	if (dsp_prop( DSP_SET, DSP_TIMEFMT, (void*)(*(var_value)), DSP_NULLTERM ) != DSP_SUCCEED)

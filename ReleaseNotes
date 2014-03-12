@@ -1,10 +1,10 @@
-$Id: ReleaseNotes,v 1.7 2012/05/02 11:35:26 mwesdorp Exp $
+$Id: ReleaseNotes,v 1.8 2013/05/03 11:19:37 mwesdorp Exp $
 
 Release Notes
 
-sqsh 2.x.y
-
-Please read doc/CHANGES-2.x.y for a detailed list of changes in this release.
+The latest version is sqsh 2.5.  Please read the file CHANGES in the root directory
+for a detailed list of changes in this and previous releases (2.1.6 up to 2.5).
+The INSTALL file provides information on howto build and install the program.
 
 sqsh 2.1.6
 

@@ -1,6 +1,6 @@
 =head1 NAME
 
-sqsh - Interactive database shell (version 2.4)
+sqsh - Interactive database shell (version 2.5)
 
 =head1 SYNOPSIS
 
@@ -250,15 +250,15 @@ long running query. Maps to the B<$query_timeout> variable.
 
 For example:
 
-  sqsh -SASE1502 -Usa -P -Q30
-  ASE1502.sa.master.1> cd tix
-  ASE1502.sa.tix.1> select count(*) from E_TIX;
-  Open Client Message
-  Layer 1, Origin 2, Severity 2, Number 63
-  ct_results(): user api layer: internal Client Library error:
+    sqsh -SASE1502 -Usa -P -Q30
+    ASE1502.sa.master.1> cd tix
+    ASE1502.sa.tix.1> select count(*) from E_TIX;
+    Open Client Message
+    Layer 1, Origin 2, Severity 2, Number 63
+    ct_results(): user api layer: internal Client Library error:
                 Read from the server has timed out.
-  ASE1502: Query or command timeout detected, command/batch cancelled
-  ASE1502: The client connection has detected this 1 time(s).
+    ASE1502: Query or command timeout detected, command/batch cancelled
+    ASE1502: The client connection has detected this 1 time(s).
 
 See also the B<$max_timeout> variable, which controls the number of times a
 timeout may occur on the current connection before the session is aborted.
@@ -283,12 +283,20 @@ See the Kerberos Support section below for details.
 Causes the string I<colsep> to be used to delimit SQL column output columns,
 this defaults to " ".
 
-=item -S server
+=item -S server | host:port[:filter]
 
-The name of the Sybase I<server> to connect, the default of this is the external
-environment variable B<$DSQUERY>. If neither B<-S> nor B<$DSQUERY> is set then
-defaults to "SYBASE". This value may also be set via the internal variable
-B<$DSQUERY>.
+The name or the address of the Sybase I<server> to connect. The default of this
+is the external environment variable B<$DSQUERY>. If neither B<-S> nor
+B<$DSQUERY> is set then defaults to "SYBASE". This value may also be set via the
+internal variable B<$DSQUERY>. The servername must exist in the interfaces or
+sql.ini file. As an alternative it is also possible to specify the target
+server as B<host:port[:filter]> where I<host> may also be an IP address. Note
+that B<filter> may be defined in $SYBASE/$SYBASE_OCS/config/libtcl[64].cfg. For
+example:
+
+    [FILTERS]
+    ssl=libsybfssl.so
+    ssl64=libsybfssl64.so
 
 =item -t [filter]
 
@@ -379,9 +387,9 @@ command (see B<COMMANDS>, below) may be executed.
 After the I<.sqshrc> file has been executed, I<sqsh> then parses any command
 line options (thus any variables set in your I<.sqshrc> file may be overridden
 by command line options). Following that, if I<sqsh> is run in interactive mode
-(i.e. without B<-i> and if stdin is attached to a tty), it then looks for
-I<.sqsh_history> and loads the contents of that file into this history buffer
-(see B<BUFFERS>, below).
+(i.e. without B<-i> and if stdin is attached to a tty), it then looks for the
+file provided by the B<$history> variable and loads the contents of that file
+into the history buffers. (see B<BUFFERS>, below).
 
 Immediately prior to establishing a connection to the database (either during
 startup, or by an explicit B<\connect> or B<\reconnect> command), the file
@@ -717,7 +725,7 @@ database.
 
 B<History Buffer>: This is actually a chain of 0 or more buffers (configurable
 by the B<$histsize> variable) of the last B<$histsize> batches that have been
-run.  This buffer is only maintained when sqsh is run in interactive mode; that
+run. This buffer is only maintained when sqsh is run in interactive mode; that
 is, batches executed using the B<-i> flag, or executed via redirection from the
 UNIX prompt will not be maintained in history (after all, they are already in a
 file somewhere).
@@ -1031,7 +1039,7 @@ Establishes the connection to the server as the supplied I<username>.
 Establishes the connection to the server using the supplied I<password> (which
 is hopefully a valid password for the supplied I<username>).
 
-=item -S server
+=item -S server | host:port[:filter]
 
 Establishes the connection to the supplied I<server>.
 
@@ -1216,13 +1224,13 @@ values in variables B<$secmech> or B<$secure_options>.
 For example, connecting to a server using Kerberos (which happens to be
 the default, i.e. first entry in libtcl.cfg [SECURITY] tab in this example):
 
-  ~$ sqsh -SSYB1502 -Uuser1 -RFC6A1502 -Z
-  \connect: Network authenticated session expires at:
+    ~$ sqsh -SSYB1502 -Uuser1 -RFC6A1502 -Z
+    \connect: Network authenticated session expires at:
             16 Feb 2010 15:28:39 (11764 secs)
-  SYB1502.user1.master.1> select @@servername,@@authmech,
+    SYB1502.user1.master.1> select @@servername,@@authmech,
                                  show_sec_services();
-  ----------------  -----------  ----------------------------------
-  FC6A1502          kerberos     unifiedlogin delegation mutualauth
+    ----------------  -----------  ----------------------------------
+    FC6A1502          kerberos     unifiedlogin delegation mutualauth
                                  integrity confidentiality
                                  detectreplay detectseq
 
@@ -1234,19 +1242,19 @@ security options will be enabled. When B<-V> is specified without any security
 service options, only option B<u> for Network Authentication will be implicitly
 set and the default security mechanism will be used if B<-Z> is not specified.
 
-  [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -V
-  Open Client Message
-  Layer 7, Origin 9, Severity 5, Number 1
-  ct_connect(): security service layer: internal security control
+    [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -V
+    Open Client Message
+    Layer 7, Origin 9, Severity 5, Number 1
+    ct_connect(): security service layer: internal security control
                 layer error:
                 Security service provider internal error -1765328352
                 occurred.
-  [user1@linux-fc6a ~]$ kinit
-  Password for user1@LOCALDOMAIN:
-  [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -V
-  \connect: Network authenticated session expires at:
+    [user1@linux-fc6a ~]$ kinit
+    Password for user1@LOCALDOMAIN:
+    [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -V
+    \connect: Network authenticated session expires at:
             16 Feb 2010 15:28:39 (10964 secs)
-  FC6A1502.user1.master.1>
+    FC6A1502.user1.master.1>
 
 When the connection succeeds, I<sqsh> will store the real name of the security
 mechanism in the variable B<$secmech>. For example: "\echo $secmech" may show
@@ -1276,19 +1284,19 @@ network authentication variables by specifying -Znone
 
 For example:
 
-  [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -V
-  \connect: Network authenticated session expires at:
+    [user1@linux-fc6a ~]$ sqsh -SFC6A1502 -Uuser1 -V
+    \connect: Network authenticated session expires at:
             16 Feb 2010 15:28:39 (10764 secs)
-  FC6A1502.user1.master.1> \echo $secmech csfkrb5
-  FC6A1502.user1.master.1> \reconnect -SASE1502 -Usa -Psybase
-  Open Client Message
-  Layer 7, Origin 9, Severity 5, Number 8
-  ct_connect(): security service layer: internal security control
+    FC6A1502.user1.master.1> \echo $secmech csfkrb5
+    FC6A1502.user1.master.1> \reconnect -SASE1502 -Usa -Psybase
+    Open Client Message
+    Layer 7, Origin 9, Severity 5, Number 8
+    ct_connect(): security service layer: internal security control
                 layer error:
-  Consistency checks performed on the credential failed
-  (minor status 0).
-  FC6A1502.user1.master.1> \reconnect -SASE1502 -Usa -Psybase -Znone
-  ASE1502.sa.master.1>
+    Consistency checks performed on the credential failed
+    (minor status 0).
+    FC6A1502.user1.master.1> \reconnect -SASE1502 -Usa -Psybase -Znone
+    ASE1502.sa.master.1>
 
 The first \reconnect fails because sqsh still wants to try network
 authentication. However, no user principal for 'sa' exists and no ticket is set
@@ -1319,7 +1327,7 @@ because there are some creative things that can be done with them.
 
 The B<\loop> command reads input either from a file, a supplied SQL statement,
 or from a user (see the options below), determining whether the current line is
-a portion of a TSQL statement or a sqsh command, and performing the appropriate
+a portion of a T-SQL statement or a sqsh command, and performing the appropriate
 action. When run in an interactive mode B<\loop> is also responsible for
 displaying the current prompt (see B<$prompt> below).
 
@@ -1406,10 +1414,10 @@ establishing the connection.
 Set the TDS version to use. See the global startup parameter -G for more
 information on TDS version.
 
-=item -S srv
+=item -S srv | host:port[:filter]
 
-The name of the Sybase I<server> to connect, this defaults to B<$DSQUERY> if not
-supplied.
+The name or address of the Sybase I<server> to connect, this defaults to
+B<$DSQUERY> if not supplied.
 
 =item -U user
 
@@ -1494,10 +1502,70 @@ All arguments that are accepted by B<\connect> are also accepted by
 B<\reconnect> (in fact B<\reconnect> uses B<\connect> to establish the new
 connection).
 
+=item \run
+
+This command will execute a script file like B<\loop> but the B<\run> command
+will allow optional script parameters. Furthermore the command accepts the
+following parameters.
+
+=over 4
+
+=item -e
+
+Run the script file with echo on.
+
+=item -f
+
+Suppress footers.
+
+=item -h
+
+Suppress headers.
+
+=item -l
+
+Suppres separator lines with pretty output style.
+
+=item -n
+
+Disable SQL buffer variable expansion.
+
+=item -p
+
+Report runtime statistics.
+
+=item -m style
+
+Specify output style {bcp|csv|horiz|html|meta|none|pretty|vert}.
+
+=item -i filename
+
+Required parameter to specify a filename to be run by I<sqsh>.
+
+=back
+
+For example: B<\run -p -i ~/tmp/runtst.sqsh 10 -m pretty>
+
+=item \lcd dirname
+
+Local Change Directory. This command takes a directory name as argument and
+changes the local SQSH context to this directory. You can use B<\lcd -> to
+return back to the previous directory. If you exit I<sqsh> then the shell is
+still in the same directory from where sqsh was started.
+
+=item \pwd
+
+Print Working Directory. Show the name of the current local working directory.
+
+=item \ls
+
+List files in the current directory. Does not take any arguments and is
+basically a shortcut for B<\shell ls>.
+
 =item \snace
 
 Will show the session expiration interval for a network authenticated session,
-using Kerberos tickets, for example.
+like in a Kerberos enabled session, for example.
 
 =item \go [options] [xacts]
 
@@ -1521,6 +1589,10 @@ If X11 support is compiled into sqsh, and X display mode is being used (see
 B<-x>, below), then I<display> will be used as the X display area for the result
 set. By default the environment variable B<$DISPLAY> is assumed.
 
+=item -e
+
+Echo the expanded SQL buffer before sending it to the server.
+
 =item -f
 
 Turns off the display of the footer message "(%d rows affected)". Footer
@@ -1538,6 +1610,11 @@ command. Currently supported styles are B<horiz> (or B<hor> or B<horizontal>),
 B<vert> (or B<vertical>), B<bcp>, B<csv>, B<html>, B<meta>, B<pretty> and
 B<none>. The display style may be permanently set via the B<$style> variable or
 the B<-m> command line flag.
+
+=item -l
+
+Suppress separator lines when using the B<-m pretty> output style. May also
+be turned off via the B<$nosepline> variable.
 
 =item -n
 
@@ -1661,10 +1738,10 @@ being supplied within the result set.
 The I<password> for I<user> required to connect to I<server>. This defaults to
 B<$password> if not supplied.
 
-=item -S server
+=item -S server | host:port[:filter]
 
-The name of the Sybase I<server> to connect, this defaults to B<$DSQUERY> if not
-supplied.
+The name or address of the Sybase I<server> to connect, this defaults to
+B<$DSQUERY> if not supplied.
 
 =item -T
 
@@ -2308,25 +2385,19 @@ The exit value of a previously executed pipe command.
 
 The return value of the most recently executed sqsh function.
 
-=back
+=item *
 
-=item $$? (int)
-
-This variable may contain the result of the last executed \if statement:
+The result of the last executed \if statement:
 
 =over 4
 
-=item - 0 -
+=item 0 - The test evaluated to True.
 
-The test evaluated to False.
+=item 1 - The test evaluated to False.
 
-=item - 1 -
+=item 2 - There was an error in the test specification.
 
-The test evaluated to True.
-
-=item - 2 -
-
-There was an error in the test specification.
+=back
 
 =back
 
@@ -2359,7 +2430,7 @@ environment.
 Contains the name I<sqsh> uses to identity itself to the server. Defaults to
 sqsh-2.1.7. The application name can be retrieved from the sysprocesses table
 like:
-  select program_name from master.dbo.sysprocesses where spid=@@pid;
+    select program_name from master.dbo.sysprocesses where spid=@@pid;
 
 =item autouse (string)
 
@@ -2406,13 +2477,21 @@ setting is "|".
 
 Used as a separator between rows during BCP style output (see the B<$style>
 configuration variable and the B<-m> option to the B<\go> command). Note that, a
-newline ("\n") is automatically appended this value and should not be supplied.
+newline ("\n") is automatically appended and should not be supplied.
 The default setting is "|".
 
 =item bcp_trim (boolean)
 
 Controls whether or not BCP style output trims trailing spaces from fixed length
 columns. The default is "True".
+
+=item builddate (none)
+
+Read only variable specifying the date when the I<sqsh> executable was compiled.
+
+=item buildtime (none)
+
+Read only variable specifying the time when the I<sqsh> executable was compiled.
 
 =item chained (boolean)
 
@@ -2684,21 +2763,21 @@ value of this variable causes some history entries to be lost.
 If set, I<sqsh> maintains a MRU-LRU order of executed buffers and does not store
 duplicate command buffers. For example, observe the following situation:
 
-   LINUX1502.user1.master.1> \history
-   (1) sp_who
-   (2) grant role mon_role to sa_role
-   (3) select * from monProcessActivity
-   (4) select @@authmech,show_sec_services()
-   (5) select @@servername,@@authmech,show_sec_services()
-   LINUX1502.user1.master.1> sp_who
-   LINUX1502.user1.master.2> go
-   ... output omitted
-   LINUX1502.user1.master.1> \history
-   (1) grant role mon_role to sa_role
-   (2) select * from monProcessActivity
-   (3) select @@authmech,show_sec_services()
-   (4) select @@servername,@@authmech,show_sec_services()
-   (5) sp_who
+    LINUX1502.user1.master.1> \history
+    (1) sp_who
+    (2) grant role mon_role to sa_role
+    (3) select * from monProcessActivity
+    (4) select @@authmech,show_sec_services()
+    (5) select @@servername,@@authmech,show_sec_services()
+    LINUX1502.user1.master.1> sp_who
+    LINUX1502.user1.master.2> go
+    ... output omitted
+    LINUX1502.user1.master.1> \history
+    (1) grant role mon_role to sa_role
+    (2) select * from monProcessActivity
+    (3) select @@authmech,show_sec_services()
+    (4) select @@servername,@@authmech,show_sec_services()
+    (5) sp_who
 
 I<sp_who> is the last executed command and the buffer - originally the last in
 the list - is now on top of the list. When an already existing buffer is reused,
@@ -2745,7 +2824,7 @@ See also the discussion on Kerberos Support.
 =item keyword_completion (int/string)
 
 This variable only applies if GNU Readline support has been compiled into
-I<sqsh>. B<$keyword_completion> is used to control the TSQL keyword completion
+I<sqsh>. B<$keyword_completion> is used to control the T-SQL keyword completion
 feature in readline, and may be set using either an integer between 0 and 4, or
 one of the strings I<none>, I<lower>, I<upper>, I<smart>, or I<exact>. If it is
 set to either 0 or I<none>, then no keyword completion is performed (this is the
@@ -2754,7 +2833,16 @@ regardless of the case that the partially completed keyword was typed. I<upper>
 or 2 forces completion to be performed in upper case, I<smart>, or 3, bases the
 decision on case upon the first character of the partial keyword, and I<exact>
 completes the keyword in exactly the same case as defined in the I<.sqsh_words>
-(for the built-in TSQL keywords, this will be lower case).
+(for the built-in T-SQL keywords, this will be lower case).
+New in I<sqsh-2.5> is that when regular Readline completion does not match
+the typed string with a keyword, then filename completion will be tried in the
+current directory. For example:
+
+    SYBASE.sa.master.1> \lcd $SYBASE/$SYBASE_ASE/scripts
+    \lcd: local directory changed to: /opt/sybase/ASE-15_0/scripts
+    SYBASE.sa.master.1> \run -n -i ./instm<TAB>
+
+results in the completed filename "./instmsgs.ebf".
 
 =item keyword_dynamic (boolean)
 
@@ -2764,7 +2852,7 @@ using the I<use database> command. When this variable is set to 'On'
 (default is 'Off'), then the query that is provided through the
 B<$keyword_query> variable is executed and the query result set is loaded into
 the Readline completion list. This will only work for Sybase ASE and Microsoft
-MS-SQL servers.
+SQL servers.
 This variable also controls dynamic loading of a column list to be auto-
 completed by Readline. When an object name is followed by a dot and TAB
 completion is requested, I<sqsh> dynamically creates a list of columns that
@@ -2787,13 +2875,15 @@ the alias 'd' and the dot, a list of column names will be produced for the
     d.defpraud         d.dumptrdate       d.status           d.version
     SYBPROD.sa.tempdb.3> where d.
 
-Note that sqsh is now able to perform cross database auto-completion as well.
+This works both for the T-SQL join syntax and the ANSI inner, outer, left and
+right join syntax. Note that sqsh is now able to perform cross database
+auto-completion as well.
 
 =item keyword_file (string)
 
 If Readline support has been compiled into I<sqsh>, and I<sqsh> is being run in
 interactive mode, the contents of this file are used for keyword tab completion
-by Readline rather than the default set of TSQL syntactical keywords. The
+by Readline rather than the default set of T-SQL syntactical keywords. The
 default is I<$HOME/.sqsh_words>. When B<$keyword_dynamic> is enabled this
 takes precedence and overrules the list loaded from B<$keyword_file>.
 
@@ -2910,10 +3000,49 @@ B<\go> command, that is, the equivalent of supplying "-c ''" or just "-c" on
 the command line. When on, an empty line is interpreted as a call to the B<\go>
 command. This feature is not recommended but is supplied for completeness.
 
+=item nosepline (boolean)
+
+Suppress the separator lines with the pretty output style.
+
 =item output_parms (boolean)
 
 Flag used to enable or disable the display of output parameter result sets from
 stored procedures. The default is to enable the display.
+
+=item p2faxm (int)
+
+Implements the feature Print messages to File (P2F). This variable is used in
+conjuction with B<$p2fname> and specifies a threshold on the number of messages
+per batch that will be send to the terminal window. If the threshold is
+exceeded, the remaining messages will be send to the specified file. The default
+value is NULL which disables the P2F feature. Also an assigned value of 0
+disables this feature. This feature will only work in interactive mode and is to
+prevent an accidental flood of server messages scrolling over the screen.
+For example:
+
+    SYBASE.sa.tempdb.1> \set p2fname=/tmp/sqsh_p2f.out
+    SYBASE.sa.tempdb.1> \set p2faxm=10
+    SYBASE.sa.tempdb.1> create clustered index keys_cx on keys(id)
+    SYBASE.sa.tempdb.2>   with ignore_dup_row
+    SYBASE.sa.tempdb.2> go
+    Warning: deleted duplicate row.  Primary key is '0'
+    Warning: deleted duplicate row.  Primary key is '1'
+    Warning: deleted duplicate row.  Primary key is '2'
+    Warning: deleted duplicate row.  Primary key is '3'
+    Warning: deleted duplicate row.  Primary key is '4'
+    Warning: deleted duplicate row.  Primary key is '5'
+    Warning: deleted duplicate row.  Primary key is '6'
+    Warning: deleted duplicate row.  Primary key is '7'
+    Warning: deleted duplicate row.  Primary key is '8'
+    Warning: deleted duplicate row.  Primary key is '9'
+    Warning: Number of printed server messages exceeds p2faxm=10 limit for current batch.
+             Remaining server messages will be printed to file: /tmp/sqsh_p2f.out
+
+=item p2fname (path)
+
+Contains the filename for the Print messages to File (P2F) feature described
+above. Default is NULL which disables the P2F feature. If a file is specified
+that already exists, then new data will be appended.
 
 =item packet_size (int)
 
@@ -2974,9 +3103,9 @@ history file specified by B<$readline_history>. It is a colon (:) separated
 string or a string containing a regular expression that is identified by "RE:".
 For example:
 
-  \set readline_histignore='go:lo:mo:exit:quit:vi:!!:GO'
-  or
-  \set readline_histignore='"RE:^[glm]o$|^cd |^exit$|^quit$|^vi$"'
+    \set readline_histignore='go:lo:mo:exit:quit:vi:!!:GO'
+    or
+    \set readline_histignore='"RE:^[glm]o$|^cd |^exit$|^quit$|^vi$"'
 
 The regular expression in the second example starts with I<RE:> and it is
 recommended to supply the string between quotes and double quotes to prevent
@@ -3228,7 +3357,7 @@ will cause the B<sp_who> stored procedure to be executed with an argument of the
 first command line parameter supplied to the B<sp_who> shell script.
 
 Note that positional parameters I<must> be contained between braces to avoid
-conflicts with the TSQL B<money> data type (without the braces, the variable
+conflicts with the T-SQL B<money> data type (without the braces, the variable
 will not be expanded).
 
 =head1 EXIT STATUS
@@ -3373,9 +3502,9 @@ value.
 
 =back
 
-=head2 Miscellaneous
+=head1 MISCELLANEOUS
 
-=head3 Colorizing sqsh prompts, etc.
+=head2 Colorizing sqsh prompts
 
 Color codes are presented as a string like {1;2;3}. If sqsh encounters a {
 (curly brace) in the prompt string it will assume a color-code is supplied and
@@ -3385,31 +3514,28 @@ semicolon.
 
 The first code defines the Color Attribute Code with possible values: 0=none
 1=bold
-
 The second value defines the Text Color Code: 30=black 31=red 32=green 33=yellow
 34=blue 35=magenta 36=cyan 37=white
-
 The third value defines the Background Color Code: 40=black 41=red 42=green
 43=yellow 44=blue 45=magenta 46=cyan 47=white The last color-code for the
 background may be omitted.
-
 Not all color and attribute combinations will present good results, depending on
 your terminal type and color scheme. But the following values work OK on a xterm
 with a creamy white background color in Linux as well as rxvt in Cygwin with a
 black background window:
 
-Prompt: Blue text in white background "{0;34;47}"
-
-Command text: Yellow text             "{0;33}"
+    Prompt: Blue text in white background "{0;34;47}"
+    Command text: Yellow text             "{0;33}"
+    Command text: Default text color      "{0}"
 
 sqsh will translate the color-codes to an actual color-code string that is
 presented to readline: for example "\001\033[0;36;47m\002". Note that if you
 want to use curly brackets in your prompt, you have to escape colorization by
 specifying a double brace, like {{...}}. For example:
 
-   \set prompt_color='{0;34;47}'
-   \set text_color='{0;33}'
-   \set prompt='$prompt_color{{$DSQUERY.$username.$database.$lineno}}>$text_color '
+    \set prompt_color='{0;34;47}'
+    \set text_color='{0}'
+    \set prompt='$prompt_color{{$DSQUERY.$username.$database.$lineno}}>$text_color '
 
 Color support is automatically available if sqsh is compiled and linked with
 readline support enabled.
@@ -3431,22 +3557,30 @@ result, the processing of these expressions is rather slow (when compared to
 bourne shell), and the error reporting doesn't lend itself to debugging large
 scripts. The development of 1000+ line scripts is discouraged.
 
-The combination of backgrounding and pipes does not work properly right now. I
-know why this is happening, but haven't determined an elegant solution to it
-just yet. What happens is, when a background job is run that incorporates a
-pipe-line, I<sqsh> will suspend until the job is complete, which is obviously
-not what you desire. To test this, try the following:
+The combination of backgrounding and pipes does not work properly right now.
+What happens is, when a background job is run that incorporates a pipe-line,
+I<sqsh> will suspend until the job is complete, which is obviously not what
+you desire. To test this, try the following:
 
     1> select * from syscolumns
     2> go | grep id &
 
-You will find that you do not get your prompt back until the job completes. If
-you want a technical explanation of why this is happening, send me e-mail at the
-address at the end.
+You will find that you do not get your prompt back until the job completes.
+The same is more ore less true for pipes being used with the \do command:
 
-I would like to support all of the flags available in I<isql> right now. This
-shouldn't be very hard.
+    1> select name from master..sysdatabases
+    2> \do | grep syb
 
-No complaints about spelling or grammar. I hate documentation, so count yourself
-lucky that you have a manual page at all.
+This will not give you a prompt anymore until the block completes with \done.
+So you are typing the do block itself in the dark and there is no possiblity
+to edit a do block or retrieve a do block from the history list.
+So you may have typed (hopefully without syntax errors):
 
+    \echo #1
+    \done
+
+After \done is processed the results will be displayed followed by a fresh
+prompt.
+
+Please report any other bugs to http://sourceforge.net/p/sqsh/bugs
+Feature requests may be posted to http://sourceforge.net/p/sqsh/feature-requests

@@ -124,13 +124,13 @@
 .\" ========================================================================
 .\"
 .IX Title "sqsh 1"
-.TH sqsh 1 "2013-08-27" "2.4" "sqsh-2.4"
+.TH sqsh 1 "2014-03-12" "2.5" "sqsh-2.5"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
 .nh
 .SH "NAME"
-sqsh \- Interactive database shell (version 2.4)
+sqsh \- Interactive database shell (version 2.5)
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 .Vb 10
@@ -350,15 +350,15 @@ long running query. Maps to the \fB\f(CB$query_timeout\fB\fR variable.
 For example:
 .Sp
 .Vb 9
-\&  sqsh \-SASE1502 \-Usa \-P \-Q30
-\&  ASE1502.sa.master.1> cd tix
-\&  ASE1502.sa.tix.1> select count(*) from E_TIX;
-\&  Open Client Message
-\&  Layer 1, Origin 2, Severity 2, Number 63
-\&  ct_results(): user api layer: internal Client Library error:
+\&    sqsh \-SASE1502 \-Usa \-P \-Q30
+\&    ASE1502.sa.master.1> cd tix
+\&    ASE1502.sa.tix.1> select count(*) from E_TIX;
+\&    Open Client Message
+\&    Layer 1, Origin 2, Severity 2, Number 63
+\&    ct_results(): user api layer: internal Client Library error:
 \&                Read from the server has timed out.
-\&  ASE1502: Query or command timeout detected, command/batch cancelled
-\&  ASE1502: The client connection has detected this 1 time(s).
+\&    ASE1502: Query or command timeout detected, command/batch cancelled
+\&    ASE1502: The client connection has detected this 1 time(s).
 .Ve
 .Sp
 See also the \fB\f(CB$max_timeout\fB\fR variable, which controls the number of times a
@@ -380,12 +380,22 @@ See the Kerberos Support section below for details.
 .IX Item "-s colsep"
 Causes the string \fIcolsep\fR to be used to delimit \s-1SQL\s0 column output columns,
 this defaults to \*(L" \*(R".
-.IP "\-S server" 4
-.IX Item "-S server"
-The name of the Sybase \fIserver\fR to connect, the default of this is the external
-environment variable \fB\f(CB$DSQUERY\fB\fR. If neither \fB\-S\fR nor \fB\f(CB$DSQUERY\fB\fR is set then
-defaults to \*(L"\s-1SYBASE\s0\*(R". This value may also be set via the internal variable
-\&\fB\f(CB$DSQUERY\fB\fR.
+.IP "\-S server | host:port[:filter]" 4
+.IX Item "-S server | host:port[:filter]"
+The name or the address of the Sybase \fIserver\fR to connect. The default of this
+is the external environment variable \fB\f(CB$DSQUERY\fB\fR. If neither \fB\-S\fR nor
+\&\fB\f(CB$DSQUERY\fB\fR is set then defaults to \*(L"\s-1SYBASE\s0\*(R". This value may also be set via the
+internal variable \fB\f(CB$DSQUERY\fB\fR. The servername must exist in the interfaces or
+sql.ini file. As an alternative it is also possible to specify the target
+server as \fBhost:port[:filter]\fR where \fIhost\fR may also be an \s-1IP\s0 address. Note
+that \fBfilter\fR may be defined in \f(CW$SYBASE\fR/$SYBASE_OCS/config/libtcl[64].cfg. For
+example:
+.Sp
+.Vb 3
+\&    [FILTERS]
+\&    ssl=libsybfssl.so
+\&    ssl64=libsybfssl64.so
+.Ve
 .IP "\-t [filter]" 4
 .IX Item "-t [filter]"
 Enables filtering of command batches through an external program, \fIfilter\fR,
@@ -462,9 +472,9 @@ command (see \fB\s-1COMMANDS\s0\fR, below) may be executed.
 After the \fI.sqshrc\fR file has been executed, \fIsqsh\fR then parses any command
 line options (thus any variables set in your \fI.sqshrc\fR file may be overridden
 by command line options). Following that, if \fIsqsh\fR is run in interactive mode
-(i.e. without \fB\-i\fR and if stdin is attached to a tty), it then looks for
-\&\fI.sqsh_history\fR and loads the contents of that file into this history buffer
-(see \fB\s-1BUFFERS\s0\fR, below).
+(i.e. without \fB\-i\fR and if stdin is attached to a tty), it then looks for the
+file provided by the \fB\f(CB$history\fB\fR variable and loads the contents of that file
+into the history buffers. (see \fB\s-1BUFFERS\s0\fR, below).
 .PP
 Immediately prior to establishing a connection to the database (either during
 startup, or by an explicit \fB\econnect\fR or \fB\ereconnect\fR command), the file
@@ -815,7 +825,7 @@ database.
 .PP
 \&\fBHistory Buffer\fR: This is actually a chain of 0 or more buffers (configurable
 by the \fB\f(CB$histsize\fB\fR variable) of the last \fB\f(CB$histsize\fB\fR batches that have been
-run.  This buffer is only maintained when sqsh is run in interactive mode; that
+run. This buffer is only maintained when sqsh is run in interactive mode; that
 is, batches executed using the \fB\-i\fR flag, or executed via redirection from the
 \&\s-1UNIX\s0 prompt will not be maintained in history (after all, they are already in a
 file somewhere).
@@ -1152,8 +1162,8 @@ Establishes the connection to the server as the supplied \fIusername\fR.
 .IX Item "-P password"
 Establishes the connection to the server using the supplied \fIpassword\fR (which
 is hopefully a valid password for the supplied \fIusername\fR).
-.IP "\-S server" 4
-.IX Item "-S server"
+.IP "\-S server | host:port[:filter]" 4
+.IX Item "-S server | host:port[:filter]"
 Establishes the connection to the supplied \fIserver\fR.
 .IP "\-n" 4
 .IX Item "-n"
@@ -1324,13 +1334,13 @@ For example, connecting to a server using Kerberos (which happens to be
 the default, i.e. first entry in libtcl.cfg [\s-1SECURITY\s0] tab in this example):
 .PP
 .Vb 9
-\&  ~$ sqsh \-SSYB1502 \-Uuser1 \-RFC6A1502 \-Z
-\&  \econnect: Network authenticated session expires at:
+\&    ~$ sqsh \-SSYB1502 \-Uuser1 \-RFC6A1502 \-Z
+\&    \econnect: Network authenticated session expires at:
 \&            16 Feb 2010 15:28:39 (11764 secs)
-\&  SYB1502.user1.master.1> select @@servername,@@authmech,
+\&    SYB1502.user1.master.1> select @@servername,@@authmech,
 \&                                 show_sec_services();
-\&  \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-  \-\-\-\-\-\-\-\-\-\-\-  \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
-\&  FC6A1502          kerberos     unifiedlogin delegation mutualauth
+\&    \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-  \-\-\-\-\-\-\-\-\-\-\-  \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+\&    FC6A1502          kerberos     unifiedlogin delegation mutualauth
 \&                                 integrity confidentiality
 \&                                 detectreplay detectseq
 .Ve
@@ -1344,19 +1354,19 @@ service options, only option \fBu\fR for Network Authentication will be implicit
 set and the default security mechanism will be used if \fB\-Z\fR is not specified.
 .PP
 .Vb 10
-\&  [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-V
-\&  Open Client Message
-\&  Layer 7, Origin 9, Severity 5, Number 1
-\&  ct_connect(): security service layer: internal security control
+\&    [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-V
+\&    Open Client Message
+\&    Layer 7, Origin 9, Severity 5, Number 1
+\&    ct_connect(): security service layer: internal security control
 \&                layer error:
 \&                Security service provider internal error \-1765328352
 \&                occurred.
-\&  [user1@linux\-fc6a ~]$ kinit
-\&  Password for user1@LOCALDOMAIN:
-\&  [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-V
-\&  \econnect: Network authenticated session expires at:
+\&    [user1@linux\-fc6a ~]$ kinit
+\&    Password for user1@LOCALDOMAIN:
+\&    [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-V
+\&    \econnect: Network authenticated session expires at:
 \&            16 Feb 2010 15:28:39 (10964 secs)
-\&  FC6A1502.user1.master.1>
+\&    FC6A1502.user1.master.1>
 .Ve
 .PP
 When the connection succeeds, \fIsqsh\fR will store the real name of the security
@@ -1390,19 +1400,19 @@ network authentication variables by specifying \-Znone
 For example:
 .PP
 .Vb 10
-\&  [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-V
-\&  \econnect: Network authenticated session expires at:
+\&    [user1@linux\-fc6a ~]$ sqsh \-SFC6A1502 \-Uuser1 \-V
+\&    \econnect: Network authenticated session expires at:
 \&            16 Feb 2010 15:28:39 (10764 secs)
-\&  FC6A1502.user1.master.1> \eecho $secmech csfkrb5
-\&  FC6A1502.user1.master.1> \ereconnect \-SASE1502 \-Usa \-Psybase
-\&  Open Client Message
-\&  Layer 7, Origin 9, Severity 5, Number 8
-\&  ct_connect(): security service layer: internal security control
+\&    FC6A1502.user1.master.1> \eecho $secmech csfkrb5
+\&    FC6A1502.user1.master.1> \ereconnect \-SASE1502 \-Usa \-Psybase
+\&    Open Client Message
+\&    Layer 7, Origin 9, Severity 5, Number 8
+\&    ct_connect(): security service layer: internal security control
 \&                layer error:
-\&  Consistency checks performed on the credential failed
-\&  (minor status 0).
-\&  FC6A1502.user1.master.1> \ereconnect \-SASE1502 \-Usa \-Psybase \-Znone
-\&  ASE1502.sa.master.1>
+\&    Consistency checks performed on the credential failed
+\&    (minor status 0).
+\&    FC6A1502.user1.master.1> \ereconnect \-SASE1502 \-Usa \-Psybase \-Znone
+\&    ASE1502.sa.master.1>
 .Ve
 .PP
 The first \ereconnect fails because sqsh still wants to try network
@@ -1430,7 +1440,7 @@ because there are some creative things that can be done with them.
 .IX Item "loop [-i] [-n] [-e sql] [file]"
 The \fB\eloop\fR command reads input either from a file, a supplied \s-1SQL\s0 statement,
 or from a user (see the options below), determining whether the current line is
-a portion of a \s-1TSQL\s0 statement or a sqsh command, and performing the appropriate
+a portion of a T\-SQL statement or a sqsh command, and performing the appropriate
 action. When run in an interactive mode \fB\eloop\fR is also responsible for
 displaying the current prompt (see \fB\f(CB$prompt\fB\fR below).
 .Sp
@@ -1503,10 +1513,10 @@ establishing the connection.
 .IX Item "-G tds version"
 Set the \s-1TDS\s0 version to use. See the global startup parameter \-G for more
 information on \s-1TDS\s0 version.
-.IP "\-S srv" 4
-.IX Item "-S srv"
-The name of the Sybase \fIserver\fR to connect, this defaults to \fB\f(CB$DSQUERY\fB\fR if not
-supplied.
+.IP "\-S srv | host:port[:filter]" 4
+.IX Item "-S srv | host:port[:filter]"
+The name or address of the Sybase \fIserver\fR to connect, this defaults to
+\&\fB\f(CB$DSQUERY\fB\fR if not supplied.
 .IP "\-U user" 4
 .IX Item "-U user"
 The Sybase \fIuser\fR to connect to the database as, this defaults to \fB\f(CB$username\fB\fR
@@ -1576,10 +1586,58 @@ active one.
 All arguments that are accepted by \fB\econnect\fR are also accepted by
 \&\fB\ereconnect\fR (in fact \fB\ereconnect\fR uses \fB\econnect\fR to establish the new
 connection).
+.IP "\erun" 4
+.IX Item "run"
+This command will execute a script file like \fB\eloop\fR but the \fB\erun\fR command
+will allow optional script parameters. Furthermore the command accepts the
+following parameters.
+.RS 4
+.IP "\-e" 4
+.IX Item "-e"
+Run the script file with echo on.
+.IP "\-f" 4
+.IX Item "-f"
+Suppress footers.
+.IP "\-h" 4
+.IX Item "-h"
+Suppress headers.
+.IP "\-l" 4
+.IX Item "-l"
+Suppres separator lines with pretty output style.
+.IP "\-n" 4
+.IX Item "-n"
+Disable \s-1SQL\s0 buffer variable expansion.
+.IP "\-p" 4
+.IX Item "-p"
+Report runtime statistics.
+.IP "\-m style" 4
+.IX Item "-m style"
+Specify output style {bcp|csv|horiz|html|meta|none|pretty|vert}.
+.IP "\-i filename" 4
+.IX Item "-i filename"
+Required parameter to specify a filename to be run by \fIsqsh\fR.
+.RE
+.RS 4
+.Sp
+For example: \fB\erun \-p \-i ~/tmp/runtst.sqsh 10 \-m pretty\fR
+.RE
+.IP "\elcd dirname" 4
+.IX Item "lcd dirname"
+Local Change Directory. This command takes a directory name as argument and
+changes the local \s-1SQSH\s0 context to this directory. You can use \fB\elcd \-\fR to
+return back to the previous directory. If you exit \fIsqsh\fR then the shell is
+still in the same directory from where sqsh was started.
+.IP "\epwd" 4
+.IX Item "pwd"
+Print Working Directory. Show the name of the current local working directory.
+.IP "\els" 4
+.IX Item "ls"
+List files in the current directory. Does not take any arguments and is
+basically a shortcut for \fB\eshell ls\fR.
 .IP "\esnace" 4
 .IX Item "snace"
 Will show the session expiration interval for a network authenticated session,
-using Kerberos tickets, for example.
+like in a Kerberos enabled session, for example.
 .IP "\ego [options] [xacts]" 4
 .IX Item "go [options] [xacts]"
 Sends the contents of the \fBWork Buffer\fR to the database, establishing a new
@@ -1599,6 +1657,9 @@ interactive mode if history support is enabled).
 If X11 support is compiled into sqsh, and X display mode is being used (see
 \&\fB\-x\fR, below), then \fIdisplay\fR will be used as the X display area for the result
 set. By default the environment variable \fB\f(CB$DISPLAY\fB\fR is assumed.
+.IP "\-e" 4
+.IX Item "-e"
+Echo the expanded \s-1SQL\s0 buffer before sending it to the server.
 .IP "\-f" 4
 .IX Item "-f"
 Turns off the display of the footer message \*(L"(%d rows affected)\*(R". Footer
@@ -1614,6 +1675,10 @@ command. Currently supported styles are \fBhoriz\fR (or \fBhor\fR or \fBhorizont
 \&\fBvert\fR (or \fBvertical\fR), \fBbcp\fR, \fBcsv\fR, \fBhtml\fR, \fBmeta\fR, \fBpretty\fR and
 \&\fBnone\fR. The display style may be permanently set via the \fB\f(CB$style\fB\fR variable or
 the \fB\-m\fR command line flag.
+.IP "\-l" 4
+.IX Item "-l"
+Suppress separator lines when using the \fB\-m pretty\fR output style. May also
+be turned off via the \fB\f(CB$nosepline\fB\fR variable.
 .IP "\-n" 4
 .IX Item "-n"
 Turns off variable expansion in the \fBWork Buffer\fR prior to sending it to the
@@ -1722,10 +1787,10 @@ being supplied within the result set.
 .IX Item "-P password"
 The \fIpassword\fR for \fIuser\fR required to connect to \fIserver\fR. This defaults to
 \&\fB\f(CB$password\fB\fR if not supplied.
-.IP "\-S server" 4
-.IX Item "-S server"
-The name of the Sybase \fIserver\fR to connect, this defaults to \fB\f(CB$DSQUERY\fB\fR if not
-supplied.
+.IP "\-S server | host:port[:filter]" 4
+.IX Item "-S server | host:port[:filter]"
+The name or address of the Sybase \fIserver\fR to connect, this defaults to
+\&\fB\f(CB$DSQUERY\fB\fR if not supplied.
 .IP "\-T" 4
 .IX Item "-T"
 Transfer the data in transit without performing character set conversion
@@ -2274,27 +2339,25 @@ The most recent error number returned from the \s-1SQL\s0 Server (@@errno) of se
 The exit value of a previously executed pipe command.
 .IP "\(bu" 4
 The return value of the most recently executed sqsh function.
+.IP "\(bu" 4
+The result of the last executed \eif statement:
+.RS 4
+.IP "0 \- The test evaluated to True." 4
+.IX Item "0 - The test evaluated to True."
+.PD 0
+.IP "1 \- The test evaluated to False." 4
+.IX Item "1 - The test evaluated to False."
+.IP "2 \- There was an error in the test specification." 4
+.IX Item "2 - There was an error in the test specification."
 .RE
 .RS 4
 .RE
-.IP "$$? (int)" 4
-.IX Item "$$? (int)"
-This variable may contain the result of the last executed \eif statement:
-.RS 4
-.IP "\- 0 \-" 4
-.IX Item "- 0 -"
-The test evaluated to False.
-.IP "\- 1 \-" 4
-.IX Item "- 1 -"
-The test evaluated to True.
-.IP "\- 2 \-" 4
-.IX Item "- 2 -"
-There was an error in the test specification.
 .RE
 .RS 4
 .RE
 .IP "$# (int)" 4
 .IX Item "$# (int)"
+.PD
 Contains the number of arguments passed into the sqsh function or script.
 .IP "$* (string list)" 4
 .IX Item "$* (string list)"
@@ -2316,7 +2379,7 @@ environment.
 Contains the name \fIsqsh\fR uses to identity itself to the server. Defaults to
 sqsh\-2.1.7. The application name can be retrieved from the sysprocesses table
 like:
-  select program_name from master.dbo.sysprocesses where spid=@@pid;
+    select program_name from master.dbo.sysprocesses where spid=@@pid;
 .IP "autouse (string)" 4
 .IX Item "autouse (string)"
 Note: the meaning of this variable has been deprecated.
@@ -2357,12 +2420,18 @@ setting is \*(L"|\*(R".
 .IX Item "bcp_rowsep (string)"
 Used as a separator between rows during \s-1BCP\s0 style output (see the \fB\f(CB$style\fB\fR
 configuration variable and the \fB\-m\fR option to the \fB\ego\fR command). Note that, a
-newline (\*(L"\en\*(R") is automatically appended this value and should not be supplied.
+newline (\*(L"\en\*(R") is automatically appended and should not be supplied.
 The default setting is \*(L"|\*(R".
 .IP "bcp_trim (boolean)" 4
 .IX Item "bcp_trim (boolean)"
 Controls whether or not \s-1BCP\s0 style output trims trailing spaces from fixed length
 columns. The default is \*(L"True\*(R".
+.IP "builddate (none)" 4
+.IX Item "builddate (none)"
+Read only variable specifying the date when the \fIsqsh\fR executable was compiled.
+.IP "buildtime (none)" 4
+.IX Item "buildtime (none)"
+Read only variable specifying the time when the \fIsqsh\fR executable was compiled.
 .IP "chained (boolean)" 4
 .IX Item "chained (boolean)"
 If set then sqsh uses the \*(L"chained\*(R" transaction mode (aka \*(L"AutoCommit off\*(R").
@@ -2603,21 +2672,21 @@ If set, \fIsqsh\fR maintains a MRU-LRU order of executed buffers and does not st
 duplicate command buffers. For example, observe the following situation:
 .Sp
 .Vb 10
-\&   LINUX1502.user1.master.1> \ehistory
-\&   (1) sp_who
-\&   (2) grant role mon_role to sa_role
-\&   (3) select * from monProcessActivity
-\&   (4) select @@authmech,show_sec_services()
-\&   (5) select @@servername,@@authmech,show_sec_services()
-\&   LINUX1502.user1.master.1> sp_who
-\&   LINUX1502.user1.master.2> go
-\&   ... output omitted
-\&   LINUX1502.user1.master.1> \ehistory
-\&   (1) grant role mon_role to sa_role
-\&   (2) select * from monProcessActivity
-\&   (3) select @@authmech,show_sec_services()
-\&   (4) select @@servername,@@authmech,show_sec_services()
-\&   (5) sp_who
+\&    LINUX1502.user1.master.1> \ehistory
+\&    (1) sp_who
+\&    (2) grant role mon_role to sa_role
+\&    (3) select * from monProcessActivity
+\&    (4) select @@authmech,show_sec_services()
+\&    (5) select @@servername,@@authmech,show_sec_services()
+\&    LINUX1502.user1.master.1> sp_who
+\&    LINUX1502.user1.master.2> go
+\&    ... output omitted
+\&    LINUX1502.user1.master.1> \ehistory
+\&    (1) grant role mon_role to sa_role
+\&    (2) select * from monProcessActivity
+\&    (3) select @@authmech,show_sec_services()
+\&    (4) select @@servername,@@authmech,show_sec_services()
+\&    (5) sp_who
 .Ve
 .Sp
 \&\fIsp_who\fR is the last executed command and the buffer \- originally the last in
@@ -2660,7 +2729,7 @@ See also the discussion on Kerberos Support.
 .IP "keyword_completion (int/string)" 4
 .IX Item "keyword_completion (int/string)"
 This variable only applies if \s-1GNU\s0 Readline support has been compiled into
-\&\fIsqsh\fR. \fB\f(CB$keyword_completion\fB\fR is used to control the \s-1TSQL\s0 keyword completion
+\&\fIsqsh\fR. \fB\f(CB$keyword_completion\fB\fR is used to control the T\-SQL keyword completion
 feature in readline, and may be set using either an integer between 0 and 4, or
 one of the strings \fInone\fR, \fIlower\fR, \fIupper\fR, \fIsmart\fR, or \fIexact\fR. If it is
 set to either 0 or \fInone\fR, then no keyword completion is performed (this is the
@@ -2669,7 +2738,18 @@ regardless of the case that the partially completed keyword was typed. \fIupper\
 or 2 forces completion to be performed in upper case, \fIsmart\fR, or 3, bases the
 decision on case upon the first character of the partial keyword, and \fIexact\fR
 completes the keyword in exactly the same case as defined in the \fI.sqsh_words\fR
-(for the built-in \s-1TSQL\s0 keywords, this will be lower case).
+(for the built-in T\-SQL keywords, this will be lower case).
+New in \fIsqsh\-2.5\fR is that when regular Readline completion does not match
+the typed string with a keyword, then filename completion will be tried in the
+current directory. For example:
+.Sp
+.Vb 3
+\&    SYBASE.sa.master.1> \elcd $SYBASE/$SYBASE_ASE/scripts
+\&    \elcd: local directory changed to: /opt/sybase/ASE\-15_0/scripts
+\&    SYBASE.sa.master.1> \erun \-n \-i ./instm<TAB>
+.Ve
+.Sp
+results in the completed filename \*(L"./instmsgs.ebf\*(R".
 .IP "keyword_dynamic (boolean)" 4
 .IX Item "keyword_dynamic (boolean)"
 This variable controls the dynamic loading of keywords in the completion list
@@ -2678,7 +2758,7 @@ using the \fIuse database\fR command. When this variable is set to 'On'
 (default is 'Off'), then the query that is provided through the
 \&\fB\f(CB$keyword_query\fB\fR variable is executed and the query result set is loaded into
 the Readline completion list. This will only work for Sybase \s-1ASE\s0 and Microsoft
-MS-SQL servers.
+\&\s-1SQL\s0 servers.
 This variable also controls dynamic loading of a column list to be auto\-
 completed by Readline. When an object name is followed by a dot and \s-1TAB\s0
 completion is requested, \fIsqsh\fR dynamically creates a list of columns that
@@ -2703,12 +2783,14 @@ the alias 'd' and the dot, a list of column names will be produced for the
 \&    SYBPROD.sa.tempdb.3> where d.
 .Ve
 .Sp
-Note that sqsh is now able to perform cross database auto-completion as well.
+This works both for the T\-SQL join syntax and the \s-1ANSI\s0 inner, outer, left and
+right join syntax. Note that sqsh is now able to perform cross database
+auto-completion as well.
 .IP "keyword_file (string)" 4
 .IX Item "keyword_file (string)"
 If Readline support has been compiled into \fIsqsh\fR, and \fIsqsh\fR is being run in
 interactive mode, the contents of this file are used for keyword tab completion
-by Readline rather than the default set of \s-1TSQL\s0 syntactical keywords. The
+by Readline rather than the default set of T\-SQL syntactical keywords. The
 default is \fI\f(CI$HOME\fI/.sqsh_words\fR. When \fB\f(CB$keyword_dynamic\fB\fR is enabled this
 takes precedence and overrules the list loaded from \fB\f(CB$keyword_file\fB\fR.
 .IP "keyword_query (string)" 4
@@ -2822,10 +2904,48 @@ This flag is used as a horrible kludge to support an \*(L"empty\*(R" alias for t
 \&\fB\ego\fR command, that is, the equivalent of supplying \*(L"\-c ''\*(R" or just \*(L"\-c\*(R" on
 the command line. When on, an empty line is interpreted as a call to the \fB\ego\fR
 command. This feature is not recommended but is supplied for completeness.
+.IP "nosepline (boolean)" 4
+.IX Item "nosepline (boolean)"
+Suppress the separator lines with the pretty output style.
 .IP "output_parms (boolean)" 4
 .IX Item "output_parms (boolean)"
 Flag used to enable or disable the display of output parameter result sets from
 stored procedures. The default is to enable the display.
+.IP "p2faxm (int)" 4
+.IX Item "p2faxm (int)"
+Implements the feature Print messages to File (P2F). This variable is used in
+conjuction with \fB\f(CB$p2fname\fB\fR and specifies a threshold on the number of messages
+per batch that will be send to the terminal window. If the threshold is
+exceeded, the remaining messages will be send to the specified file. The default
+value is \s-1NULL\s0 which disables the P2F feature. Also an assigned value of 0
+disables this feature. This feature will only work in interactive mode and is to
+prevent an accidental flood of server messages scrolling over the screen.
+For example:
+.Sp
+.Vb 10
+\&    SYBASE.sa.tempdb.1> \eset p2fname=/tmp/sqsh_p2f.out
+\&    SYBASE.sa.tempdb.1> \eset p2faxm=10
+\&    SYBASE.sa.tempdb.1> create clustered index keys_cx on keys(id)
+\&    SYBASE.sa.tempdb.2>   with ignore_dup_row
+\&    SYBASE.sa.tempdb.2> go
+\&    Warning: deleted duplicate row.  Primary key is \*(Aq0\*(Aq
+\&    Warning: deleted duplicate row.  Primary key is \*(Aq1\*(Aq
+\&    Warning: deleted duplicate row.  Primary key is \*(Aq2\*(Aq
+\&    Warning: deleted duplicate row.  Primary key is \*(Aq3\*(Aq
+\&    Warning: deleted duplicate row.  Primary key is \*(Aq4\*(Aq
+\&    Warning: deleted duplicate row.  Primary key is \*(Aq5\*(Aq
+\&    Warning: deleted duplicate row.  Primary key is \*(Aq6\*(Aq
+\&    Warning: deleted duplicate row.  Primary key is \*(Aq7\*(Aq
+\&    Warning: deleted duplicate row.  Primary key is \*(Aq8\*(Aq
+\&    Warning: deleted duplicate row.  Primary key is \*(Aq9\*(Aq
+\&    Warning: Number of printed server messages exceeds p2faxm=10 limit for current batch.
+\&             Remaining server messages will be printed to file: /tmp/sqsh_p2f.out
+.Ve
+.IP "p2fname (path)" 4
+.IX Item "p2fname (path)"
+Contains the filename for the Print messages to File (P2F) feature described
+above. Default is \s-1NULL\s0 which disables the P2F feature. If a file is specified
+that already exists, then new data will be appended.
 .IP "packet_size (int)" 4
 .IX Item "packet_size (int)"
 Defines the size of the \s-1TDS\s0 packets used to communicate with \s-1SQL\s0. Changing the
@@ -2878,9 +2998,9 @@ string or a string containing a regular expression that is identified by \*(L"\s
 For example:
 .Sp
 .Vb 3
-\&  \eset readline_histignore=\*(Aqgo:lo:mo:exit:quit:vi:!!:GO\*(Aq
-\&  or
-\&  \eset readline_histignore=\*(Aq"RE:^[glm]o$|^cd |^exit$|^quit$|^vi$"\*(Aq
+\&    \eset readline_histignore=\*(Aqgo:lo:mo:exit:quit:vi:!!:GO\*(Aq
+\&    or
+\&    \eset readline_histignore=\*(Aq"RE:^[glm]o$|^cd |^exit$|^quit$|^vi$"\*(Aq
 .Ve
 .Sp
 The regular expression in the second example starts with \fI\s-1RE:\s0\fR and it is
@@ -3107,7 +3227,7 @@ will cause the \fBsp_who\fR stored procedure to be executed with an argument of 
 first command line parameter supplied to the \fBsp_who\fR shell script.
 .PP
 Note that positional parameters \fImust\fR be contained between braces to avoid
-conflicts with the \s-1TSQL\s0 \fBmoney\fR data type (without the braces, the variable
+conflicts with the T\-SQL \fBmoney\fR data type (without the braces, the variable
 will not be expanded).
 .SH "EXIT STATUS"
 .IX Header "EXIT STATUS"
@@ -3228,11 +3348,10 @@ total number of batches that failed even if \fB\f(CB$batch_failcount\fB\fR does 
 .IX Item "exit_value=nonzero"
 This will override all conditions explained above and just exit the specific
 value.
-.SS "Miscellaneous"
-.IX Subsection "Miscellaneous"
-\fIColorizing sqsh prompts, etc.\fR
-.IX Subsection "Colorizing sqsh prompts, etc."
-.PP
+.SH "MISCELLANEOUS"
+.IX Header "MISCELLANEOUS"
+.SS "Colorizing sqsh prompts"
+.IX Subsection "Colorizing sqsh prompts"
 Color codes are presented as a string like {1;2;3}. If sqsh encounters a {
 (curly brace) in the prompt string it will assume a color-code is supplied and
 will act as such. No checks will be performed on the validity of the color-code
@@ -3241,22 +3360,21 @@ semicolon.
 .PP
 The first code defines the Color Attribute Code with possible values: 0=none
 1=bold
-.PP
 The second value defines the Text Color Code: 30=black 31=red 32=green 33=yellow
 34=blue 35=magenta 36=cyan 37=white
-.PP
 The third value defines the Background Color Code: 40=black 41=red 42=green
 43=yellow 44=blue 45=magenta 46=cyan 47=white The last color-code for the
 background may be omitted.
-.PP
 Not all color and attribute combinations will present good results, depending on
 your terminal type and color scheme. But the following values work \s-1OK\s0 on a xterm
 with a creamy white background color in Linux as well as rxvt in Cygwin with a
 black background window:
 .PP
-Prompt: Blue text in white background \*(L"{0;34;47}\*(R"
-.PP
-Command text: Yellow text             \*(L"{0;33}\*(R"
+.Vb 3
+\&    Prompt: Blue text in white background "{0;34;47}"
+\&    Command text: Yellow text             "{0;33}"
+\&    Command text: Default text color      "{0}"
+.Ve
 .PP
 sqsh will translate the color-codes to an actual color-code string that is
 presented to readline: for example \*(L"\e001\e033[0;36;47m\e002\*(R". Note that if you
@@ -3264,9 +3382,9 @@ want to use curly brackets in your prompt, you have to escape colorization by
 specifying a double brace, like {{...}}. For example:
 .PP
 .Vb 3
-\&   \eset prompt_color=\*(Aq{0;34;47}\*(Aq
-\&   \eset text_color=\*(Aq{0;33}\*(Aq
-\&   \eset prompt=\*(Aq$prompt_color{{$DSQUERY.$username.$database.$lineno}}>$text_color \*(Aq
+\&    \eset prompt_color=\*(Aq{0;34;47}\*(Aq
+\&    \eset text_color=\*(Aq{0}\*(Aq
+\&    \eset prompt=\*(Aq$prompt_color{{$DSQUERY.$username.$database.$lineno}}>$text_color \*(Aq
 .Ve
 .PP
 Color support is automatically available if sqsh is compiled and linked with
@@ -3286,23 +3404,36 @@ result, the processing of these expressions is rather slow (when compared to
 bourne shell), and the error reporting doesn't lend itself to debugging large
 scripts. The development of 1000+ line scripts is discouraged.
 .PP
-The combination of backgrounding and pipes does not work properly right now. I
-know why this is happening, but haven't determined an elegant solution to it
-just yet. What happens is, when a background job is run that incorporates a
-pipe-line, \fIsqsh\fR will suspend until the job is complete, which is obviously
-not what you desire. To test this, try the following:
+The combination of backgrounding and pipes does not work properly right now.
+What happens is, when a background job is run that incorporates a pipe-line,
+\&\fIsqsh\fR will suspend until the job is complete, which is obviously not what
+you desire. To test this, try the following:
 .PP
 .Vb 2
 \&    1> select * from syscolumns
 \&    2> go | grep id &
 .Ve
 .PP
-You will find that you do not get your prompt back until the job completes. If
-you want a technical explanation of why this is happening, send me e\-mail at the
-address at the end.
+You will find that you do not get your prompt back until the job completes.
+The same is more ore less true for pipes being used with the \edo command:
 .PP
-I would like to support all of the flags available in \fIisql\fR right now. This
-shouldn't be very hard.
+.Vb 2
+\&    1> select name from master..sysdatabases
+\&    2> \edo | grep syb
+.Ve
 .PP
-No complaints about spelling or grammar. I hate documentation, so count yourself
-lucky that you have a manual page at all.
+This will not give you a prompt anymore until the block completes with \edone.
+So you are typing the do block itself in the dark and there is no possiblity
+to edit a do block or retrieve a do block from the history list.
+So you may have typed (hopefully without syntax errors):
+.PP
+.Vb 2
+\&    \eecho #1
+\&    \edone
+.Ve
+.PP
+After \edone is processed the results will be displayed followed by a fresh
+prompt.
+.PP
+Please report any other bugs to http://sourceforge.net/p/sqsh/bugs
+Feature requests may be posted to http://sourceforge.net/p/sqsh/feature\-requests
