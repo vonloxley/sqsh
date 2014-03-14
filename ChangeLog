@@ -1,17 +1,10 @@
-$Id: ChangeLog,v 1.18 2014/03/02 21:10:03 mwesdorp Exp $
+$Id: ChangeLog,v 1.19 2014/03/11 21:49:04 mwesdorp Exp $
 
 Release Notes
 
-sqsh 2.1.7 through 2.5
+sqsh 2.1.6 through 2.5
 
 Please read the file CHANGES for a detailed list of changes in these releases.
-
-sqsh 2.1.6
-
-Multiple changes contributed by Martin Wesdorp.
-This includes colorized output when using readline, handling of login and query
-timeouts, and most importantly updating the experimental kerberos
-support to be compatible with isql.
 
 sqsh 2.1.5
 

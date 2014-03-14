@@ -108,8 +108,8 @@
                   a shortcut for "\shell ls".
 
 
-3 - Feature -     Readline filename completion. When readline support is compiled into SQSH, you have the ability
-                  to use readline keyword completion by using the TAB character to complete an objectname. The list
+3 - Feature -     Readline filename completion. When Readline support is compiled into SQSH, you have the ability
+                  to use Readline keyword completion by using the TAB character to complete an objectname. The list
                   of objectnames is a built-in list, or is provided in a file specified by the $keyword_file variable
                   or the list is dynamically created by executing a query specified in $keyword_query each time you
                   switch database context and if $keyword_dynamic is set to True. Note that $keyword_completion must
@@ -124,7 +124,7 @@
                   \lcd: local directory changed to: /opt/sybase/ASE-15_0/scripts
                   SYBASE.sa.master.1> \run -n -i ./instm<TAB>
 
-                  results in the completed filename "./instmsgs.ebf". Note that readline filename completion ignores
+                  results in the completed filename "./instmsgs.ebf". Note that Readline filename completion ignores
                   the value of $keyword_completion, instead you can set completion-ignore-case to "on" in your
                   ~/.inputrc file if you wish case insensitive filename completion.
                   So as long as there are completion matches in the internally created SQSH object list, no filename
@@ -192,7 +192,7 @@
                   Program sqsh-2.5 was compiled on Mar  8 2014 - 11:15:42
 
 
-7 - Improvement - SQSH now understands the ANSI inner join syntax when using readline TAB completion on an alias name
+7 - Improvement - SQSH now understands the ANSI inner join syntax when using Readline TAB completion on an alias name
                   to display the column names for the related table. In sqsh-2.4 this only worked for the left, right
                   and outer ANSI join syntax.
 
@@ -209,11 +209,46 @@
                   This works on both Cygwin32 and Cygwin64 bits platforms.
 
 
-10 - Bugfix -     Typing a ^C after a \do command was run, resulted in a segmentation fault. This was caused by
+10 - Improvement -The Readline function "tilde_expand()" performs tilde expansion by default only when the tilde in
+                  a string is preceded by a blank space or a tab character and is appended with a slash, blank space
+                  or newline. That is, Readline must be able to expand the tilde and its optional name and its
+                  surrounding characters to a valid file or pathname.
+                  If the tilde is preceded with a "=" for example or a double quote or a colon  to specify a list,
+                  like in \set p2fname=~/tmp/dba.log or \set p2fname="~/tmp/dba.log" then the tilde did not got
+                  expanded and the string assignment was assigned as is and the file could not be opened.
+                  Note that it might be confusing that when you do a \echo $filename that expansion occurs at
+                  \echo run time and the resulting string /home/sybase/tmp/dba.log, for example, is shown as expected.
+                  However, if you do a
+
+                      \set | grep filename
+
+                  then you would see the real unexpanded value ~/tmp/dba.log stored in this variable.
+                  This is being fixed now by implementing tilde expansion in the sqsh_expand() function where it
+                  obviously belongs. When the tilde is preceded by a blank space, tab, double quote, equal sign or
+                  colon and the tilde name specifier is followed by a slash, blank space, tab, newline, double quote,
+                  equal sign or colon, then the tilde will be expanded, otherwise it will be left alone.
+                  If you need a tilde where it would otherwise be expanded, you have to use single quotes or you may
+                  escape the tilde with \\~. For example:
+
+                      \set searchpath='.:~/bin:~/lib:~sybase/bin:~sybase/lib'
+
+                  Another example:
+
+                      SYBASE.sa.master.1> sp_who
+                      SYBASE.sa.master.2> go >~/tmp/who.log
+                      sqsh: Unable to open ~/tmp/who.log: sqsh_open: No such file or directory
+                      SYBASE.sa.master.2> go > ~/tmp/who.log
+
+                  The first go statements fails because of the ill formatted redirection specifier. By adding a space
+                  between ">" and "~" the command is successfull.
+                  With this code change, Sqsh is now more compliant with tilde expansion in bash.
+
+
+11 - Bugfix -     Typing a ^C after a \do command was run, resulted in a segmentation fault. This was caused by
                   a faulty interrupt stack that was not popped after the \do command finished.
 
 
-11 - Bugfix -     Fixed a problem with assigning values to the variables colsep, linesep, bcp_colsep and bcp_rowsep.
+12 - Bugfix -     Fixed a problem with assigning values to the variables colsep, linesep, bcp_colsep and bcp_rowsep.
                   In previous SQSH versions it was not possible to reset these variables to the default
                   by assigning the 'default' string or NULL value and the latter resulted in a segmentation fault.
                   It is now possible/easier to assign control characters to these variables, for example:
@@ -248,12 +283,12 @@
       no tab-->   Boston               MA
 
 
-12 - Bugfix -     SQSH (when compiled with FreeTDS to connect to a MSSQL server) will now properly display
+13 - Bugfix -     SQSH (when compiled with FreeTDS to connect to a MSSQL server) will now properly display
                   uniqueidentifier datatypes created by the newid() function. This is basically a workaround
                   in FreeTDS processing, i.e. do not use an explicit cs_convert for this datatype but use native
                   FreeTDS internal conversions instead.
 
-13 - Bugfix -     In several places code has been changed to solve compiler complaints on redeclared objects
+14 - Bugfix -     In several places code has been changed to solve compiler complaints on redeclared objects
                   or to improve code readability. See below for details.
 
 
@@ -311,6 +346,10 @@
 
   sqsh-2.5/src/sqsh_config.h   - SQSH_VERSION set to sqsh-2.5
 
+  sqsh-2.5/src/sqsh_expand.h   - Defined EXP_TILDE flag.
+
+  sqsh-2.5/src/sqsh_expand.c   - Implemented tilde expansion.
+
   sqsh-2.5/src/sqsh_global.c   - Adapted the copyright string.
                                  Initialize new global variables for the P2F feature (g_p2f_fp, g_p2fc).
 
@@ -320,11 +359,12 @@
                                 (P2F feature enablement)
 
   sqsh-2.5/src/sqsh_job.c      - Reset getopt variable list for child processes.
+                                 Removed command line tilde expansion from here and implemented it in sqsh_expand.c
 
   sqsh-2.5/src/sqsh_readline.c - Changed cast of sqsh_completion function to (rl_completion_func_t *).
                                  Implementation of filename tab completion when object list is exhausted.
 
-  sqsh-2.5/src/sqsh_readline.h - Changed declaration of external readline functions to match the declaration in
+  sqsh-2.5/src/sqsh_readline.h - Changed declaration of external Readline functions to match the declaration in
                                  readline/history.h in case this file is not included from readline/readline.h.
 
   sqsh-2.5/src/var_ctlib.c     - Skip some tests when variable packet_size is assigned NULL value (default).
@@ -349,7 +389,7 @@
 
   sqsh-2.5/src/var_passwd.c    - The check for a "NULL" value assignment to a variable is now case insensitive.
 
-  sqsh-2.5/src/var_readline.c  - Improved assignment to readline stifle_value variable in case the assignment
+  sqsh-2.5/src/var_readline.c  - Improved assignment to Readline stifle_value variable in case the assignment
                                  variable is NULL.
 
   sqsh-2.5/src/sqsh_parser/Makefile.in   - Do not remove the generated C files with "make distclean".
@@ -357,7 +397,7 @@
                                            allow for 64 bits archive creation on AIX, i.e. -X32_64.
 
   sqsh-2.5/src/sqsh_parser/sqsh_parser.c - Define internal parser functions as static (local). Especially xmalloc
-                                           clashed with readline functions on some target systems.
+                                           clashed with Readline functions on some target systems.
 
   sqsh-2.5/src/sqsh_parser/tsql.c        - Generated file from tsql.y: include 'stdlib.h' instead of deprecated
                                            'malloc.h'.

@@ -269,11 +269,7 @@ AC_DEFUN([AC_SYBASE_ASE], [
 		# Assume this is a FreeTDS build
 		#
 			SYBASE_VERSION="FreeTDS"
-			if [[ "$ac_cv_bit_mode" = "64" -a -d $SYBASE_OCOS/lib64 ]]; then
-				SYBASE_LIBDIR="$SYBASE_OCOS/lib64"
-			else
-				SYBASE_LIBDIR="$SYBASE_OCOS/lib"
-			fi
+			SYBASE_LIBDIR="$SYBASE_OCOS/lib"
 			if [[ ! -f $SYBASE_LIBDIR/libct.a -a ! -f $SYBASE_LIBDIR/libct.so ]]; then
 				AC_MSG_RESULT(fail)
 				AC_MSG_ERROR([No properly installed FreeTDS or Sybase environment found in ${SYBASE_OCOS}.])

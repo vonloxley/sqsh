@@ -35,7 +35,8 @@
 #define EXP_STRIPNL         (1<<2)  /* Strip out newlines */
 #define EXP_IGNORECMD       (1<<3)  /* Ignore command substitution */
 #define EXP_COMMENT         (1<<4)  /* Pay attention to comments */
-#define EXP_COLUMNS         (1<<5)  /* Pay attention to comments */
+#define EXP_COLUMNS         (1<<5)  /* Pay attention to columns */
+#define EXP_TILDE           (1<<6)  /* sqsh-2.5: Pay attention to tildes */
 
 /*
  * Passing a positive value into sqsh_nexpand() causes it to expand until

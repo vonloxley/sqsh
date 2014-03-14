@@ -40,11 +40,10 @@
 #include "sqsh_getopt.h"
 #include "sqsh_sig.h"
 #include "sqsh_job.h"
-#include "sqsh_readline.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_job.c,v 1.9 2013/07/20 16:18:35 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_job.c,v 1.10 2014/02/12 16:48:24 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -235,9 +234,6 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 	int          old_flags = (int)-1;
 #endif /* USE_AIX_FIX */
 	varbuf_t    *while_buf;
-#if defined(USE_READLINE)
-	char        *expand_tilde;         /* sqsh-2.1.8 - Tilde expansion */
-#endif
 
 	/*-- Check the arguments --*/
 	if( js == NULL || cmd_line == NULL ) {
@@ -314,26 +310,13 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 		 * Expand the command line of any tokens, keeping quotes and stripping
 		 * escape characters (i.e. removing them as part of the expansion
 		 * process).
+		 * sqsh-2.5 : Implemented tilde expansion in sqsh_expand().
 		 */
-		if (sqsh_expand( cmd_line, sg_cmd_buf, EXP_COLUMNS ) == False)
+		if (sqsh_expand( cmd_line, sg_cmd_buf, EXP_COLUMNS | EXP_TILDE ) == False)
 		{
 			sqsh_set_error( sqsh_get_error(), "sqsh_expand: %s", sqsh_get_errstr() );
 			return -1;
 		}
-
-#if defined(USE_READLINE)
-		/*
-		 * sqsh-2.1.8 - Finally perform a tilde expansion on the command string.
-		 *              Use the readline function tilde_expand for this.
-		 */
-		if (strchr (varbuf_getstr (sg_cmd_buf), '~') != NULL )
-		{
-			expand_tilde = tilde_expand ( varbuf_getstr (sg_cmd_buf) );
-			varbuf_strcpy ( sg_cmd_buf, expand_tilde );
-			DBG(sqsh_debug( DEBUG_EXPAND, "expand_tilde: %s\n", expand_tilde ));
-			free ( expand_tilde );
-		}
-#endif
 
 		/*
 		 * The "actual" command line is the version that we just expanded
@@ -383,7 +366,7 @@ job_id_t jobset_run( js, cmd_line, exit_status )
 
 	/*
 	 * If this was a \while statement, then the sole argument to the
-	 * function will be the unexpanted command line stripped of
+	 * function will be the unexpanded command line stripped of
 	 * all redirection crap.
 	 */
 	if (while_buf != NULL)

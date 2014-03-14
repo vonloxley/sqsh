@@ -33,10 +33,11 @@
 #include "sqsh_expand.h"
 #include "sqsh_strchr.h"
 #include "sqsh_sig.h"
+#include "sqsh_readline.h"
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.6 2013/04/04 10:52:36 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.7 2013/04/25 14:09:47 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -70,7 +71,7 @@ int sqsh_expand( str, buf, flags )
  * final results in buf.  It attempts to follow some of the basic rules
  * of shells.  If a variable is contained within double quotes it is still
  * expanded (although, unlike a shell it doesn't strip the quotes), if a
- * variable is contained in double quotes it is not expanded.  sqsh_expand()
+ * variable is contained in single quotes it is not expanded.  sqsh_expand()
  * returns True upon success, and False if there is some sort of error.
  */
 int sqsh_nexpand( str, buf, flags, n )
@@ -81,15 +82,27 @@ int sqsh_nexpand( str, buf, flags, n )
 {
     int         quote_type = QUOTE_NONE ; /* Which quotes are we in? */
     int         r ;                       /* Results of varbuf_() functions */
+    char       *str_start;
     char       *str_end;
     int         leading_whitespace = True;
+#if defined (USE_READLINE)
+    const char  tilde_prefix[] = { ' ', '\"', '=', ':', '\t' };
+    const char  tilde_suffix[] = { ' ', '/', '\"', '=', ':', '\n', '\t', '\0' };
+    char       *sqsh_tilde_expand;
+    char       *tilde_name;
+    char       *j;
+    int         idx;
+    int         found_prefix;
+    int         found_suffix;
+#endif
     DBG(char   *instr;)
-
     DBG(instr = str;)
+
 
     /*-- Clear out the expansion buffer --*/
     varbuf_clear( buf );
 
+    str_start = str;
     if (n == EXP_EOF || n == EXP_WORD)
         str_end = NULL;
     else
@@ -140,8 +153,7 @@ int sqsh_nexpand( str, buf, flags, n )
                 }
                 else
                 {
-                    r = varbuf_charcat( buf, *str );
-                    ++str;
+                    r = varbuf_charcat( buf, *str++ );
                 }
                 break;
 
@@ -153,8 +165,7 @@ int sqsh_nexpand( str, buf, flags, n )
                 }
                 else
                 {
-                    r = varbuf_charcat( buf, *str );
-                    ++str;
+                    r = varbuf_charcat( buf, *str++ );
                 }
                 break;
 
@@ -192,7 +203,7 @@ int sqsh_nexpand( str, buf, flags, n )
                  */
                 if (!(flags & EXP_STRIPQUOTE))
                     r = varbuf_charcat( buf, *str );
-                
+
                 /*
                  * If we are in already in single quotes, then mark outselves
                  * as no longer being in them. Otherwise, we are currently
@@ -223,7 +234,7 @@ int sqsh_nexpand( str, buf, flags, n )
                  */
                 if (!(flags & EXP_STRIPQUOTE))
                     r = varbuf_charcat( buf, *str );
-                
+
                 /*
                  * If we are in already in double quotes, then mark outselves
                  * as no longer being in them. Otherwise, we are currently
@@ -232,7 +243,7 @@ int sqsh_nexpand( str, buf, flags, n )
                 quote_type = (quote_type==QUOTE_DOUBLE)?QUOTE_NONE:QUOTE_DOUBLE;
                 ++str;
                 break;
-            
+
             /*
              * Look for the command substitution character.
              */
@@ -246,10 +257,8 @@ int sqsh_nexpand( str, buf, flags, n )
                 if (quote_type == QUOTE_SINGLE || flags & EXP_IGNORECMD)
                 {
                     r = varbuf_charcat( buf, *str++ );
-                    break;
                 }
-
-                if (expand_command( &str, str_end, buf, flags ) == False)
+                else if (expand_command( &str, str_end, buf, flags ) == False)
                     return False;
                 break;
 
@@ -266,10 +275,8 @@ int sqsh_nexpand( str, buf, flags, n )
                 if (quote_type == QUOTE_SINGLE)
                 {
                     r = varbuf_charcat( buf, *str++ );
-                    break;
                 }
-
-                if (expand_escape( &str, str_end, buf, flags ) == False)
+                else if (expand_escape( &str, str_end, buf, flags ) == False)
                     return False;
                 break;
 
@@ -286,10 +293,8 @@ int sqsh_nexpand( str, buf, flags, n )
                 if (quote_type == QUOTE_SINGLE)
                 {
                     r = varbuf_charcat( buf, *str++ );
-                    break;
                 }
-
-                if (expand_variable( &str, str_end, buf, flags ) == False)
+                else if (expand_variable( &str, str_end, buf, flags ) == False)
                     return False;
                 break;
 
@@ -301,16 +306,14 @@ int sqsh_nexpand( str, buf, flags, n )
                 if (quote_type == QUOTE_SINGLE)
                 {
                     r = varbuf_charcat( buf, *str++ );
-                    break;
                 }
-
                 /*
                 ** Only expand columns when there are actually
                 ** columns available to be expanded (this may
                 ** protect us against expanding weird temp-table
                 ** names.
                 */
-                if ((flags & EXP_COLUMNS) != 0 && g_do_ncols > 0)
+                else if ((flags & EXP_COLUMNS) != 0 && g_do_ncols > 0)
                 {
                     r = 0;
                     if (expand_column( &str, str_end, buf, flags ) == False)
@@ -322,7 +325,57 @@ int sqsh_nexpand( str, buf, flags, n )
                 }
                 break;
 
+#if defined (USE_READLINE)
+                /*
+                ** sqsh-2.5: Expand a tilde on the command line to the
+                ** corresponding home directory of the specified user.
+                */
+            case '~':
+                if (quote_type == QUOTE_SINGLE || (flags & EXP_TILDE) == 0)
+                {
+                    r = varbuf_charcat( buf, *str++ );
+                }
+                else
+                {
+                    /*
+                     * To be able to successfully expand a tilde directive like ~ or ~sybase,
+                     * the tilde must be preceded with a character from the tilde_prefix list
+                     * and the directive must be appended with a character from the tilde_suffix
+                     * list. If all is well, we pass on the tilde directive to Readline
+                     * and store the result in the target buffer.
+                    */
+                    found_prefix = found_suffix = False;
+                    if (str == str_start)
+                        found_prefix = True;
+                    else
+                    {
+                        for ( idx = 0; idx < sizeof(tilde_prefix) && !found_prefix; ++idx )
+                            if (*(str-1) == tilde_prefix[idx])
+                                found_prefix = True;
+                    }
+                    for ( j = str+1; isalnum((int) *j); j++ );
+                    for ( idx = 0; idx < sizeof(tilde_suffix) && !found_suffix; ++idx)
+                        if (*j == tilde_suffix[idx])
+                            found_suffix = True;
 
+                    if (found_prefix && found_suffix)
+                    {
+                        tilde_name = malloc ( (int) (j - str + 1));
+                        strncpy ( tilde_name, str, j - str );
+                        tilde_name[j-str] = '\0';
+                        sqsh_tilde_expand = tilde_expand ( tilde_name );
+                        r = varbuf_strcat( buf, sqsh_tilde_expand );
+                        free ( sqsh_tilde_expand );
+                        free ( tilde_name );
+                        str = j;
+                    }
+                    else
+                    {
+                        r = varbuf_charcat( buf, *str++ );
+                    }
+                }
+                break;
+#endif
             default:
                 r = varbuf_charcat( buf, *str++ );
         }
@@ -350,7 +403,7 @@ int sqsh_nexpand( str, buf, flags, n )
 /*
  * expand_skip_eol():
  *
- * Copy everything up to the current end of line into the 
+ * Copy everything up to the current end of line into the
  * expand buffer.
  */
 static int expand_skip_eol( cpp, str_end, buf, flags )
@@ -400,7 +453,7 @@ static int expand_skip_comment( cpp, str_end, buf, flags )
     /*
      * Track down the end of comment.
      */
-    while (*str && (str_end == NULL || str != (str_end-1)) && 
+    while (*str && (str_end == NULL || str != (str_end-1)) &&
         (*str != '*' || *(str+1) != '/'))
     {
         ++str;
@@ -408,18 +461,18 @@ static int expand_skip_comment( cpp, str_end, buf, flags )
 
     /* if we're not at the end of the string (CR 1046570)*/
     if(*str) {
-	/*
-	 * If we failed to find a closing comment, then
-	 * we stopped at the end of line.
-	 */
-	if (*str != '*' || *(str+1) != '/')
-	{
-	    ++str;
-	}
-	else
-	{
-	    str += 2;
-	}
+        /*
+         * If we failed to find a closing comment, then
+         * we stopped at the end of line.
+         */
+        if (*str != '*' || *(str+1) != '/')
+        {
+            ++str;
+        }
+        else
+        {
+            str += 2;
+        }
     }
 
     varbuf_strncat( buf, *cpp, str - (*cpp) );
@@ -436,7 +489,7 @@ static int expand_skip_comment( cpp, str_end, buf, flags )
  * buffer (str_end), which may be NULL if the string is NULL terminated,
  * a desination buffer (buf), and the current set of parsing flags. cpp
  * should be pointing a ` character.
- * 
+ *
  */
 static int expand_command( cpp, str_end, buf, flags )
     char    **cpp;
@@ -480,7 +533,7 @@ static int expand_command( cpp, str_end, buf, flags )
             sqsh_set_error( SQSH_E_BADQUOTE, "Unbounded ` character" );
         return False;
     }
-    
+
     /*
      * Create a buffer to hold the soon-to-be-expanded
      * command string.
@@ -498,7 +551,7 @@ static int expand_command( cpp, str_end, buf, flags )
      * may encounter along the way as well as any escape sequences
      * (so they may be interpreted by the underlying shell).
      */
-    if (sqsh_nexpand( cmd_start, cmd, flags|EXP_STRIPNL|EXP_STRIPESC, 
+    if (sqsh_nexpand( cmd_start, cmd, flags|EXP_STRIPNL|EXP_STRIPESC,
         (str - cmd_start) ) == False)
     {
         varbuf_destroy( cmd );
@@ -543,7 +596,7 @@ static int expand_command( cpp, str_end, buf, flags )
     env_get( g_env, "ifs", &ifs );
     if( ifs == NULL || *ifs == '\0' )
         ifs = "\f\n\r\t\v";
-    
+
     /*
      * Because this expansion could theoretically take a while
      * we want to protect ourselves agains recieving an interrupt
@@ -584,7 +637,7 @@ static int expand_command( cpp, str_end, buf, flags )
             if( got_signal == 0 && ch != EOF )
                 varbuf_charcat( buf, ' ' );
         }
-        
+
         /*
          * While we haven't reached EOF, and we haven't hit an IFS
          * character start copying character into the buffer.
@@ -677,7 +730,7 @@ static int expand_variable( cpp, str_end, buf, flags )
      * the variable.  We are still in part of the name if we
      * see the characters [?a-zA-Z0-9_] and special character # and *.
      */
-    while (!(str_end == NULL && str == str_end) && *str != '\0' && 
+    while (!(str_end == NULL && str == str_end) && *str != '\0' &&
         (isalnum((int)*str) || strchr("#*?_$", *str)  ))
     {
         if (!isdigit((int)*str))
@@ -689,7 +742,7 @@ static int expand_variable( cpp, str_end, buf, flags )
 
     /*
      * Keep track of where the variable ends, this may not be
-     * equal to the value of str if the next character is a 
+     * equal to the value of str if the next character is a
      * close brace.
      */
     var_name_end = str;
@@ -717,17 +770,17 @@ static int expand_variable( cpp, str_end, buf, flags )
 
     if( var_name_start == var_name_end )
     {
-	if (varbuf_charcat( buf, *str++ ) == -1)
-	    return False;
-	*cpp = str;
-	return True;
+        if (varbuf_charcat( buf, *str++ ) == -1)
+            return False;
+        *cpp = str;
+        return True;
     }
 
     /*
      * Check for special cases.
      * sqsh-2.2.0 - First, $? is the result of last action.
      */
-    if (*var_name_start == '?' && 
+    if (*var_name_start == '?' &&
         (var_name_end - var_name_start) == 1)
     {
         env_get( g_internal_env, "?", &var_value );
@@ -739,7 +792,7 @@ static int expand_variable( cpp, str_end, buf, flags )
     /*
      * Next, $$ is the current processid.
      */
-    if (*var_name_start == '$' && 
+    if (*var_name_start == '$' &&
         (var_name_end - var_name_start) == 1)
     {
         sprintf(nbr, "%d", (int) getpid() );
@@ -751,7 +804,7 @@ static int expand_variable( cpp, str_end, buf, flags )
     /*
      * Next, $# is the number of arguments.
      */
-    if (*var_name_start == '#' && 
+    if (*var_name_start == '#' &&
         (var_name_end - var_name_start) == 1)
     {
         /*
@@ -774,7 +827,7 @@ static int expand_variable( cpp, str_end, buf, flags )
     /*
      * Next, $* is the complete list of arguments.
      */
-    if (*var_name_start == '*' && 
+    if (*var_name_start == '*' &&
         (var_name_end - var_name_start) == 1)
     {
         if (g_func_nargs > 0)
@@ -793,7 +846,7 @@ static int expand_variable( cpp, str_end, buf, flags )
     }
 
     /*
-     * Next special case. All digits point us to a function 
+     * Next special case. All digits point us to a function
      * argument.
      */
     if (all_digits == True)
@@ -809,7 +862,7 @@ static int expand_variable( cpp, str_end, buf, flags )
         /*
          * If invalid argument number, then just leave blank.
          */
-        if (g_func_nargs == 0 || arg_nbr < 0 || 
+        if (g_func_nargs == 0 || arg_nbr < 0 ||
             arg_nbr > g_func_args[g_func_nargs-1].argc - 1)
         {
             *cpp = str;
@@ -825,7 +878,7 @@ static int expand_variable( cpp, str_end, buf, flags )
      * First, check to see if the variable is available in our
      * "external" environment.
      */
-    r = env_nget( g_env, var_name_start, &var_value, 
+    r = env_nget( g_env, var_name_start, &var_value,
         var_name_end - var_name_start);
 
     if (r == -1)
@@ -856,7 +909,7 @@ static int expand_variable( cpp, str_end, buf, flags )
         if( varbuf_strcat( buf, var_value ) == -1 )
             return False;
     }
-    
+
     *cpp = str;
     return True;
 }
@@ -973,7 +1026,7 @@ static int expand_escape( cpp, str_end, buf, flags )
         if( varbuf_strncat( buf, str, 2 ) == -1 )
             return False;
     }
-    
+
     /*
      * Skip straight to the escaped character.
      */
@@ -988,7 +1041,7 @@ static int expand_escape( cpp, str_end, buf, flags )
           *str != '\0' && *str != '\n' ) {
         if( varbuf_charcat( buf, *str ) == -1 )
             return False;
-    } 
+    }
     ++str;
 
     *cpp = str;

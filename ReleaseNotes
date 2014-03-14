@@ -1,18 +1,11 @@
-$Id: ReleaseNotes,v 1.8 2013/05/03 11:19:37 mwesdorp Exp $
+$Id: ReleaseNotes,v 1.9 2014/03/12 14:40:42 mwesdorp Exp $
 
 Release Notes
 
-The latest version is sqsh 2.5.  Please read the file CHANGES in the root directory
-for a detailed list of changes in this and previous releases (2.1.6 up to 2.5).
+The latest version is sqsh 2.5.  Please read the file CHANGES in the root
+directory for a detailed list of changes in this and previous releases
+(2.1.6 up to 2.5).
 The INSTALL file provides information on howto build and install the program.
-
-sqsh 2.1.6
-
-Multiple changes contributed by Martin Wesdorp.
-This includes colorized output when using readline, handling of login and query
-timeouts, and most importantly updating the experimental kerberos
-support to be compatible with isql.
-Please read doc/CHANGES-2.1.6 for a detailed list of changes in this release.
 
 sqsh 2.1.5
 

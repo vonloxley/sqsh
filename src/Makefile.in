@@ -444,7 +444,7 @@ sqsh_expand.o: sqsh_expand.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_error.h sqsh_varbuf.h sqsh_env.h sqsh_global.h \
  sqsh_cmd.h sqsh_avl.h sqsh_job.h sqsh_args.h sqsh_sigcld.h \
  sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_fd.h sqsh_expand.h \
- sqsh_strchr.h sqsh_sig.h
+ sqsh_strchr.h sqsh_sig.h sqsh_readline.h
 sqsh_fd.o: sqsh_fd.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_sigcld.h sqsh_env.h sqsh_global.h sqsh_cmd.h sqsh_avl.h sqsh_job.h \
  sqsh_args.h sqsh_varbuf.h sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h \
@@ -479,7 +479,7 @@ sqsh_job.o: sqsh_job.c sqsh_config.h config.h sqsh_compat.h sqsh_debug.h \
  sqsh_error.h sqsh_fd.h sqsh_init.h sqsh_tok.h sqsh_varbuf.h sqsh_cmd.h \
  sqsh_avl.h sqsh_global.h sqsh_env.h sqsh_job.h sqsh_args.h sqsh_sigcld.h \
  sqsh_history.h sqsh_alias.h dsp.h sqsh_func.h sqsh_fork.h sqsh_expand.h \
- sqsh_strchr.h sqsh_getopt.h sqsh_sig.h sqsh_readline.h
+ sqsh_strchr.h sqsh_getopt.h sqsh_sig.h
 sqsh_main.o: sqsh_main.c sqsh_config.h config.h sqsh_compat.h \
  sqsh_debug.h sqsh_job.h sqsh_args.h sqsh_sigcld.h sqsh_error.h \
  sqsh_global.h sqsh_env.h sqsh_cmd.h sqsh_avl.h sqsh_varbuf.h \
