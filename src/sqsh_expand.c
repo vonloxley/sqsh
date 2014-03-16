@@ -37,7 +37,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.7 2013/04/25 14:09:47 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_expand.c,v 1.8 2014/03/14 17:24:53 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -54,6 +54,9 @@ static int  expand_command      _ANSI_ARGS(( char**, char*, varbuf_t*, int ));
 static int  expand_skip_eol     _ANSI_ARGS(( char**, char*, varbuf_t*, int ));
 static int  expand_skip_comment _ANSI_ARGS(( char**, char*, varbuf_t*, int ));
 static void expand_sighandler   _ANSI_ARGS(( int, void* ));
+#if defined (USE_READLINE)
+static int  expand_tilde        _ANSI_ARGS(( char**, char*, char*, varbuf_t*, int ));
+#endif
 
 int sqsh_expand( str, buf, flags )
     char     *str;
@@ -80,29 +83,19 @@ int sqsh_nexpand( str, buf, flags, n )
     int       flags;
     int       n;
 {
-    int         quote_type = QUOTE_NONE ; /* Which quotes are we in? */
-    int         r ;                       /* Results of varbuf_() functions */
-    char       *str_start;
+    int         quote_type = QUOTE_NONE ; /* Which type of quotes are we in? */
+    int         r ;                       /* Results of varbuf_() functions  */
+    char       *str_start;                /* Keep pointer to start of string */
     char       *str_end;
     int         leading_whitespace = True;
-#if defined (USE_READLINE)
-    const char  tilde_prefix[] = { ' ', '\"', '=', ':', '\t' };
-    const char  tilde_suffix[] = { ' ', '/', '\"', '=', ':', '\n', '\t', '\0' };
-    char       *sqsh_tilde_expand;
-    char       *tilde_name;
-    char       *j;
-    int         idx;
-    int         found_prefix;
-    int         found_suffix;
-#endif
     DBG(char   *instr;)
-    DBG(instr = str;)
 
+    DBG(instr = str;)
+    str_start = str;
 
     /*-- Clear out the expansion buffer --*/
     varbuf_clear( buf );
 
-    str_start = str;
     if (n == EXP_EOF || n == EXP_WORD)
         str_end = NULL;
     else
@@ -184,7 +177,7 @@ int sqsh_nexpand( str, buf, flags, n )
 
             /*
              * Determine if we are contained within single quotes.  If we
-             * are then paramters no longer get expanded.
+             * are then parameters no longer get expanded.
              */
             case '\'':
                 /*
@@ -194,23 +187,24 @@ int sqsh_nexpand( str, buf, flags, n )
                 if (quote_type == QUOTE_DOUBLE)
                 {
                     r = varbuf_charcat( buf, *str++ );
-                    break;
                 }
+                else
+                {
+                    /*
+                     * Unless requested to do otherwise, go ahead and stick
+                     * the quote in the destination buffer.
+                     */
+                    if (!(flags & EXP_STRIPQUOTE))
+                        r = varbuf_charcat( buf, *str );
 
-                /*
-                 * Unless requested to do otherwise, go ahead and stick
-                 * the quote in the destination buffer.
-                 */
-                if (!(flags & EXP_STRIPQUOTE))
-                    r = varbuf_charcat( buf, *str );
-
-                /*
-                 * If we are in already in single quotes, then mark outselves
-                 * as no longer being in them. Otherwise, we are currently
-                 * in single quotes.
-                 */
-                quote_type = (quote_type==QUOTE_SINGLE)?QUOTE_NONE:QUOTE_SINGLE;
-                ++str;
+                    /*
+                     * If we are already in single quotes, then mark ourselves
+                     * as no longer being in them. Otherwise, we are currently
+                     * in single quotes.
+                     */
+                    quote_type = (quote_type==QUOTE_SINGLE)?QUOTE_NONE:QUOTE_SINGLE;
+                    ++str;
+                }
                 break;
 
             /*
@@ -225,23 +219,24 @@ int sqsh_nexpand( str, buf, flags, n )
                 if (quote_type == QUOTE_SINGLE)
                 {
                     r = varbuf_charcat( buf, *str++ );
-                    break;
                 }
+                else
+                {
+                    /*
+                     * Unless requested to do otherwise, go ahead and stick
+                     * the quote in the destination buffer.
+                     */
+                    if (!(flags & EXP_STRIPQUOTE))
+                        r = varbuf_charcat( buf, *str );
 
-                /*
-                 * Unless requested to do otherwise, go ahead and stick
-                 * the quote in the destination buffer.
-                 */
-                if (!(flags & EXP_STRIPQUOTE))
-                    r = varbuf_charcat( buf, *str );
-
-                /*
-                 * If we are in already in double quotes, then mark outselves
-                 * as no longer being in them. Otherwise, we are currently
-                 * in double quotes.
-                 */
-                quote_type = (quote_type==QUOTE_DOUBLE)?QUOTE_NONE:QUOTE_DOUBLE;
-                ++str;
+                    /*
+                     * If we are already in double quotes, then mark ourselves
+                     * as no longer being in them. Otherwise, we are currently
+                     * in double quotes.
+                     */
+                    quote_type = (quote_type==QUOTE_DOUBLE)?QUOTE_NONE:QUOTE_DOUBLE;
+                    ++str;
+                }
                 break;
 
             /*
@@ -258,8 +253,11 @@ int sqsh_nexpand( str, buf, flags, n )
                 {
                     r = varbuf_charcat( buf, *str++ );
                 }
-                else if (expand_command( &str, str_end, buf, flags ) == False)
-                    return False;
+                else
+                {
+                    if (expand_command( &str, str_end, buf, flags ) == False)
+                        return False;
+                }
                 break;
 
             /*
@@ -276,8 +274,11 @@ int sqsh_nexpand( str, buf, flags, n )
                 {
                     r = varbuf_charcat( buf, *str++ );
                 }
-                else if (expand_escape( &str, str_end, buf, flags ) == False)
-                    return False;
+                else
+                {
+                    if (expand_escape( &str, str_end, buf, flags ) == False)
+                        return False;
+                }
                 break;
 
             /*
@@ -294,8 +295,11 @@ int sqsh_nexpand( str, buf, flags, n )
                 {
                     r = varbuf_charcat( buf, *str++ );
                 }
-                else if (expand_variable( &str, str_end, buf, flags ) == False)
-                    return False;
+                else
+                {
+                    if (expand_variable( &str, str_end, buf, flags ) == False)
+                        return False;
+                }
                 break;
 
             case '#':
@@ -307,28 +311,31 @@ int sqsh_nexpand( str, buf, flags, n )
                 {
                     r = varbuf_charcat( buf, *str++ );
                 }
-                /*
-                ** Only expand columns when there are actually
-                ** columns available to be expanded (this may
-                ** protect us against expanding weird temp-table
-                ** names.
-                */
-                else if ((flags & EXP_COLUMNS) != 0 && g_do_ncols > 0)
-                {
-                    r = 0;
-                    if (expand_column( &str, str_end, buf, flags ) == False)
-                        return False;
-                }
                 else
                 {
-                    r = varbuf_charcat( buf, *str++ );
+                    /*
+                    ** Only expand columns when there are actually
+                    ** columns available to be expanded (this may
+                    ** protect us against expanding weird temp-table
+                    ** names.
+                    */
+                    if ((flags & EXP_COLUMNS) != 0 && g_do_ncols > 0)
+                    {
+                        r = 0;
+                        if (expand_column( &str, str_end, buf, flags ) == False)
+                            return False;
+                    }
+                    else
+                    {
+                        r = varbuf_charcat( buf, *str++ );
+                    }
                 }
                 break;
 
 #if defined (USE_READLINE)
                 /*
                 ** sqsh-2.5: Expand a tilde on the command line to the
-                ** corresponding home directory of the specified user.
+                ** corresponding home directory of the specified unix/linux login.
                 */
             case '~':
                 if (quote_type == QUOTE_SINGLE || (flags & EXP_TILDE) == 0)
@@ -337,42 +344,8 @@ int sqsh_nexpand( str, buf, flags, n )
                 }
                 else
                 {
-                    /*
-                     * To be able to successfully expand a tilde directive like ~ or ~sybase,
-                     * the tilde must be preceded with a character from the tilde_prefix list
-                     * and the directive must be appended with a character from the tilde_suffix
-                     * list. If all is well, we pass on the tilde directive to Readline
-                     * and store the result in the target buffer.
-                    */
-                    found_prefix = found_suffix = False;
-                    if (str == str_start)
-                        found_prefix = True;
-                    else
-                    {
-                        for ( idx = 0; idx < sizeof(tilde_prefix) && !found_prefix; ++idx )
-                            if (*(str-1) == tilde_prefix[idx])
-                                found_prefix = True;
-                    }
-                    for ( j = str+1; isalnum((int) *j); j++ );
-                    for ( idx = 0; idx < sizeof(tilde_suffix) && !found_suffix; ++idx)
-                        if (*j == tilde_suffix[idx])
-                            found_suffix = True;
-
-                    if (found_prefix && found_suffix)
-                    {
-                        tilde_name = malloc ( (int) (j - str + 1));
-                        strncpy ( tilde_name, str, j - str );
-                        tilde_name[j-str] = '\0';
-                        sqsh_tilde_expand = tilde_expand ( tilde_name );
-                        r = varbuf_strcat( buf, sqsh_tilde_expand );
-                        free ( sqsh_tilde_expand );
-                        free ( tilde_name );
-                        str = j;
-                    }
-                    else
-                    {
-                        r = varbuf_charcat( buf, *str++ );
-                    }
+                    if (expand_tilde( &str, str_start, str_end, buf, flags ) == False)
+                        return False;
                 }
                 break;
 #endif
@@ -1061,6 +1034,75 @@ static void expand_sighandler( sig, user_data )
     *((int*)user_data) = sig;
 }
 
+#if defined (USE_READLINE)
+/*
+ * expand_tilde():
+ *
+ * sqsh-2.5 : New function to expand a tilde expression to the
+ * corresponding unix/linux login home directory. Only available
+ * if Readline support is included.
+ */
+static int expand_tilde( cpp, str_start, str_end, buf, flags )
+    char    **cpp;
+    char     *str_start;
+    char     *str_end;
+    varbuf_t *buf;
+    int       flags;
+{
+    const char  tilde_prefix[] = { ' ', '\"', '=', ':', '>', '<', '\t' };
+    const char  tilde_suffix[] = { ' ', '/', '\"', '=', ':', '\n', '\t', '\0' };
+    char       *str;
+    char       *sqsh_tilde_expand;
+    char       *tilde_name;
+    char       *j;
+    int         idx;
+    int         found_prefix;
+    int         found_suffix;
+
+    str = *cpp;
+
+    /*
+     * To be able to successfully expand a tilde directive like ~ or ~sybase,
+     * the tilde must be preceded with a character from the tilde_prefix list
+     * and the directive must be appended with a character from the tilde_suffix
+     * list. If all is well, we pass on the tilde directive to the Readline
+     * tilde_expand() function and store the result in the target buffer.
+    */
+    found_prefix = found_suffix = False;
+    if (str == str_start)
+        found_prefix = True;  /* ~ is the very first character of the string */
+    else
+    {
+        for ( idx = 0; idx < sizeof(tilde_prefix) && !found_prefix; ++idx )
+            if (*(str-1) == tilde_prefix[idx])
+                found_prefix = True;
+    }
+    for ( j = str+1; isalnum((int) *j); j++ );
+    for ( idx = 0; idx < sizeof(tilde_suffix) && !found_suffix; ++idx)
+        if (*j == tilde_suffix[idx])
+            found_suffix = True;
+
+    if (found_prefix && found_suffix)
+    {
+        if ((tilde_name = malloc ( (int) (j - str + 1))) == NULL)
+            return False;
+        strncpy ( tilde_name, str, j - str );
+        tilde_name[j-str] = '\0';
+        sqsh_tilde_expand = tilde_expand ( tilde_name );
+        varbuf_strcat( buf, sqsh_tilde_expand );
+        free ( sqsh_tilde_expand );
+        free ( tilde_name );
+        str = j;
+    }
+    else
+    {
+        varbuf_charcat( buf, *str++ );
+    }
+
+    *cpp = str;
+    return True;
+}
+#endif
 
 /*
  * sqsh-2.1.6 feature - expand_color_prompt()

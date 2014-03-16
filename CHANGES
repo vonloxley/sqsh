@@ -9,7 +9,7 @@
                   filename by $p2fname.
                   By default the threshold is set to NULL which means that the feature is disabled. If the value
                   is set to 0 then the feature is still disabled. The variable p2fname is set to to NULL by default
-                  also. If you set both these variables then the feature is enabled when you run sqsh interactively.
+                  also. If you set both these variables then the feature is enabled when you run SQSH interactively.
 
                   For example: Suppose a table "keys" exists which is accidentally loaded twice with a list of
                   key values and you want to build a clustered index on that table while ignoring the duplicate
@@ -70,7 +70,7 @@
                   If you run this script without specifying a parameter, the expanded string is empty and you
                   just would end up executing 'sp_helpdb', displaying the results on all your databases. However,
                   if you specify a database name as parameter, the result would display extended information
-                  for just the specified dbname. In previous versions you could start sqsh on the command line
+                  for just the specified dbname. In previous versions you could start SQSH on the command line
                   and provide the parameters mixed with other argument options. For example:
 
                   sqsh -SSYBASE -Usa -i sp_helpdb.sqsh master -D tempdb -e
@@ -97,7 +97,7 @@
 
             \lcd: Local Change Directory. This command takes a directory name as argument and changes the
                   local SQSH context to this directory. You can use "\lcd -" to return back to the previous
-                  directory. If you exit sqsh then the shell is still in the same directory from where sqsh was
+                  directory. If you exit SQSH then the shell is still in the same directory from where SQSH was
                   started.
 
 
@@ -154,7 +154,7 @@
 
 5 - Improvement - The \go command now accepts the option -e to echo the expanded SQL command buffer before
                   sending it to the server and the -l option will suppress the separator lines with the pretty
-                  output style. The echo option was already available as a sqsh startup parameter (i.e sqsh -SSYBASE -e)
+                  output style. The echo option was already available as a SQSH startup parameter (i.e sqsh -SSYBASE -e)
                   and could be changed by setting the $echo variable to On or Off. Now it is available on a per
                   batch execution basis. For example:
 
@@ -180,16 +180,23 @@
                   | pub_id | pub_name                             | city                 | state |
                   +========+======================================+======================+=======+
                   | 0736   | New Age Books                        | Boston               | MA    |
-                  +--------+--------------------------------------+----------------------+-------+
+      sepline>    +--------+--------------------------------------+----------------------+-------+
                   | 1389   | Algodata Infosystems                 | Berkeley             | CA    |
                   +--------+--------------------------------------+----------------------+-------+
+
+                  The -l option on the \go and \run command is a one time option that activates separator
+                  line suppression for the current batch or current script file only. There is also a new
+                  variable "nosepline" that is a Boolean which defaults to False, but when enabled with
+                  \set nosepline=True, in the .sqshrc file for example, will activate pretty separator line
+                  suppression permanently and you you do not have to provide the -l parameter to the \go or
+                  \run command anymore.
 
 
 6 - Improvement - Two new read only variables are introduced that contain the date and time SQSH was built.
                   The variables are named builddate and buildtime.
 
                   SYBASE.sa.master.1> \echo "Program $version was compiled on $builddate - $buildtime"
-                  Program sqsh-2.5 was compiled on Mar  8 2014 - 11:15:42
+                  Program sqsh-2.5 was compiled on Mar 15 2014 - 11:15:42
 
 
 7 - Improvement - SQSH now understands the ANSI inner join syntax when using Readline TAB completion on an alias name
@@ -209,39 +216,32 @@
                   This works on both Cygwin32 and Cygwin64 bits platforms.
 
 
-10 - Improvement -The Readline function "tilde_expand()" performs tilde expansion by default only when the tilde in
-                  a string is preceded by a blank space or a tab character and is appended with a slash, blank space
-                  or newline. That is, Readline must be able to expand the tilde and its optional name and its
-                  surrounding characters to a valid file or pathname.
-                  If the tilde is preceded with a "=" for example or a double quote or a colon  to specify a list,
-                  like in \set p2fname=~/tmp/dba.log or \set p2fname="~/tmp/dba.log" then the tilde did not got
-                  expanded and the string assignment was assigned as is and the file could not be opened.
-                  Note that it might be confusing that when you do a \echo $filename that expansion occurs at
-                  \echo run time and the resulting string /home/sybase/tmp/dba.log, for example, is shown as expected.
-                  However, if you do a
+10 - Improvement -In sqsh-2.1.8 tilde expansion on the command line was introduced by using the tilde_expand()
+                  function of the Readline package. By default this tilde expansion is rather strict and only
+                  works properly if the tilde is preceded by a blank or tab character and followed with a slash,
+                  blank space or newline. So for example you were able to use this in a command like
 
-                      \set | grep filename
+                      SYBASE.sa.master.1> select ...
+                      SYBASE.sa.master.2> \go > ~/tmp/result.log
 
-                  then you would see the real unexpanded value ~/tmp/dba.log stored in this variable.
-                  This is being fixed now by implementing tilde expansion in the sqsh_expand() function where it
-                  obviously belongs. When the tilde is preceded by a blank space, tab, double quote, equal sign or
-                  colon and the tilde name specifier is followed by a slash, blank space, tab, newline, double quote,
-                  equal sign or colon, then the tilde will be expanded, otherwise it will be left alone.
-                  If you need a tilde where it would otherwise be expanded, you have to use single quotes or you may
-                  escape the tilde with \\~. For example:
+                  but you could not use it in 
 
-                      \set searchpath='.:~/bin:~/lib:~sybase/bin:~sybase/lib'
+                      SYBASE.sa.master.1> \set session="~/.sqsh/session.ini".
 
-                  Another example:
+                  This is being fixed now by implementing tilde expansion in the sqsh_expand() function (where it
+                  obviously belongs). When the tilde is preceded by a blank space, tab, double quote, equal sign,
+                  colon, > or < and the tilde name specifier is followed by a slash, blank space, tab, newline,
+                  double quote, equal sign or colon, then the tilde will be expanded (still using the readline
+                  tilde_expand function), otherwise it will be left alone. If you need a tilde where it would
+                  otherwise be expanded, you have to use single quotes or you may escape the tilde with \\~.
+                  For example:
 
-                      SYBASE.sa.master.1> sp_who
-                      SYBASE.sa.master.2> go >~/tmp/who.log
-                      sqsh: Unable to open ~/tmp/who.log: sqsh_open: No such file or directory
-                      SYBASE.sa.master.2> go > ~/tmp/who.log
+                      SYBASE.sa.master.1> \set searchpath='.:~/bin:~/lib:~sybase/bin:~sybase/lib'
 
-                  The first go statements fails because of the ill formatted redirection specifier. By adding a space
-                  between ">" and "~" the command is successfull.
-                  With this code change, Sqsh is now more compliant with tilde expansion in bash.
+                  A tilde will be expanded to your HOME directory and a tilde followed by a unix/linux login name
+                  will expand to the home directory for that login, according to the /etc/passwd file.
+                  Note that tilde expansion will not occur in the SQL buffer, but only for SQSH commands.
+                  With this code change, SQSH is now a little more compliant with tilde expansion in bash.
 
 
 11 - Bugfix -     Typing a ^C after a \do command was run, resulted in a segmentation fault. This was caused by
