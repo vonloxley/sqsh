@@ -7,17 +7,17 @@
                   that will be shown on screen for the current batch. If the threshold is exceeded, the remainder
                   of the messages will be written to a file. The threshold is specified with variable $p2faxm and the
                   filename by $p2fname.
-                  By default the threshold is set to NULL which means that the feature is disabled. If the value
-                  is set to 0 then the feature is still disabled. The variable p2fname is set to to NULL by default
-                  also. If you set both these variables then the feature is enabled when you run SQSH interactively.
+                  By default the threshold variable $p2faxm and the filename $p2fname are set to NULL, which means
+                  that the feature is disabled. If the threshold value is set to 0, then the feature is still disabled.
+                  If you set both these variables then the feature is enabled when you run SQSH interactively.
 
-                  For example: Suppose a table "keys" exists which is accidentally loaded twice with a list of
-                  key values and you want to build a clustered index on that table while ignoring the duplicate
+                  For example: Suppose a heap table "inventory" exists which is accidentally loaded twice using bcp
+                  and you want to build a clustered index on that table while ignoring the duplicate
                   rows. To prevent an overflow of warning messages on screen you now could do:
 
-                  SYBASE.sa.tempdb.1> \set p2fname=/tmp/sqsh_p2f.out
+                  SYBASE.sa.tempdb.1> \set p2fname="~/tmp/sqsh_p2f.out"
                   SYBASE.sa.tempdb.1> \set p2faxm=10
-                  SYBASE.sa.tempdb.1> create clustered index keys_cx on keys(id) with ignore_dup_row
+                  SYBASE.sa.tempdb.1> create clustered index inventory_cx on inventory(id) with ignore_dup_row
                   SYBASE.sa.tempdb.2> go
                   Warning: deleted duplicate row.  Primary key is '0'
                   Warning: deleted duplicate row.  Primary key is '1'
@@ -30,32 +30,32 @@
                   Warning: deleted duplicate row.  Primary key is '8'
                   Warning: deleted duplicate row.  Primary key is '9'
                   Warning: Number of printed server messages exceeds p2faxm=10 limit for current batch.
-                           Remaining server messages will be printed to file: /tmp/sqsh_p2f.out
+                           Remaining server messages will be printed to file: /home/sybase/tmp/sqsh_p2f.out
 
                   When you assign a new value to the p2fname variable, the current file is closed and a new one
                   is opened. If the file already exist, then new data will be appended.
                   Note that for each new batch the message counter is reset. This feature is not applicable when
                   running SQSH in batch mode. So when you would execute something like:
 
-                  sqsh -C"create clustered index keys_cx on keys(id) with ignore_dup_row" \
+                  sqsh -C"create clustered index inventory_cx on inventory(id) with ignore_dup_row" \
                        -Lp2faxm=10 -Lp2fname=/tmp/sqsh_p2f.out
 
                   the variable settings are ignored and while no output file is specified with the "-o" option
-                  nor output redirection is used like "> result.out 2>&1), the warning messages will go to the
+                  nor output redirection is used like "... > result.out 2>&1", the warning messages will go to the
                   terminal screen altogether.
                   Please note that if you enable this feature by default by specifying the variables in the ~/.sqshrc
                   file for example and the threshold p2faxm is set rather low, that the output of sp_sysmon
                   for example may inadvertently be written to a file.
 
                   SYBASE.sa.master.1> \set p2faxm=3
-                  SYBASE.sa.master.1> \set p2fname=/tmp/sqsh_p2f.out
+                  SYBASE.sa.master.1> \set p2fname=~sybase/tmp/sqsh_p2f.out
                   SYBASE.sa.master.1> sp_sysmon "00:00:10"
                   SYBASE.sa.master.2> go
                   ===============================================================================
                         Sybase Adaptive Server Enterprise System Performance Report
                   ===============================================================================
                   Warning: Number of printed server messages exceeds p2faxm=3 limit for current batch.
-                           Remaining server messages will be printed to file: /tmp/sqsh_p2f.out
+                           Remaining server messages will be printed to file: /home/sybase/tmp/sqsh_p2f.out
                   (return status = 0)
 
 
@@ -70,12 +70,12 @@
                   If you run this script without specifying a parameter, the expanded string is empty and you
                   just would end up executing 'sp_helpdb', displaying the results on all your databases. However,
                   if you specify a database name as parameter, the result would display extended information
-                  for just the specified dbname. In previous versions you could start SQSH on the command line
+                  for just the specified dbname. In previous versions you could start SQSH only on the command line
                   and provide the parameters mixed with other argument options. For example:
 
                   sqsh -SSYBASE -Usa -i sp_helpdb.sqsh master -D tempdb -e
 
-                  But there was no possibility to start running a script from the SQSH prompt and passing on arguments
+                  But there was no possibility to start a script from the SQSH prompt and passing on arguments
                   as well. You can use the \loop command to run a script file, but that command does not accept
                   additional parameters. As the \loop command is the heart of SQSH, I did not want to take the risk
                   of breaking existing code, so I implemented this new command "\run". Now you can run from the prompt:
@@ -143,7 +143,7 @@
 
                   you can then start a secure session by specifying:
 
-                  sqsh -Shost:port:ssl ...
+                  sqsh -Ssybprod1:5001:ssl ...
 
                   The portnumber used on this connection must be configured for SSL connections in the server. The
                   host may be specified with a name or an IP address.
@@ -214,6 +214,8 @@
                   detect 64 bit compilations and thus setting "CPPFLAGS=-DSYB_LP64" in the src/Makefile as required.
                   Also building SQSH on the Cygwin platform is now fully automated by configure and make.
                   This works on both Cygwin32 and Cygwin64 bits platforms.
+                  Furthermore the gnulib installation scripts like config.sub, config.guess and install-sh have
+                  been refreshed to the latest version available.
 
 
 10 - Improvement -In sqsh-2.1.8 tilde expansion on the command line was introduced by using the tilde_expand()
@@ -250,7 +252,7 @@
 
 12 - Bugfix -     Fixed a problem with assigning values to the variables colsep, linesep, bcp_colsep and bcp_rowsep.
                   In previous SQSH versions it was not possible to reset these variables to the default
-                  by assigning the 'default' string or NULL value and the latter resulted in a segmentation fault.
+                  by assigning the 'default' string or a NULL value and the latter resulted in a segmentation fault.
                   It is now possible/easier to assign control characters to these variables, for example:
 
                   SYBASE.sa.master.1> \set linesep="\n"
