@@ -3937,8 +3937,12 @@ $as_echo_n "checking Open Client libraries... " >&6; }
 		# Assume this is a FreeTDS build
 		#
 			SYBASE_VERSION="FreeTDS"
-			SYBASE_LIBDIR="$SYBASE_OCOS/lib"
-			if [ ! -f $SYBASE_LIBDIR/libct.a -a ! -f $SYBASE_LIBDIR/libct.so ]; then
+			if [ "$ac_cv_bit_mode" = "64" -a -f $SYBASE_OCOS/lib64/libct.so ]; then
+				SYBASE_LIBDIR="$SYBASE_OCOS/lib64"
+			else
+				SYBASE_LIBDIR="$SYBASE_OCOS/lib"
+			fi
+			if [ ! -f $SYBASE_LIBDIR/libct.so ]; then
 				{ $as_echo "$as_me:${as_lineno-$LINENO}: result: fail" >&5
 $as_echo "fail" >&6; }
 				as_fn_error $? "No properly installed FreeTDS or Sybase environment found in ${SYBASE_OCOS}." "$LINENO" 5
