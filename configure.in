@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.10 2014/03/09 20:58:51 mwesdorp Exp $
+dnl $Id: configure.in,v 1.11 2014/03/11 21:49:04 mwesdorp Exp $
 dnl
 dnl Copyright (C) 2000-2002 Free Software Foundation, Inc.
 dnl This file is free software, distributed under the terms of the GNU
@@ -350,11 +350,6 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(stropts.h memory.h stdlib.h time.h sys/time.h sys/types.h string.h strings.h fcntl.h unistd.h errno.h limits.h sys/param.h crypt.h shadow.h locale.h)
 
 dnl
-dnl Checks for library functions.
-dnl
-AC_CHECK_FUNCS(sigaction strcasecmp strerror cftime strftime memcpy memmove localtime timelocal strchr gettimeofday get_process_stats crypt poll localeconv setlocale)
-
-dnl
 dnl Check for crypt, pthread and iconv libraries
 dnl
 AC_FIND_LIB(crypt, [$LIBDIRS], [ LIBS="${LIBS} -lcrypt" ],[ ])
@@ -364,6 +359,11 @@ fi
 if test "$SYBASE_VERSION" = "FreeTDS"; then
 	AC_FIND_LIB(iconv, [$LIBDIRS], [ LIBS="${LIBS} -liconv" ],[ ])
 fi
+
+dnl
+dnl Checks for library functions.
+dnl
+AC_CHECK_FUNCS(sigaction strcasecmp strerror cftime strftime memcpy memmove localtime timelocal strchr gettimeofday get_process_stats crypt poll localeconv setlocale)
 
 dnl
 dnl Checks function behaviour
