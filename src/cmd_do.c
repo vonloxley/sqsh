@@ -75,7 +75,7 @@ int cmd_do( argc, argv )
 	varbuf_t         *orig_sqlbuf;          /* SQL Buffer upon entry */
 	CS_CONNECTION    *orig_conn;            /* Connection upon entry */
 	CS_CONTEXT       *orig_ctxt;            /* Context upon entry */
-	char              orig_password[SQSH_PASSLEN+1]; /* Current session password */
+	char              orig_password[SQSH_PASSLEN+1] = ""; /* Current session password */
 	int               ret        = False;
 	int               have_error = False;
 	int               exit_status;
@@ -99,7 +99,8 @@ int cmd_do( argc, argv )
 	env_get( g_env, "DSQUERY",  &expand); env_put( g_env, "DSQUERY",  expand, ENV_F_TRAN );
 	env_get( g_env, "database", &expand); env_put( g_env, "database", expand, ENV_F_TRAN );
 	env_get( g_env, "username", &expand); env_put( g_env, "username", expand, ENV_F_TRAN );
-	strcpy ( orig_password, g_password);
+	if (g_password != NULL)
+		strcpy ( orig_password, g_password);
 
 	while ((ch = sqsh_getopt( argc, argv, "S:U:P:D:n" )) != EOF)
 	{

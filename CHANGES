@@ -1,4 +1,4 @@
-                                            Changes in sqsh-2.5
+                                            Changes in sqsh-2.5, sqsh-2.5.16 and sqsh-2.5.16.1
 
                                 New features, improvements and bug fixes:
 
@@ -290,9 +290,16 @@
                   in FreeTDS processing, i.e. do not use an explicit cs_convert for this datatype but use native
                   FreeTDS internal conversions instead.
 
-14 - Bugfix -     In several places code has been changed to solve compiler complaints on redeclared objects
+14 - Coding -     In several places code has been changed to solve compiler complaints on redeclared objects
                   or to improve code readability. See below for details.
 
+15 - Bugfix -     The \do command would result in a segmentation fault when the server password is empty (NULL).
+
+16 - configure -  Running configure for sqsh-2.5 and sqsh-2.5.16 could fail on some systems where "grep -e" is
+                  not supported.  This is being fixed now by using the command stored in $EGREP that is determined
+                  earlier by configure, instead of using "grep -e" when probing for the current OpenClient version.
+
+17 - Enhancement - The source code is prepared for CT-Library version 16 (CS_VERSION_16, with $SYBASE/OCS-16_0).
 
 
                              All modified source files in release 2.5
@@ -314,6 +321,7 @@
 
   sqsh-2.5/src/cmd_do.c        - Fixed a bug with interrupt handlers.
                                  Implementation of feature "P2F": Counter is set to zero at the start of a new batch.
+                                 Fixed a bug when the g_password variable is NULL, i.e. the server password is empty.
 
   sqsh-2.5/src/cmd_go.c        - New command option -e can now be specified with the \go command to echo the expanded
                                  SQL buffer before it is being send to the server.
