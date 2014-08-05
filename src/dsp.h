@@ -128,43 +128,41 @@ extern int g_dsp_interrupted;
  */
 
 /*-- Types of properties for dsp_prop() --*/
-#define DSP_WIDTH         1
-#define DSP_COLSEP        2
-#define DSP_LINESEP       3
-#define DSP_XGEOM         4
-#define DSP_STYLE         5
-#define DSP_DATETIMEFMT   6
-#define DSP_FLOAT_SCALE   7
-#define DSP_FLOAT_PREC    8
-#define DSP_REAL_SCALE    9
-#define DSP_REAL_PREC    10
-#define DSP_COLWIDTH     11
-#define DSP_OUTPUTPARMS  12
-#define DSP_BCP_COLSEP   13
-#define DSP_BCP_ROWSEP   14
-#define DSP_BCP_TRIM     15
-#define DSP_MAXLEN       16
-#define DSP_CSV_COLSEP   17
-#define DSP_CSV_ROWSEP   18
-#define DSP_DATEFMT      19
-#define DSP_TIMEFMT      20
-#define DSP_VALID_PROP(p) ((p) >= DSP_WIDTH && (p) <= DSP_TIMEFMT)
-
+#define DSP_DATETIMEFMT   1
+#define DSP_DATEFMT       2
+#define DSP_TIMEFMT       3
+#define DSP_COLWIDTH      4
+#define DSP_FLOAT_PREC    5
+#define DSP_FLOAT_SCALE   6
+#define DSP_REAL_PREC     7
+#define DSP_REAL_SCALE    8
+#define DSP_STYLE         9
+#define DSP_WIDTH         10
+#define DSP_OUTPUTPARMS   11
+#define DSP_COLSEP        12
+#define DSP_BCP_COLSEP    13
+#define DSP_BCP_ROWSEP    14
+#define DSP_BCP_TRIM      15
+#define DSP_LINESEP       16
+#define DSP_XGEOM         17
+#define DSP_MAXLEN        18
+#define DSP_CSV_NULLIND   19
+#define DSP_VALID_PROP(p) ((p) >= DSP_DATETIMEFMT && (p) <= DSP_CSV_NULLIND)
 
 /*-- Length for dsp_prop() --*/
 #define DSP_NULLTERM     -1
 #define DSP_UNUSED       -2
 
 /*-- Different display styles for DSP_STYLE property --*/
-#define DSP_BCP           1
-#define DSP_HORIZ         2
-#define DSP_VERT          3
-#define DSP_HTML          4
-#define DSP_NONE          5
-#define DSP_META          6
-#define DSP_PRETTY        7
-#define DSP_CSV           8
-#define DSP_VALID_STYLE(s) ((s) >= DSP_BCP && (s) <= DSP_CSV)
+#define DSP_HORIZ         1
+#define DSP_VERT          2
+#define DSP_PRETTY        3
+#define DSP_BCP           4
+#define DSP_CSV           5
+#define DSP_HTML          6
+#define DSP_META          7
+#define DSP_NONE          8
+#define DSP_VALID_STYLE(s) ((s) >= DSP_HORIZ && (s) <= DSP_NONE)
 
 
 /*-- External Prototypes --*/
@@ -199,7 +197,7 @@ typedef int (dsp_t) _ANSI_ARGS(( dsp_out_t*, CS_COMMAND*, int ));
 #define MAX_XGEOM     9      /* Maximum X geometry NNNNxNNNN */
 
 /*
- * The following data structure is used to represent all of the 
+ * The following data structure is used to represent all of the
  * available properties within the display sub-system.
  */
 typedef struct dsp_prop_st {
@@ -217,13 +215,15 @@ typedef struct dsp_prop_st {
 	int     p_colwidth;              /* Max column width in pretty mode */
 	int     p_outputparms;           /* Display output parameters? */
 	char    p_bcp_colsep[MAX_SEPLEN+1];  /* Current bcp column separator */
-	int     p_bcp_colsep_len;        /* Display len of bcp column separator */
+	int     p_bcp_colsep_len;            /* Display len of bcp column separator */
 	char    p_bcp_rowsep[MAX_SEPLEN+1];  /* Current bcp row separator */
-	int     p_bcp_rowsep_len;        /* Display len of bcp row separator */
-	int     p_bcp_trim;              /* True/False: Trim spaces in bcp? */
-	int     p_maxlen;                /* Maximum column width we will accept */
-    char    p_csv_colsep[MAX_SEPLEN+1]; /* Current csv column separator */
-    int     p_csv_colsep_len;        /* Display len of csv column separator */
+	int     p_bcp_rowsep_len;            /* Display len of bcp row separator */
+	int     p_bcp_trim;                  /* True/False: Trim spaces in bcp? */
+	int     p_maxlen;                    /* Maximum column width we will accept */
+	char    p_csv_colsep[MAX_SEPLEN+1];  /* Current csv column separator */
+	int     p_csv_colsep_len;            /* Display len of csv column separator */
+	char    p_csv_nullind[MAX_SEPLEN+1]; /* CSV NULL indicator string */
+	int     p_csv_nullind_len;           /* CSV NULL indicator string length */
 } dsp_prop_t;
 
 

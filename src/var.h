@@ -41,6 +41,7 @@ int var_set_add             _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_packet          _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_completion      _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_esc             _ANSI_ARGS(( env_t*, char*, char** )) ;
+int var_set_nullesc         _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_debug           _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_readonly        _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_lock            _ANSI_ARGS(( env_t*, char*, char** )) ;
@@ -64,6 +65,7 @@ int var_set_datefmt         _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_timefmt         _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_lconv           _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_set_p2fname         _ANSI_ARGS(( env_t*, char*, char** )) ;
+int var_set_csv_nullind     _ANSI_ARGS(( env_t*, char*, char** )) ;
 
 /*-- Retrieval validation functions --*/
 int var_get_date            _ANSI_ARGS(( env_t*, char*, char** )) ;
@@ -84,6 +86,7 @@ int var_get_interactive     _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_get_maxlen          _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_get_datefmt         _ANSI_ARGS(( env_t*, char*, char** )) ;
 int var_get_timefmt         _ANSI_ARGS(( env_t*, char*, char** )) ;
+int var_get_csv_nullind     _ANSI_ARGS(( env_t*, char*, char** )) ;
 
 #ifdef SQSH_INIT
 
@@ -136,7 +139,7 @@ static var_entry_t  sg_var_entry[] = {
     { "histsave",         "1",           var_set_bool,        NULL            },
     { "histsize",         "10",          var_set_histsize,    NULL            },
     { "hostname",         NULL,          var_set_nullstr,     NULL            },
-    { "ifs",              "\n\f\r\t\v",  var_set_esc,         NULL            },
+    { "ifs",              "\n\f\r\t\v",  var_set_nullesc,     NULL            },
     { "interactive",      "1",           var_set_readonly,    var_get_interactive },
     { "interfaces",       NULL,          var_set_interfaces,  NULL            },
     { "keyword_completion", "0",         var_set_completion,  NULL            },
@@ -217,6 +220,8 @@ static var_entry_t  sg_var_entry[] = {
     { "builddate",      __DATE__,        var_set_readonly,    NULL            },
     { "buildtime",      __TIME__,        var_set_readonly,    NULL            },
 #endif
+    /* sqsh-3.0 - New variable */
+    { "csv_nullind",      "",            var_set_csv_nullind, var_get_csv_nullind},
 } ;
 
 #endif /* SQSH_INIT */

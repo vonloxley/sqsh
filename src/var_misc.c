@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_misc.c,v 1.7 2014/03/11 21:49:04 mwesdorp Exp $" ;
+static char RCS_Id[] = "$Id: var_misc.c,v 1.8 2014/03/12 14:40:43 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -107,6 +107,53 @@ int var_get_env( env, var_name, var_value )
  * Allow a variable to be set using escape sequences.
  */
 int var_set_esc( env, var_name, var_value )
+	env_t    *env ;
+	char     *var_name ;
+	char     **var_value ;
+{
+	char   *src, *dst ;
+
+	src = *var_value ;
+	dst = *var_value ;
+	while( *src != '\0' ) {
+		if( *src == '\\' ) {
+			++src ;
+			switch( *src ) {
+				case 'n' :
+					*dst++ = '\n' ;
+					break ;
+				case 'f' :
+					*dst++ = '\f' ;
+					break ;
+				case 'r' :
+					*dst++ = '\r' ;
+					break ;
+				case 't' :
+					*dst++ = '\t' ;
+					break ;
+				case 'v' :
+					*dst++ = '\v' ;
+					break ;
+				default :
+					*dst++ = *src ;
+			}
+		} else {
+			*dst++ = *src ;
+		}
+
+		++src ;
+	}
+	*dst = '\0' ;
+
+	return True ;
+}
+
+/*
+ * var_set_nullesc():
+ *
+ * Allow a variable to be set using escape sequences.
+ */
+int var_set_nullesc( env, var_name, var_value )
 	env_t    *env ;
 	char     *var_name ;
 	char     **var_value ;

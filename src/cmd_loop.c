@@ -39,7 +39,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_loop.c,v 1.1.1.1 2004/04/07 12:35:03 chunkm0nkey Exp $";
+static char RCS_Id[] = "$Id: cmd_loop.c,v 1.2 2013/04/18 11:54:43 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -137,13 +137,10 @@ int cmd_loop( argc, argv )
 	 */
 	if (do_connect)
 	{
-		if ((jobset_run( g_jobset, "\\connect", &exit_status )) == -1)
+		if (jobset_run( g_jobset, "\\connect", &exit_status ) == -1 || exit_status == CMD_FAIL)
 		{
-			fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
 			return CMD_FAIL;
 		}
-		if (exit_status == CMD_FAIL)
-			return CMD_FAIL;
 	}
 
 	/*

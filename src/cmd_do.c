@@ -258,9 +258,8 @@ int cmd_do( argc, argv )
 	{
 		g_connection = NULL;
 		g_context    = NULL;
-		if (jobset_run( g_jobset, "\\connect", &exit_status ) == -1)
+		if (jobset_run( g_jobset, "\\connect", &exit_status ) == -1 || exit_status == CMD_FAIL)
 		{
-			fprintf( stderr, "\\do: Connect failed\n" );
 			ret = exit_status;
 		}
 	}

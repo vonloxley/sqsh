@@ -41,7 +41,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_go.c,v 1.6 2014/01/21 20:29:49 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_go.c,v 1.7 2014/03/11 21:49:04 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -308,9 +308,8 @@ int cmd_go( argc, argv )
 	 */
  	if (g_connection == NULL) 
 	{
-		if (jobset_run( g_jobset, "\\connect", &exit_status ) == -1) 
+		if (jobset_run( g_jobset, "\\connect", &exit_status ) == -1 || exit_status == CMD_FAIL) 
 		{
-			fprintf( stderr, "\\go: Connect failed\n" );
 			env_rollback( g_env );
 			return CMD_FAIL;
 		}

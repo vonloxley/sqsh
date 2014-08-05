@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.39 2014/03/11 21:49:04 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.40 2014/04/04 08:22:38 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -470,10 +470,9 @@ int cmd_connect( argc, argv )
                                session);)
                 cp = malloc (strlen(session) + 12) ;
                 sprintf (cp, "\\loop -n %s", session);
-                if ((jobset_run( g_jobset, cp, &exit_status )) == -1 ||
-                    exit_status == CMD_FAIL)
+                if (jobset_run( g_jobset, cp, &exit_status ) == -1 || exit_status == CMD_FAIL)
                 {
-                    fprintf( stderr, "%s\n", sqsh_get_errstr() );
+                    fprintf( stderr, "%s: %s\n", cp, sqsh_get_errstr() );
                     free (cp);
                     goto connect_fail;
                 }

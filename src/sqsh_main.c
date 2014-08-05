@@ -42,7 +42,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.22 2013/04/18 11:54:43 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.23 2013/04/25 14:09:47 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -277,8 +277,7 @@ main( argc, argv )
             if (access( cptr, R_OK ) != -1)
             {
                 env_set( g_env, "cur_rcfile", cptr );
-                if((jobset_run( g_jobset, "\\loop -n $cur_rcfile", &exit_status))
-                    == -1 )
+                if (jobset_run( g_jobset, "\\loop -n $cur_rcfile", &exit_status) == -1 || exit_status == CMD_FAIL)
                 {
                     fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
                     sqsh_exit(255);
@@ -790,7 +789,7 @@ main( argc, argv )
      */
     if (sql != NULL)
     {
-        if ((jobset_run( g_jobset, "\\loop -e \"$sql\"", &exit_status )) == -1)
+        if (jobset_run( g_jobset, "\\loop -e \"$sql\"", &exit_status ) == -1 || exit_status == CMD_FAIL)
         {
             fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
             sqsh_exit( 255 );
@@ -803,7 +802,7 @@ main( argc, argv )
          * the read-eval-print loop.  Note, it is the responsibility
          * of the loop to establish the connection to the database.
          */
-        if ((jobset_run( g_jobset, "\\loop $script", &exit_status )) == -1)
+        if (jobset_run( g_jobset, "\\loop $script", &exit_status ) == -1 || exit_status == CMD_FAIL)
         {
             fprintf( stderr, "\\loop: %s\n", sqsh_get_errstr() );
             sqsh_exit( 255 );

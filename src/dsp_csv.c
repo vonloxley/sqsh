@@ -34,17 +34,17 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_csv.c,v 1.1 2005/07/24 11:41:19 mpeppler Exp $";
+static char RCS_Id[] = "$Id: dsp_csv.c,v 1.2 2013/02/19 18:06:42 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
     static void dsp_col _ANSI_ARGS(( dsp_out_t*, char*, int ));
 
 /*
- * dsp_bcp:
+ * dsp_csv:
  *
  * Kind of stupid routine for displaying a result set in a packed
- * format, separated by $colsep only.  No formatting is done.
+ * format, separated by "," only.  No formatting is done.
  *
  */
 int dsp_csv( output, cmd, flags )
@@ -85,7 +85,7 @@ int dsp_csv( output, cmd, flags )
 		return DSP_FAIL;
 	    }
 	    break;
-			
+
 	  case CS_PARAM_RESULT:
 	  case CS_ROW_RESULT:
 	  case CS_COMPUTE_RESULT:
@@ -94,7 +94,7 @@ int dsp_csv( output, cmd, flags )
 	    {
 		while ((ret = ct_fetch( cmd, CS_UNUSED, CS_UNUSED, CS_UNUSED,
 					&nrows )) == CS_SUCCEED);
-					
+
 		if (ret != CS_END_DATA)
 		{
 		    return DSP_FAIL;
@@ -112,7 +112,7 @@ int dsp_csv( output, cmd, flags )
 	    for (i = 0; i < desc->d_ncols; i++)
 	    {
 		col = &desc->d_cols[i];
-                    
+
 		if (col->c_format.namelen > 0)
 		{
 		    dsp_fputs( col->c_format.name, output );
@@ -135,13 +135,13 @@ int dsp_csv( output, cmd, flags )
 		{
 		    if (desc->d_cols[i].c_nullind == 0)
 		    {
-			dsp_col( output, 
+			dsp_col( output,
 				 desc->d_cols[i].c_data,
 				 strlen( desc->d_cols[i].c_data ) );
 		    }
 		    else
 		    {
-			dsp_col( output, "", 0 );
+			dsp_fputs( g_dsp_props.p_csv_nullind, output );
 		    }
 
 		    if (i < (desc->d_ncols-1))
@@ -167,7 +167,7 @@ int dsp_csv( output, cmd, flags )
 		return DSP_FAIL;
 	    }
 	    break;
-			
+
 	  default:
 	    break;
 	}

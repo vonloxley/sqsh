@@ -34,7 +34,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: var_dsp.c,v 1.6 2014/01/18 18:36:34 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: var_dsp.c,v 1.7 2014/03/12 14:40:43 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -220,40 +220,40 @@ int var_set_style( env, var_name, var_value )
 		return False;
 	}
 
-	if (strcmp( *var_value, "hor" )        == 0 ||
-	    strcmp( *var_value, "horiz" )      == 0 ||
-	    strcmp( *var_value, "horizontal" ) == 0)
+	if (strcasecmp( *var_value, "hor" )        == 0 ||
+	    strcasecmp( *var_value, "horiz" )      == 0 ||
+	    strcasecmp( *var_value, "horizontal" ) == 0)
 	{
 		style = DSP_HORIZ;
 	}
-	else if (strcmp( *var_value, "vert" )     == 0 ||
-	         strcmp( *var_value, "vertical" ) == 0)
+	else if (strcasecmp( *var_value, "vert" )     == 0 ||
+	         strcasecmp( *var_value, "vertical" ) == 0)
 	{
 		style = DSP_VERT;
 	}
-	else if (strcmp( *var_value, "bcp" ) == 0)
+	else if (strcasecmp( *var_value, "pretty" ) == 0)
+	{
+		style = DSP_PRETTY;
+	}
+	else if (strcasecmp( *var_value, "bcp" ) == 0)
 	{
 		style = DSP_BCP;
 	}
-	else if (strcmp( *var_value, "csv" ) == 0)
+	else if (strcasecmp( *var_value, "csv" ) == 0)
 	{
 		style = DSP_CSV;
 	}
-	else if (strcmp( *var_value, "html" ) == 0)
+	else if (strcasecmp( *var_value, "html" ) == 0)
 	{
 		style = DSP_HTML;
 	}
-	else if (strcmp( *var_value, "none" ) == 0)
-	{
-		style = DSP_NONE;
-	}
-	else if (strcmp( *var_value, "meta" ) == 0)
+	else if (strcasecmp( *var_value, "meta" ) == 0)
 	{
 		style = DSP_META;
 	}
-	else if (strcmp( *var_value, "pretty" ) == 0)
+	else if (strcasecmp( *var_value, "none" ) == 0)
 	{
-		style = DSP_PRETTY;
+		style = DSP_NONE;
 	}
 	else
 	{
@@ -285,32 +285,32 @@ int var_get_style( env, var_name, var_value )
 
 	switch (style)
 	{
-		case DSP_HORIZ: 
+		case DSP_HORIZ:
 			*var_value = "horizontal";
 			break;
 		case DSP_VERT:
 			*var_value = "vertical";
 			break;
-		case DSP_HTML:
-			*var_value = "html";
+		case DSP_PRETTY:
+			*var_value = "pretty";
 			break;
 		case DSP_BCP:
 			*var_value = "bcp";
 			break;
-		case DSP_NONE:
-			*var_value = "none";
+		case DSP_CSV:
+			*var_value = "csv";
+			break;
+		case DSP_HTML:
+			*var_value = "html";
 			break;
 		case DSP_META:
 			*var_value = "meta";
 			break;
-		case DSP_PRETTY:
-			*var_value = "pretty";
-			break;
-		case DSP_CSV:
-			*var_value = "csv";
+		case DSP_NONE:
+			*var_value = "none";
 			break;
 		default:
-			*var_value = "unknown";
+			*var_value = "horizontal";
 			break;
 	}
 
@@ -454,7 +454,7 @@ int var_set_colsep( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	if (var_set_esc( env, var_name, var_value ) == False)
+	if (var_set_nullesc( env, var_name, var_value ) == False)
 	{
 		return False;
 	}
@@ -491,7 +491,7 @@ int var_set_bcp_colsep( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	if (var_set_esc( env, var_name, var_value ) == False)
+	if (var_set_nullesc( env, var_name, var_value ) == False)
 	{
 		return False;
 	}
@@ -528,7 +528,7 @@ int var_set_bcp_rowsep( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	if (var_set_esc( env, var_name, var_value ) == False)
+	if (var_set_nullesc( env, var_name, var_value ) == False)
 	{
 		return False;
 	}
@@ -620,7 +620,7 @@ int var_set_linesep( env, var_name, var_value )
 	char     *var_name;
 	char     **var_value;
 {
-	if (var_set_esc( env, var_name, var_value ) == False)
+	if (var_set_nullesc( env, var_name, var_value ) == False)
 	{
 		return False;
 	}
@@ -688,7 +688,7 @@ int var_set_xgeom( env, var_name, var_value )
 
 	if (have_error == True)
 	{
-		sqsh_set_error( SQSH_E_INVAL, 
+		sqsh_set_error( SQSH_E_INVAL,
 		        "Invalid geometry, format must be WW or WWxHH" );
 		return False;
 	}
@@ -763,3 +763,44 @@ int var_get_maxlen( env, var_name, var_value )
 	*var_value = nbr;
 	return True;
 }
+
+/*
+ * New in sqsh-3.0
+ */
+int var_set_csv_nullind( env, var_name, var_value )
+	env_t    *env;
+	char     *var_name;
+	char     **var_value;
+{
+	if (var_set_esc( env, var_name, var_value ) == False)
+	{
+		return False;
+	}
+
+	if (dsp_prop( DSP_SET, DSP_CSV_NULLIND, (void*)(*var_value), DSP_NULLTERM) != DSP_SUCCEED)
+	{
+		return False;
+	}
+
+	DBG(sqsh_debug(DEBUG_SCREEN,"var_set_csv_nullind: csv_nullind now set to %s\n", *var_value);)
+
+	return True ;
+}
+
+int var_get_csv_nullind( env, var_name, var_value )
+	env_t    *env;
+	char     *var_name;
+	char     **var_value;
+{
+	static char csv_nullind[32];
+
+	if (dsp_prop( DSP_GET, DSP_CSV_NULLIND, (void*)csv_nullind, sizeof(csv_nullind) ) != DSP_SUCCEED)
+	{
+		*var_value = NULL;
+		return False;
+	}
+
+	*var_value = csv_nullind;
+	return True ;
+}
+

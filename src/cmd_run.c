@@ -35,7 +35,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_run.c,v 1.4 2014/02/12 16:48:24 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_run.c,v 1.5 2014/03/11 21:49:04 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -188,9 +188,8 @@ int cmd_run( argc, argv )
 	/*
 	 * Make sure we have a valid connection.
 	 */
-	if ((jobset_run( g_jobset, "\\connect", &exit_status )) == -1 || exit_status == CMD_FAIL)
+	if (jobset_run( g_jobset, "\\connect", &exit_status ) == -1 || exit_status == CMD_FAIL)
 	{
-		fprintf( stderr, "\\run: Unable to (re)connect\n" );
 		sqsh_stdin_pop();
 		fclose( input_file );
 		g_func_nargs--;
