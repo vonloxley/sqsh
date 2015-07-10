@@ -34,11 +34,11 @@ extern int errno;
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_csv.c,v 1.2 2013/02/19 18:06:42 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_csv.c,v 1.3 2014/08/05 15:54:38 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
-    static void dsp_col _ANSI_ARGS(( dsp_out_t*, char*, int ));
+    static void dsp_col _ANSI_ARGS(( dsp_out_t*, char*, int, int ));
 
 /*
  * dsp_csv:
@@ -58,7 +58,7 @@ int dsp_csv( output, cmd, flags )
     CS_INT       ret;          /* ct_results return code */
     CS_INT       nrows;        /* Number of rows fetch */
     dsp_desc_t  *desc;         /* Result set description */
-    dsp_col_t  *col;
+    dsp_col_t   *col;
 
     /*
      * Start blasting through result sets...
@@ -137,7 +137,8 @@ int dsp_csv( output, cmd, flags )
 		    {
 			dsp_col( output,
 				 desc->d_cols[i].c_data,
-				 strlen( desc->d_cols[i].c_data ) );
+				 strlen( desc->d_cols[i].c_data ),
+                                 desc->d_cols[i].c_is_int_type );
 		    }
 		    else
 		    {
@@ -180,10 +181,11 @@ int dsp_csv( output, cmd, flags )
  * dsp_col():
  *
  */
-static void dsp_col( output, col_value, col_width )
+static void dsp_col( output, col_value, col_width, col_int_type )
     dsp_out_t *output;
     char      *col_value;
     int        col_width;
+    int        col_int_type;
 {
     char    *end;
 
@@ -196,24 +198,21 @@ static void dsp_col( output, col_value, col_width )
 
 	if (g_dsp_props.p_bcp_trim == True)
 	{
-	    for (; end >= col_value && (*end == '\0' || isspace((int)*end));
+	    for (; end > col_value && (*end == '\0' || isspace((int)*end));
 		 --end);
 	}
 
-	/* FIXME
-	   Check for numeric only fields so that you don't have to quote
-	   everything... */
-	if (end > col_value || (end == col_value && !isspace((int)*end))) {
-	    dsp_fputc('"', output);
-	    for (; col_value <= end; ++col_value)
-	    {
-                /* sqsh-2.1.9 - Bug fix 3525302 */
-		if (*col_value == '"')
-		    dsp_fputc('"', output);
-		dsp_fputc( *col_value, output );
-	    }
-	    dsp_fputc('"', output);
-	}
+        if (col_int_type == False)
+            dsp_fputc('"', output);
+        for (; col_value <= end; ++col_value)
+        {
+            /* sqsh-2.1.9 - Bug fix 3525302 */
+            if (col_int_type == False && *col_value == '"')
+                dsp_fputc('"', output);
+            dsp_fputc( *col_value, output );
+        }
+        if (col_int_type == False)
+            dsp_fputc('"', output);
     }
 
     return;

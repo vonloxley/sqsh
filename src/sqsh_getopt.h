@@ -25,10 +25,17 @@
 #ifndef sqsh_getopt_h_included
 #define sqsh_getopt_h_included
 
+typedef struct sqsh_longopt_st {
+    char *name;
+    int   reqarg;
+    int   shortopt;
+} sqsh_longopt_t;
+
 /*-- Prototypes --*/
 int sqsh_getopt          _ANSI_ARGS(( int, char**, char* )) ;
 int sqsh_getopt_env      _ANSI_ARGS(( char*, char* )) ;
 int sqsh_getopt_combined _ANSI_ARGS(( char*, int, char**, char* )) ;
 int sqsh_getopt_reset    _ANSI_ARGS(( void )) ;
+int sqsh_getopt_long     _ANSI_ARGS(( int, char**, char*, sqsh_longopt_t[] )) ;
 
 #endif /* sqsh_getopt_h_included */

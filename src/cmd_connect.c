@@ -42,9 +42,20 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: cmd_connect.c,v 1.41 2014/08/05 15:54:38 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: cmd_connect.c,v 1.42 2014/08/06 09:38:15 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
+
+/*
+ * sqsh-3.0: Define FreeTDS enumerated values to prevent compile errors
+ * when using different versions of FreeTDS.
+*/
+#define CS_TDS_70 7365
+#define CS_TDS_71 7366
+#define CS_TDS_72 7367
+#define CS_TDS_73 7368
+#define CS_TDS_74 7369
+#define CS_TDS_80 CS_TDS_71
 
 /*
  * sqsh-2.1.6 - Structure for Network Security Options
@@ -115,6 +126,9 @@ static CS_RETCODE ShowNetAuthCredExp _ANSI_ARGS((CS_CONNECTION *,
 static JMP_BUF sg_jmp_buf;
 static int     sg_interrupted;
 static void    connect_run_sigint ( int, void *);
+
+/* sqsh-3.0 - Function execute_cmd to run a simple SQL command */
+static CS_RETCODE execute_cmd _ANSI_ARGS((CS_CONNECTION *, CS_CHAR *));
 
 /*
  * cmd_connect:
@@ -187,6 +201,9 @@ int cmd_connect( argc, argv )
     char      *secure_options;
     char      *login_timeout;
     char      *query_timeout;
+    char      *clientname;
+    char      *clienthostname;
+    char      *clientapplname;
     CS_INT    SybTimeOut;
     CS_BOOL   NetAuthRequired;
     varbuf_t  *exp_buf = NULL;
@@ -201,9 +218,7 @@ int cmd_connect( argc, argv )
     int       ctlib_fd;
 #endif
 
-    CS_RETCODE  result_type;
     CS_LOCALE  *locale = NULL;
-    CS_COMMAND *cmd;
 #if !defined(_WINDOZE_)
     CS_INT      netio_type;
 #endif
@@ -860,6 +875,14 @@ int cmd_connect( argc, argv )
         /* Then we use freetds which uses enum instead of defines */
         else if (strcmp(tds_version, "7.0") == 0)
             version = CS_TDS_70;
+        else if (strcmp(tds_version, "7.1") == 0)
+            version = CS_TDS_71;
+        else if (strcmp(tds_version, "7.2") == 0)
+            version = CS_TDS_72;
+        else if (strcmp(tds_version, "7.3") == 0)
+            version = CS_TDS_73;
+        else if (strcmp(tds_version, "7.4") == 0)
+            version = CS_TDS_74;
         else if (strcmp(tds_version, "8.0") == 0)
             version = CS_TDS_80;
 #endif
@@ -1258,8 +1281,17 @@ int cmd_connect( argc, argv )
                 case CS_TDS_70:
                     env_set( g_env, "tds_version", "7.0" );
                     break;
-                case CS_TDS_80:
-                    env_set( g_env, "tds_version", "8.0" );
+                case CS_TDS_71:
+                    env_set( g_env, "tds_version", "7.1" );
+                    break;
+                case CS_TDS_72:
+                    env_set( g_env, "tds_version", "7.2" );
+                    break;
+                case CS_TDS_73:
+                    env_set( g_env, "tds_version", "7.3" );
+                    break;
+                case CS_TDS_74:
+                    env_set( g_env, "tds_version", "7.4" );
                     break;
 #endif
                 default:
@@ -1280,30 +1312,8 @@ int cmd_connect( argc, argv )
     /*-- If autouse has been set, use it --*/
     if (autouse != NULL && *autouse != '\0')
     {
-        if (ct_cmd_alloc( g_connection, &cmd ) != CS_SUCCEED)
-            goto connect_succeed;
-
         sprintf( sqlbuf, "use %s", autouse );
-
-        if (ct_command( cmd,                /* Command Structure */
-                        CS_LANG_CMD,        /* Command Type */
-                        sqlbuf,             /* Buffer */
-                        CS_NULLTERM,        /* Buffer Length */
-                        CS_UNUSED           /* Options */
-                      ) != CS_SUCCEED)
-        {
-            ct_cmd_drop( cmd );
-            goto connect_fail;
-        }
-
-        if (ct_send( cmd ) != CS_SUCCEED)
-        {
-            ct_cmd_drop( cmd );
-            goto connect_fail;
-        }
-
-        while (ct_results( cmd, &result_type ) != CS_END_RESULTS);
-        ct_cmd_drop( cmd );
+        (void) execute_cmd (g_connection, sqlbuf);
 
         /*
          * sqsh-2.4 - Check in batch mode if the -D <database> is correctly set.
@@ -1319,7 +1329,6 @@ int cmd_connect( argc, argv )
         }
     }
 
-connect_succeed:
     /*
      * Now, since the connection was succesfull, we want to change
      * any environment variables to accurately reflect the current
@@ -1337,15 +1346,33 @@ connect_succeed:
         if ( check_opt_capability( g_connection ) )
         {
             CS_BOOL value = (*chained == '1' ? CS_TRUE : CS_FALSE);
-            retcode = ct_options( g_connection, CS_SET, CS_OPT_CHAINXACTS,
-                                  &value, CS_UNUSED, NULL);
-            if (retcode != CS_SUCCEED)
+            if (ct_options( g_connection, CS_SET, CS_OPT_CHAINXACTS, &value, CS_UNUSED, NULL) != CS_SUCCEED)
             {
-                fprintf (stderr,
-                "\\connect: WARNING: Unable to set transaction mode %s\n",
-                (*chained == '1' ? "on" : "off"));
+                fprintf (stderr, "\\connect: WARNING: Unable to set transaction mode %s\n", (*chained == '1' ? "on" : "off"));
             }
         }
+    }
+
+    /*
+     * sqsh-3.0: Set clientapplname, clienthostname and clientname.
+    */
+    env_get( g_env, "clientapplname", &clientapplname );
+    if ( clientapplname != NULL && *clientapplname != '\0' )
+    {
+        sprintf (sqlbuf, "set clientapplname '%s'", clientapplname);
+        (void) execute_cmd (g_connection, sqlbuf);
+    }
+    env_get( g_env, "clienthostname", &clienthostname );
+    if ( clienthostname != NULL && *clienthostname != '\0' )
+    {
+        sprintf (sqlbuf, "set clienthostname '%s'", clienthostname);
+        (void) execute_cmd (g_connection, sqlbuf);
+    }
+    env_get( g_env, "clientname",     &clientname );
+    if ( clientname != NULL && *clientname != '\0' )
+    {
+        sprintf (sqlbuf, "set clientname '%s'", clientname);
+        (void) execute_cmd (g_connection, sqlbuf);
     }
 
     return_code = CMD_LEAVEBUF;
@@ -1421,7 +1448,6 @@ connect_fail:
     return_code = CMD_FAIL;
 
 connect_leave:
-
     if ( exp_buf != NULL)
         varbuf_destroy( exp_buf );
 
@@ -1463,9 +1489,9 @@ static int check_opt_capability( g_connection )
                          CS_OPTION_GET, (CS_VOID*)&val
                        );
     if (ret != CS_SUCCEED || val == CS_FALSE)
-        return 0;
+        return False;
 
-    return 1;
+    return True;
 }
 
 static int wrap_print( outfile, str )
@@ -2181,3 +2207,39 @@ static CS_RETCODE validate_srvname_cb (userdata, certptr, certcount, valid)
 }
 #endif
 
+
+/*
+ * sqsh-3.0 - Function to execute a simple SQL command without any result set processing.
+*/
+static CS_RETCODE execute_cmd (g_connection, sqlbuf)
+    CS_CONNECTION *g_connection;
+    CS_CHAR       *sqlbuf;
+{
+    CS_COMMAND    *cmd;
+    CS_RETCODE     result_type;
+
+    if (ct_cmd_alloc( g_connection, &cmd ) != CS_SUCCEED)
+        return CS_FAIL;
+
+    if (ct_command( cmd,                /* Command Structure */
+                    CS_LANG_CMD,        /* Command Type */
+                    sqlbuf,             /* Buffer */
+                    CS_NULLTERM,        /* Buffer Length */
+                    CS_UNUSED           /* Options */
+                  ) != CS_SUCCEED)
+    {
+        ct_cmd_drop( cmd );
+        return CS_FAIL;
+    }
+
+    if (ct_send( cmd ) != CS_SUCCEED)
+    {
+        ct_cmd_drop( cmd );
+        return CS_FAIL;
+    }
+
+    while (ct_results( cmd, &result_type ) != CS_END_RESULTS);
+    ct_cmd_drop( cmd );
+
+    return CS_SUCCEED;
+}

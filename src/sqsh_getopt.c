@@ -33,9 +33,10 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_getopt.c,v 1.3 2008/04/06 10:03:08 mpeppler Exp $" ;
+static char RCS_Id[] = "$Id: sqsh_getopt.c,v 1.4 2013/02/24 22:21:10 mwesdorp Exp $" ;
 USE(RCS_Id)
 #endif /* !defined(lint) */
+
 
 /*
  * The following variables don't following my usual naming convention
@@ -52,12 +53,13 @@ static  int    sg_argc ;             /* Current end of argv */
 
 /*
  * The is_flag() macro is used to test a string to see if it is
- * potentially a flag (that is, it is of the format -[a-zA-Z0-9] or -\250).
+ * potentially a flag (that is, it is of the format -- or -[a-zA-Z0-9] or -\250).
  */
-#define is_flag(s) (*(s) == '-' && (isalnum((int)*((s)+1)) || *((s)+1) == '\250'))
+#define is_flag(s) (*(s) == '-' && (isalnum((int)*((s)+1)) || *((s)+1) == '-' || *((s)+1) == '\250'))
 
 /*-- Prototypes --*/
-static int sqsh_move _ANSI_ARGS(( int, char**, int ));
+static int sqsh_move    _ANSI_ARGS(( int, char**, int ));
+static int sqsh_nextopt _ANSI_ARGS(( int, char** )) ;
 
 int sqsh_getopt( argc, argv, opt_flags )
 	int      argc;
@@ -128,7 +130,7 @@ int sqsh_getopt( argc, argv, opt_flags )
 		/*
 		 * Now, figure out which options are available for this particular
 		 * flag.  Currently there are three supported: A ':' indicates that
-		 * the flag requires and argument, a ';' indicates that it may have
+		 * the flag requires an argument, a ';' indicates that it may have
 		 * an optional argument, and a '-' indicates that we are to ignore
 		 * the current argument.  Note that the '-' may be used in combination
 		 * with the other two.
@@ -464,4 +466,66 @@ int sqsh_getopt_reset()
 {
 	sg_argv = NULL ;	
 	return True ;
+}
+
+/*
+ * sqsh-3.0
+ * Process long options that are specfied as --xxxxx yyyyy
+ * or --xxxxx=yyyyy
+ */
+int sqsh_getopt_long ( argc, argv, option, slt )
+    int              argc ;
+    char           **argv ;
+    char            *option;
+    sqsh_longopt_t   slt[];
+{
+    int    i;
+    char *ch;
+
+
+    /*
+     * The long option maybe specified as --option=argument
+    */
+    if ( (ch = strchr( option, '=' )) != NULL )
+        *ch = '\0';
+
+    for ( i = 0; slt[i].name != NULL; ++i )
+    {
+        if ( strcasecmp (option, slt[i].name) == 0 )
+        {
+            if ( slt[i].reqarg == 1 )
+            {
+               if (ch != NULL)
+                   sqsh_optarg = ch + 1;
+               else
+                   if ( sqsh_nextopt ( argc, argv ) == False )
+                       return '?';
+            }
+            return slt[i].shortopt;
+        }
+    }
+    return '?';
+}        
+
+/*
+ * sqsh-3.0
+ * Set sqsh_optarg to next option in the arglist.
+ * Return False if there are no more options available or if the next option is the
+ * password option -\250.
+*/
+static int sqsh_nextopt ( argc, argv )
+    int    argc ;
+    char **argv ;
+{
+
+    if (sqsh_optind < sg_nargs)
+    {
+        if (argv[sqsh_optind][0] == '-' && argv[sqsh_optind][1] == '\250' )
+            return False;
+        sqsh_optarg = argv[sqsh_optind++];
+    }
+    else
+        return False;
+
+    return True ;
 }

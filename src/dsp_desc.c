@@ -32,7 +32,7 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: dsp_desc.c,v 1.12 2013/07/22 14:02:23 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: dsp_desc.c,v 1.13 2013/12/03 09:22:23 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
@@ -107,6 +107,29 @@ static void   dsp_display_fmt    _ANSI_ARGS(( CS_CHAR*, CS_DATAFMT* ));
     )
 #endif
 
+/*
+ * sqsh-3.0
+ * Determine if datatype is a integer kind of datatype.
+ */
+#if defined(CS_BIGINT_TYPE) && defined(CS_USMALLINT_TYPE) && defined(CS_UINT_TYPE) && defined(CS_UBIGINT_TYPE)
+#define IS_INT_TYPE(t) ( \
+        ((t) == CS_INT_TYPE)        \
+     || ((t) == CS_SMALLINT_TYPE)   \
+     || ((t) == CS_TINYINT_TYPE)    \
+     || ((t) == CS_BIT_TYPE)        \
+     || ((t) == CS_BIGINT_TYPE)     \
+     || ((t) == CS_UBIGINT_TYPE)    \
+     || ((t) == CS_UINT_TYPE)       \
+     || ((t) == CS_USMALLINT_TYPE)  \
+    )
+#else
+#define IS_INT_TYPE(t) ( \
+        ((t) == CS_INT_TYPE)        \
+     || ((t) == CS_SMALLINT_TYPE)   \
+     || ((t) == CS_TINYINT_TYPE)    \
+     || ((t) == CS_BIT_TYPE)        \
+    )
+#endif
 
 /*
  * dsp_desc_bind():
@@ -230,10 +253,11 @@ dsp_desc_t* dsp_desc_bind( cmd, result_type )
             return NULL;
         }
 
+        d->d_cols[i].c_colid        = i + 1;
         d->d_cols[i].c_justification= dsp_just( d->d_cols[i].c_format.datatype );
         d->d_cols[i].c_maxlength    = dsp_dlen( &d->d_cols[i].c_format );
         d->d_cols[i].c_processed    = False;
-        d->d_cols[i].c_colid        = i + 1;
+        d->d_cols[i].c_is_int_type  = IS_INT_TYPE(d->d_cols[i].c_format.datatype); /* sqsh-3.0 */
         d->d_cols[i].c_native       = NULL;
         d->d_cols[i].c_data         = NULL;
 

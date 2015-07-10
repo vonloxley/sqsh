@@ -25,8 +25,14 @@
 #ifndef sqsh_readline_h_included
 #define sqsh_readline_h_included
 
+#include "config.h"
+
 #if defined(USE_READLINE)
 #include <readline/readline.h>
+
+#if defined(HAVE_READLINE_HISTORY_H)
+    #include <readline/history.h>
+#endif
 
 /*
  * Readline history functions - for some reason not all

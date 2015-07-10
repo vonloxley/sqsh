@@ -261,8 +261,13 @@ AC_DEFUN([AC_SYBASE_ASE], [
 		# SYBASE_VERSION=`strings $SYBASE_OCOS/lib/lib*ct*.a 2>/dev/null | \
 		#	cut -c1-80 | fgrep 'Sybase Client-Library' | cut -d '/' -f 2 | uniq`
 		#
-		SYBASE_VERSION=`$SYBASE_OCOS/bin/isql -v 2>/dev/null | cut -c1-80 | $EGREP "[[SAP|Sybase]] CTISQL Utility" | \
-			cut -d '/' -f 2 | cut -d . -f 1`
+		if [[ -f $SYBASE_OCOS/bin/isql64 ]]; then
+			SYBASE_VERSION=`$SYBASE_OCOS/bin/isql64 -v 2>/dev/null | cut -c1-80 | $EGREP "[[SAP|Sybase]] CTISQL Utility" | \
+				cut -d '/' -f 2 | cut -d . -f 1`
+		else
+			SYBASE_VERSION=`$SYBASE_OCOS/bin/isql -v 2>/dev/null | cut -c1-80 | $EGREP "[[SAP|Sybase]] CTISQL Utility" | \
+				cut -d '/' -f 2 | cut -d . -f 1`
+		fi
 
 		if [[ "$SYBASE_VERSION" = "" ]]; then
 		#

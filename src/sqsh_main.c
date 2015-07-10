@@ -42,12 +42,15 @@
 
 /*-- Current Version --*/
 #if !defined(lint) && !defined(__LINT__)
-static char RCS_Id[] = "$Id: sqsh_main.c,v 1.24 2014/08/05 15:54:38 mwesdorp Exp $";
+static char RCS_Id[] = "$Id: sqsh_main.c,v 1.25 2014/08/06 09:38:15 mwesdorp Exp $";
 USE(RCS_Id)
 #endif /* !defined(lint) */
 
 /*-- Prototypes --*/
 static void print_usage      _ANSI_ARGS(( void ));
+#if 0
+static void print_arglist    _ANSI_ARGS(( int argc, char *argv[] ));
+#endif
 
 #define SQSH_HIDEPWD
 
@@ -105,7 +108,7 @@ static sqsh_flag_t sg_flags[] = {
     { "-L", "var=value",      "Set the value of a given variable"  },
     { "-m", "style",          "Set display mode"                   },
     { "-n", "{on|off}",       "Set chained transaction mode"       },
-    { "-N", "appname",        "Set Application Name (sqsh)"        },
+    { "-N", "appname",        "Set application name (sqsh-3.0)"    },
     { "-o", "filename",       "Direct all output to file"          },
     { "-p", "",               "Display performance stats"          },
     { "-P", "[password]",     "Sybase password (NULL)"             },
@@ -124,6 +127,36 @@ static sqsh_flag_t sg_flags[] = {
     { "-y", "directory",      "Override value of $SYBASE"          },
     { "-z", "language",       "Alternate display language"         },
     { "-Z", "[secmech]",      "Network security mechanism"         },
+    { "--appname       ", "appname", "Set application name"        },
+    { "--clientapplname", "clientapplname", "Set client appl name" },
+    { "--clienthostname", "clienthostname", "Set client host name" },
+    { "--clientname    ", "clientname",     "Set client name"      },
+    { "--hostname      ", "hostname",       "Set hostname"         },
+    { "--help          ", "",               "Show help text only"  },
+    { "--version       ", "",               "Show version only"    },
+};
+
+/*
+ * Define values for sqsh long options
+*/
+#define SLO_HELP        1
+#define SLO_VERSION     2
+#define SLO_APPNAME     3
+#define SLO_CANAME      4
+#define SLO_CHNAME      5
+#define SLO_CNAME       6
+#define SLO_HOSTNAME    7
+
+static sqsh_longopt_t sg_longopt[] = {
+/*--- long option --- required parm -- short option */
+    { "help",               0,         SLO_HELP     },
+    { "version",            0,         SLO_VERSION  },
+    { "appname",            1,         SLO_APPNAME  },
+    { "clientapplname",     1,         SLO_CANAME   },
+    { "clienthostname",     1,         SLO_CHNAME   },
+    { "clientname",         1,         SLO_CNAME    },
+    { "hostname",           1,         SLO_HOSTNAME },
+    { NULL,                 0,         0            },
 };
 
 int
@@ -306,11 +339,41 @@ main( argc, argv )
      * sqsh-2.1.6 - New parameters added to the list and cases neatly ordered
      */
     while ((ch = sqsh_getopt_combined( "SQSH", argc, argv,
-        "a:A:bBc;C:d:D:eE:f:G:hH:i:I:J:k:K:l:L:m:n:N:o:pP;Q:r;R:s:S:t;T:U:vV;w:Xy:z:Z;\250:" )) != EOF)
+        "-:a:A:bBc;C:d:D:eE:f:G:hH:i:I:J:k:K:l:L:m:n:N:o:pP;Q:r;R:s:S:t;T:U:vV;w:Xy:z:Z;\250:" )) != EOF)
     {
         ret = 0;
         switch (ch)
         {
+            case '-' : /* Process sqsh long options */
+                switch (sqsh_getopt_long (argc, argv, sqsh_optarg, sg_longopt))
+                {
+                    case SLO_HELP:
+                        print_usage();
+                        sqsh_exit(0);
+                        break;
+                    case SLO_VERSION:
+                        printf( "%s\n", g_version );
+                        sqsh_exit(0);
+                        break;
+                    case SLO_APPNAME:
+                        ret = env_set( g_env, "appname",        sqsh_optarg );
+                        break;
+                    case SLO_CANAME:
+                        ret = env_set( g_env, "clientapplname", sqsh_optarg );
+                        break;
+                    case SLO_CHNAME:
+                        ret = env_set( g_env, "clienthostname", sqsh_optarg );
+                        break;
+                    case SLO_CNAME:
+                        ret = env_set( g_env, "clientname",     sqsh_optarg );
+                        break;
+                    case SLO_HOSTNAME:
+                        ret = env_set( g_env, "hostname",       sqsh_optarg );
+                        break;
+                    default :
+                        sqsh_set_error( SQSH_E_BADPARAM, "Unkown option --%s or missing argument error", sqsh_optarg ) ;
+                }
+                break;
             case 'a' :
                 ret = env_set( g_env, "thresh_exit", sqsh_optarg );
                 break;
@@ -544,6 +607,7 @@ main( argc, argv )
                     }
                     close(fdin);
                     close(fdout);
+                    DBG(sqsh_debug(DEBUG_MISC,"sqsh_main: : password read from pipe: %s\n", buf));
                   } else {
                       fprintf(stderr, "sqsh: Error: Missing pipe file descriptors for password option 250\n");
                       ret = False;
@@ -565,7 +629,7 @@ main( argc, argv )
          */
         if (ret == False)
         {
-            fprintf( stderr, "sqsh: -%c: %s\n", ch, sqsh_get_errstr() );
+            fprintf( stderr, "sqsh: Option -%c: %s\n", ch, sqsh_get_errstr() );
             sqsh_exit( 255 );
         }
     }
@@ -1128,5 +1192,23 @@ static void hide_password (argc, argv)
   }
 }
 
+#endif
+
+#if 0
+/*
+ * Print arglist for debugging purposes.
+*/
+static void print_arglist ( argc, argv )
+     int    argc;
+     char **argv;
+{
+     int i;
+
+     fprintf ( stdout, "Current argument list:\n" );
+     for (i = 0; i < argc; ++i)
+         fprintf ( stdout, "Argv[%d] = %s\n", i, argv[i] );
+     fprintf ( stdout, "\n" );
+     fflush ( stdout );
+}
 #endif
 

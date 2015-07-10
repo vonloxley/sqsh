@@ -30,6 +30,7 @@
 #undef HAVE_CRYPT_H
 #undef HAVE_SHADOW_H
 #undef HAVE_STROPTS_H
+#undef HAVE_READLINE_HISTORY_H
 
 /*
  * If you compiler doesn't fully support the keyword 'const'

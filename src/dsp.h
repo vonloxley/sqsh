@@ -83,6 +83,12 @@ typedef struct _dsp_col_t {
 	 */
 	CS_INT      c_width;
 
+	/*
+	 * sqsh-3.0
+	 * Used in dsp_csv.c to skip quotes for integer datatypes.
+	 */
+	CS_INT      c_is_int_type;   /* Datatype belongs to group of integers */
+
 } dsp_col_t;
 
 /*

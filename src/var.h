@@ -222,6 +222,9 @@ static var_entry_t  sg_var_entry[] = {
 #endif
     /* sqsh-3.0 - New variable */
     { "csv_nullind",      "",            var_set_csv_nullind, var_get_csv_nullind},
+    { "clientname",       NULL,          var_set_nullstr,     NULL            },
+    { "clienthostname",   NULL,          var_set_nullstr,     NULL            },
+    { "clientapplname",   NULL,          var_set_nullstr,     NULL            },
 } ;
 
 #endif /* SQSH_INIT */
