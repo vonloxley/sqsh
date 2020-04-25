@@ -211,7 +211,7 @@ do
 			# install on.
 			#
 			x11_path=""
-			if [ "yes" = "yes" ]
+			if [ "no" = "yes" ]
 			then
 				x11_path=""
 				for dir in \
@@ -259,7 +259,7 @@ do
 			readline_path=""
 			if [ "yes" = "yes" ]
 			then
-				for dir in `echo  | sed -e 's,^-L,,g'` \
+				for dir in `echo -L/lib64 | sed -e 's,^-L,,g'` \
 					/usr/local/lib /usr/lib
 				do
 					if [ -f $dir/libreadline.a -o \

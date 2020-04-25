@@ -7,9 +7,9 @@ fi
 
 prefix=/usr/local
 exec_prefix=${prefix}/bin
-sybase=/opt/sybase/OCS-15_0
+sybase=/opt/sybase/OCS-16_0
 
-readline_libdir=''
+readline_libdir='-L/lib64'
 motif_libdir=''
 x_libdir='# -L/usr/X11R6/lib'
 
