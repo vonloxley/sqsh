@@ -61,3 +61,9 @@
 # The following alias's create a more 'isql-like' environment.
 #
 \alias :r='\buf-load -a !*'
+
+#
+# Enable tab-completion
+#
+\set keyword_completion=4
+\set keyword_dynamic=1
