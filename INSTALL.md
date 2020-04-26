@@ -26,47 +26,47 @@ In order to build this package, you will need:
 
 * Sybase CT-Library
 
-       You'll need a full installation of Open Client 12.5 or greater
-       to compile against (you only need the run-time to run sqsh
-       however).  Sqsh may still compile against Open Client 10.x, 11.x,
-       however these release are *very* old and I don't have a copy
-       around to test with any more.
+    You'll need a full installation of Open Client 12.5 or greater
+    to compile against (you only need the run-time to run sqsh
+    however).  Sqsh may still compile against Open Client 10.x, 11.x,
+    however these release are *very* old and I don't have a copy
+    around to test with any more.
 
-       Note: As of version 2.5 sqsh is trying to detect 64 bit compilation
-       mode and sets compiler flags accordingly.
+    Note: As of version 2.5 sqsh is trying to detect 64 bit compilation
+    mode and sets compiler flags accordingly.
 
 *  FreeTDS
 
-       If you don't have CT-Library, or you want to connect to a
-       Microsoft SQL Server (up to 2012), sqsh should now,
-       out-of-the-box, compile and run against FreeTDS (I've
-       tested personally with 0.91 and the current CVS tree).
-       You can get FreeTDS from http://www.freetds.org/.
+    If you don't have CT-Library, or you want to connect to a
+    Microsoft SQL Server (up to 2012), sqsh should now,
+    out-of-the-box, compile and run against FreeTDS (I've
+    tested personally with 0.91 and the current CVS tree).
+    You can get FreeTDS from http://www.freetds.org/.
 
-       PLEASE: Unfortunately, I don't have much spare time available
-       these days, so if you are having problems (core dumps,
-       connectivity, etc.) when using FreeTDS, please try posting
-       to the FreeTDS mailing list before proclaiming it a sqsh
-       issue.  Also, note that FreeTDS does not currently support
-       all of features of Open Client, so many of the flags that
-       sqsh supports (such as locale and charset changes) will
-       not work.
+    PLEASE: Unfortunately, I don't have much spare time available
+    these days, so if you are having problems (core dumps,
+    connectivity, etc.) when using FreeTDS, please try posting
+    to the FreeTDS mailing list before proclaiming it a sqsh
+    issue.  Also, note that FreeTDS does not currently support
+    all of features of Open Client, so many of the flags that
+    sqsh supports (such as locale and charset changes) will
+    not work.
 
 *  X11R4 or Later (optional)
 
-       To take advantage of the X Windowing System display style, you
-       must have at least X11R4 (R5 or later recommended).  This may
-       be found from ftp://ftp.x.org.
+    To take advantage of the X Windowing System display style, you
+    must have at least X11R4 (R5 or later recommended).  This may
+    be found from ftp://ftp.x.org.
 
 *  GNU Readline library (optional)
 
-       If you want emacs/vi style keyboard editing, this package is a must.
-       You can get it from
+    If you want emacs/vi style keyboard editing, this package is a must.
+    You can get it from
 
-          http://ftp.gnu.org/gnu/readline/
+        http://ftp.gnu.org/gnu/readline/
 
-       Sqsh should work with versions of readline as old as 2.2,
-       but is currently being tested with version 6.2.
+    Sqsh should work with versions of readline as old as 2.2,
+    but is currently being tested with version 6.2.
 
 Problems
 --------
@@ -88,12 +88,12 @@ Just follow the following directions:
     directory.  For bourne shell users (sh, bash, zsh, etc.),
     for example simply do:
 
-       % SYBASE=/opt/sybase
-       % export SYBASE
+        % SYBASE=/opt/sybase
+        % export SYBASE
 
     or for csh and that ilk, do:
 
-       % setenv SYBASE /opt/sybase
+        % setenv SYBASE /opt/sybase
 
     If you are using Sybase 12.0 or later, the simplest thing to do is
     to "source" the SYBASE.sh or SYBASE.csh file located in the
@@ -103,14 +103,14 @@ Just follow the following directions:
     If you are building against FreeTDS then you have to set the SYBASE
     variable to the prefix installation of freetds, i.e.:
 
-       % SYBASE=/usr/local
-       % export SYBASE
+        % SYBASE=/usr/local
+        % export SYBASE
 
     If you are building on Cygwin you need to specify the SYBASE path
     using the unix directory style notation:
 
-       % SYBASE=/cygdrive/c/Sybase
-       % export SYBASE
+        % SYBASE=/cygdrive/c/Sybase
+        % export SYBASE
 
     Also make sure that when you run sqsh on Cygwin that you have environment
     variables SYBASE and SYBASE_OCS defined for the local Windows user and not
@@ -120,16 +120,16 @@ Just follow the following directions:
     keys do exist for SYBASE and SYBASE_OCS as string values in
     "Computer\HKEY_CURRENT_USER\Environment".  If you are getting messages like this:
 
-       The context allocation routine failed when it tried to load localization files!!
-       One or more following problems may caused the failure
-       Your sybase home directory is c:\sql10. Check the environment variable SYBASE if it is not the one you want!
-       Cannot access file c:\sql10\ini\objectid.dat
+    The context allocation routine failed when it tried to load localization files!!
+    One or more following problems may caused the failure
+    Your sybase home directory is c:\sql10. Check the environment variable SYBASE if it is not the one you want!
+    Cannot access file c:\sql10\ini\objectid.dat
 
     then you most likely lack those variables in your Windows user environment.
 
 2. Run "configure"
 
-    $ ./configure
+        $ ./configure
 
     The configure shell script goes out and attempts to figure out
     exactly what your machine looks like.  The script supports the
@@ -137,114 +137,114 @@ Just follow the following directions:
 
         --prefix=DIR (/usr/local default)
 
-          Specifies an alternate base directory in which to install
-          the sqsh binary and man page (in DIR/{man,bin}). By default
-          this is /usr/local.
+    Specifies an alternate base directory in which to install
+    the sqsh binary and man page (in DIR/{man,bin}). By default
+    this is /usr/local.
 
-       --exec_prefix=DIR
+        --exec_prefix=DIR
 
-          This option allows the binary to be installed in a directory
-          other than the one specified with --prefix, instead the
-          binary will be placed in DIR/bin.
+    This option allows the binary to be installed in a directory
+    other than the one specified with --prefix, instead the
+    binary will be placed in DIR/bin.
 
-       --with-readline[=yes|no] (yes is default in sqsh-2.5)
+        --with-readline[=yes|no] (yes is default in sqsh-2.5)
 
-          If you have the GNU Readline library available (see Requirements,
-          above), supply this flag to enable readline support in sqsh.
-          Supplying this option will cause 'configure' to attempt to
-          automatically determine the location of your readline header
-          files and libraries.  Hints may be supplied as to the location
-          of these files using the INCDIRS and LIBDIRS environment
-          variables described below, otherwise a search-path of common
-          installation locations are used instead.
+    If you have the GNU Readline library available (see Requirements,
+    above), supply this flag to enable readline support in sqsh.
+    Supplying this option will cause 'configure' to attempt to
+    automatically determine the location of your readline header
+    files and libraries.  Hints may be supplied as to the location
+    of these files using the INCDIRS and LIBDIRS environment
+    variables described below, otherwise a search-path of common
+    installation locations are used instead.
 
-       --with-x
+        --with-x
 
-          Enables X windows support in sqsh.  This requires the existence
-          of X11R4 or later on your system.  By default, if this flag
-          is not supplied, X support is disabled.
+    Enables X windows support in sqsh.  This requires the existence
+    of X11R4 or later on your system.  By default, if this flag
+    is not supplied, X support is disabled.
 
-       --without-x
+        --without-x
 
-          Disables X support.  This is the same as running configure
-          without '-with-x'.
+    Disables X support.  This is the same as running configure
+    without '-with-x'.
 
-       --x-includes=<incdir>
+        --x-includes=<incdir>
 
-          By default, if --with-x is supplied configure will auto-
-          matically attempt to find the location of your X11
-          include directory.  If it fails or chooses the wrong
-          directory, this option may be supplied to force it to
-          use <incdir>.
+    By default, if --with-x is supplied configure will auto-
+    matically attempt to find the location of your X11
+    include directory.  If it fails or chooses the wrong
+    directory, this option may be supplied to force it to
+    use <incdir>.
 
-       --x-libraries=<libdir>
+        --x-libraries=<libdir>
 
-          As with --x-includes, this will override configures attempts
-          to automatically determine the location of your X11 libraries.
+    As with --x-includes, this will override configures attempts
+    to automatically determine the location of your X11 libraries.
 
-       --with-motif[=<path>]
+        --with-motif[=<path>]
 
-          Causes the X support for sqsh to use Motif widgets rather than
-          the default (and rather crude) Athena widget set.  Enabling
-          this option also automatically enables --with-x. If <path>
-          is supplied, then <path>/include/X11 will be used to find the
-          Motif include headers, and <path>/lib will be chosen to find
-          Motif libraries.
+    Causes the X support for sqsh to use Motif widgets rather than
+    the default (and rather crude) Athena widget set.  Enabling
+    this option also automatically enables --with-x. If <path>
+    is supplied, then <path>/include/X11 will be used to find the
+    Motif include headers, and <path>/lib will be chosen to find
+    Motif libraries.
 
-       --with-static
+        --with-static
 
-          Forces sqsh to be compiled by statically linking in the
-          appropriate Open Client libraries rather than dynamically
-          linking with them.  Note that all other libraries continue
-          to be dynamically linked.
+    Forces sqsh to be compiled by statically linking in the
+    appropriate Open Client libraries rather than dynamically
+    linking with them.  Note that all other libraries continue
+    to be dynamically linked.
 
-       --with-gcc
+        --with-gcc
 
-          Forces configure to chose gcc as the compiler of choice
-          regardless of whether or not a different C compiler is
-          found earlier in your path.
+    Forces configure to chose gcc as the compiler of choice
+    regardless of whether or not a different C compiler is
+    found earlier in your path.
 
-       --with-debug[=yes|no] (default is no)
+        --with-debug[=yes|no] (default is no)
 
-          Enables the sqsh -l flag to specify additional debugging options.
+    Enables the sqsh -l flag to specify additional debugging options.
 
-       --with-devlib[=yes|no] (default is no)
+        --with-devlib[=yes|no] (default is no)
 
-          Will link against the $SYBASE/$SYBASE_OCS/devlib libraries.
-          You may also need to set LD_LIBRARY_PATH to put this directory
-          in front of the normal lib directory in order to load the requested
-          development libraries.
+    Will link against the $SYBASE/$SYBASE_OCS/devlib libraries.
+    You may also need to set LD_LIBRARY_PATH to put this directory
+    in front of the normal lib directory in order to load the requested
+    development libraries.
 
     Also, the following environment variables may be set prior to
     running 'configure' to alter its behavior (see conf.sh for an
     example on how to use these flags):
 
-       CC
-          Forces configure to use the value of $CC as the default
-          C compiler.  This variable may also specify flags to pass
-          to the compiler, such as "cc -O -Wall" or just "gcc".
+    CC
+      Forces configure to use the value of $CC as the default
+      C compiler.  This variable may also specify flags to pass
+      to the compiler, such as "cc -O -Wall" or just "gcc".
 
-       CFLAGS
-          Pass on additional compiler flags, for example "-g -O2 -m64"
-          when making sqsh in 64bit mode.
+    CFLAGS
+      Pass on additional compiler flags, for example "-g -O2 -m64"
+      when making sqsh in 64bit mode.
 
-       CPPFLAGS
-          Define preproccesor flags like "-DSYB_LP64" when making
-          sqsh in 64bit mode.
+    CPPFLAGS
+      Define preproccesor flags like "-DSYB_LP64" when making
+      sqsh in 64bit mode.
 
-       LDFLAGS
-          Define linker flags like "-m64" for example.
+    LDFLAGS
+      Define linker flags like "-m64" for example.
 
-       INCDIRS
-          When attempting to discover the location of the readline
-          header files (only when --with-readline is specified), this
-          variable may supply a colon separated set of directories
-          in which to look for the header files, rather than the
-          default search path.
+    INCDIRS
+      When attempting to discover the location of the readline
+      header files (only when --with-readline is specified), this
+      variable may supply a colon separated set of directories
+      in which to look for the header files, rather than the
+      default search path.
 
-       LIBDIRS
-          As with INCDIRS, this variable is used to track down the
-          location of the readline library.
+    LIBDIRS
+      As with INCDIRS, this variable is used to track down the
+      location of the readline library.
 
     You may also run "./configure --help" for more information on
     available options.
@@ -278,13 +278,13 @@ Just follow the following directions:
 
 6. Now, attempt to build it:
 
-    $ make
+         $ make
 
     This will (hopefully) create the sqsh executable.
 
 7. Now, try to install it:
 
-    $ make install
+         $ make install
 
     This will install the binary into ${prefix}/bin, or ${exec_prefix}/bin,
     if --exec_prefix was specified. Use sudo to obtain root privileges for
@@ -300,16 +300,16 @@ Just follow the following directions:
 
     Optionally, you may also execute:
 
-    $ make install-wrapper
+         $ make install-wrapper
 
     This will install sqsh as ${prefix}/bin/sqsh.bin and install a shell
     script called ${prefix}/bin/sqsh. This shell script will do the
     following:
 
-        o  Automatically set your $SYBASE to the one used when
-           'configure' was run.
-        o  Automatically set your $LD_LIBRARY_PATH (or $SHLIB_PATH
-           on HP-UX) to point to the Open Client (or FreeTDS) library.
+    o  Automatically set your $SYBASE to the one used when
+    'configure' was run.
+    o  Automatically set your $LD_LIBRARY_PATH (or $SHLIB_PATH
+    on HP-UX) to point to the Open Client (or FreeTDS) library.
 
     NOTE: Because this script overrides any other SYBASE or
     LD_LIBRARY_PATH setting you may already have in your environment,
@@ -320,26 +320,27 @@ Just follow the following directions:
 
     For most machines you simply type:
 
-    $ make install.man
+         $ make install.man
 
     Which will cause the man page to be copied into ${prefix}/man/man1.
     However, if your machine supports compressed man pages, you may use:
 
-    $ make install.zman
+         $ make install.zman
 
     Which will cause the man page to be compressed and copied into
-    ${prefix}/man/man1.Z.
+     
+         ${prefix}/man/man1.Z.
 
 Now if all went well, you have a working program with man pages and
 everything.  However, if you ever decide to do the unimaginable, and
 get rid of all traces of the program, try:
 
-    $ make uninstall
-    $ make uninstall.man
+         $ make uninstall
+         $ make uninstall.man
 
 or, if need be:
 
-    $ make uninstall.zman
+         $ make uninstall.zman
 
 Building Binary Distribution
 ----------------------------
@@ -348,7 +349,7 @@ If you wish to build a binary distribution (a tar file that contains
 everything needed to install and run the binary you compile), simply
 perform steps 1 through 6, above, and then do a:
 
-    % make dist
+        % make dist
 
 This will build a sqsh-<version>.tar.gz file that contains
 everything needed to distribute sqsh in binary-only form.
