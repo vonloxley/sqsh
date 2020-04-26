@@ -23,8 +23,9 @@ Michael Peppler (mpeppler@peppler.org) and Martin Wesdorp
 Availability
 ------------
 
-Sqsh may be found on the following site:
+Sqsh may be found on the following sites:
 
+    https://vonloxley.github.io/sqsh/
     http://sourceforge.net/projects/sqsh/
 
 Licensing
@@ -38,5 +39,5 @@ distributed under the terms of this license.
 Building and Installing
 -----------------------
 
-Refer to the INSTALL file for directions on installation.
+Refer to the [INSTALL](INSTALL.md) file for directions on installation.
 
