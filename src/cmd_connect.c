@@ -47,6 +47,26 @@ USE(RCS_Id)
 #endif /* !defined(lint) */
 
 /*
+ * sqsh-3.0: Define FreeTDS enumerated values to prevent compile errors
+ * when using different versions of FreeTDS.
+*/
+#if !defined(CS_TDS_70)
+#define CS_TDS_70 7365
+#endif
+#if !defined(CS_TDS_71)
+#define CS_TDS_71 7366
+#endif
+#if !defined(CS_TDS_72)
+#define CS_TDS_72 7367
+#endif
+#if !defined(CS_TDS_73)
+#define CS_TDS_73 7368
+#endif
+#if !defined(CS_TDS_74)
+#define CS_TDS_74 7369
+#endif
+
+/*
  * sqsh-2.1.6 - Structure for Network Security Options
 */
 typedef struct _NetSecService {
@@ -856,10 +876,18 @@ int cmd_connect( argc, argv )
             version = CS_TDS_495;
         else if (strcmp(tds_version, "5.0") == 0)
             version = CS_TDS_50;
-#if !defined(CS_TDS_50)
+#if defined(SQSH_FREETDS)
         /* Then we use freetds which uses enum instead of defines */
         else if (strcmp(tds_version, "7.0") == 0)
             version = CS_TDS_70;
+        else if (strcmp(tds_version, "7.1") == 0)
+            version = CS_TDS_71;
+        else if (strcmp(tds_version, "7.2") == 0)
+            version = CS_TDS_72;
+        else if (strcmp(tds_version, "7.3") == 0)
+            version = CS_TDS_73;
+        else if (strcmp(tds_version, "7.4") == 0)
+            version = CS_TDS_74;
         else if (strcmp(tds_version, "8.0") == 0)
             version = CS_TDS_80;
 #endif
@@ -993,7 +1021,7 @@ int cmd_connect( argc, argv )
      * OpenClient supports an optional filter that can be specified as third
      * parameter like host:port:filter. Filters are defined in libtcl.cfg.
      */
-#if defined(CS_SERVERADDR) && defined(CS_TDS_50)
+#if defined(CS_SERVERADDR) && !defined(SQSH_FREETDS)
     if ( server != NULL && (cp = strchr(server, ':')) != NULL )
     {
         char  *cp2;
@@ -1254,7 +1282,7 @@ int cmd_connect( argc, argv )
                 case CS_TDS_50:
                     env_set( g_env, "tds_version", "5.0" );
                     break;
-#if !defined(CS_TDS_50)
+#if defined(SQSH_FREETDS)
                 case CS_TDS_70:
                     env_set( g_env, "tds_version", "7.0" );
                     break;
@@ -1799,7 +1827,7 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
     if (sg_login == False)
     {
         env_get( g_env, "DSQUERY", &server ) ;
-#if defined(CS_TDS_50)
+#if defined(SQSH_FREETDS)
         if (CS_SEVERITY(msg->msgnumber) >= CS_SV_COMM_FAIL ||
             ctx == NULL || con == NULL)
 #else

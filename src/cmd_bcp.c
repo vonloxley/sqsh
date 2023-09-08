@@ -745,7 +745,7 @@ int cmd_bcp( argc, argv )
         goto return_fail;
     }
 
-#if defined(CS_SERVERADDR) && defined(CS_TDS_50)
+#if defined(CS_SERVERADDR) && !defined(SQSH_FREETDS)
     if ( server != NULL && (cp = strchr(server, ':')) != NULL )
     {
         char  *cp2;
