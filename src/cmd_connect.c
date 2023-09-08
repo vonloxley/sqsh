@@ -52,7 +52,7 @@ USE(RCS_Id)
 typedef struct _NetSecService {
     CS_INT  service;
     CS_CHAR optchar;
-    CS_CHAR *name;
+    const CS_CHAR *name;
 } NET_SEC_SERVICE;
 
 /*
@@ -1882,7 +1882,7 @@ static CS_RETCODE SetNetAuth (conn, principal, keytab_file, secmech, req_options
     CS_INT  i;
     CS_BOOL OptSupported;
 
-    NET_SEC_SERVICE nss[] = {
+    static const NET_SEC_SERVICE nss[] = {
       /*
        * CS_SEC_NETWORKAUTH must be the first entry
       */
