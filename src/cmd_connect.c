@@ -889,7 +889,10 @@ int cmd_connect( argc, argv )
         else if (strcmp(tds_version, "7.4") == 0)
             version = CS_TDS_74;
         else if (strcmp(tds_version, "8.0") == 0)
-            version = CS_TDS_80;
+        {
+            fprintf( stderr, "sqsh: This build does not support TDS version 8.0\n" );
+            goto connect_fail;
+        }
 #endif
         else version = CS_TDS_50; /* default version */
 
@@ -1285,9 +1288,6 @@ int cmd_connect( argc, argv )
 #if defined(SQSH_FREETDS)
                 case CS_TDS_70:
                     env_set( g_env, "tds_version", "7.0" );
-                    break;
-                case CS_TDS_80:
-                    env_set( g_env, "tds_version", "8.0" );
                     break;
 #endif
                 default:
