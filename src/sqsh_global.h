@@ -174,4 +174,14 @@ extern int         g_interactive;
 extern FILE       *g_p2f_fp; /* Print to file filepointer */
 extern int         g_p2fc;   /* Print to file count */
 
+#if !defined(CS_NULLDATA)
+#error cspublic.h not included!
+#endif
+
+/* newer FreeTDS versions defines CS_TDS_72, old ones use enumeration but not defines */
+#undef SQSH_FREETDS
+#if defined(CS_TDS_72) || !defined(CS_TDS_50)
+#define SQSH_FREETDS 1
+#endif
+
 #endif
