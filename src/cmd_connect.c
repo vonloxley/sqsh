@@ -47,12 +47,32 @@ USE(RCS_Id)
 #endif /* !defined(lint) */
 
 /*
+ * sqsh-3.0: Define FreeTDS enumerated values to prevent compile errors
+ * when using different versions of FreeTDS.
+*/
+#if !defined(CS_TDS_70)
+#define CS_TDS_70 7365
+#endif
+#if !defined(CS_TDS_71)
+#define CS_TDS_71 7366
+#endif
+#if !defined(CS_TDS_72)
+#define CS_TDS_72 7367
+#endif
+#if !defined(CS_TDS_73)
+#define CS_TDS_73 7368
+#endif
+#if !defined(CS_TDS_74)
+#define CS_TDS_74 7369
+#endif
+
+/*
  * sqsh-2.1.6 - Structure for Network Security Options
 */
 typedef struct _NetSecService {
     CS_INT  service;
     CS_CHAR optchar;
-    CS_CHAR *name;
+    const CS_CHAR *name;
 } NET_SEC_SERVICE;
 
 /*
@@ -856,12 +876,23 @@ int cmd_connect( argc, argv )
             version = CS_TDS_495;
         else if (strcmp(tds_version, "5.0") == 0)
             version = CS_TDS_50;
-#if !defined(CS_TDS_50)
+#if defined(SQSH_FREETDS)
         /* Then we use freetds which uses enum instead of defines */
         else if (strcmp(tds_version, "7.0") == 0)
             version = CS_TDS_70;
+        else if (strcmp(tds_version, "7.1") == 0)
+            version = CS_TDS_71;
+        else if (strcmp(tds_version, "7.2") == 0)
+            version = CS_TDS_72;
+        else if (strcmp(tds_version, "7.3") == 0)
+            version = CS_TDS_73;
+        else if (strcmp(tds_version, "7.4") == 0)
+            version = CS_TDS_74;
         else if (strcmp(tds_version, "8.0") == 0)
-            version = CS_TDS_80;
+        {
+            fprintf( stderr, "sqsh: This build does not support TDS version 8.0\n" );
+            goto connect_fail;
+        }
 #endif
         else version = CS_TDS_50; /* default version */
 
@@ -993,7 +1024,7 @@ int cmd_connect( argc, argv )
      * OpenClient supports an optional filter that can be specified as third
      * parameter like host:port:filter. Filters are defined in libtcl.cfg.
      */
-#if defined(CS_SERVERADDR) && defined(CS_TDS_50)
+#if defined(CS_SERVERADDR) && !defined(SQSH_FREETDS)
     if ( server != NULL && (cp = strchr(server, ':')) != NULL )
     {
         char  *cp2;
@@ -1254,12 +1285,9 @@ int cmd_connect( argc, argv )
                 case CS_TDS_50:
                     env_set( g_env, "tds_version", "5.0" );
                     break;
-#if !defined(CS_TDS_50)
+#if defined(SQSH_FREETDS)
                 case CS_TDS_70:
                     env_set( g_env, "tds_version", "7.0" );
-                    break;
-                case CS_TDS_80:
-                    env_set( g_env, "tds_version", "8.0" );
                     break;
 #endif
                 default:
@@ -1799,7 +1827,7 @@ static CS_RETCODE syb_client_cb ( ctx, con, msg )
     if (sg_login == False)
     {
         env_get( g_env, "DSQUERY", &server ) ;
-#if defined(CS_TDS_50)
+#if defined(SQSH_FREETDS)
         if (CS_SEVERITY(msg->msgnumber) >= CS_SV_COMM_FAIL ||
             ctx == NULL || con == NULL)
 #else
@@ -1877,24 +1905,42 @@ static CS_RETCODE SetNetAuth (conn, principal, keytab_file, secmech, req_options
 
 #if defined(CS_SEC_NETWORKAUTH)
 
+#if defined(CS_SEC_MECHANISM)
     CS_CHAR buf[CS_MAX_CHAR+1];
+#endif
     CS_INT  buflen;
     CS_INT  i;
     CS_BOOL OptSupported;
 
-    NET_SEC_SERVICE nss[] = {
+    static const NET_SEC_SERVICE nss[] = {
       /*
        * CS_SEC_NETWORKAUTH must be the first entry
       */
     { CS_SEC_NETWORKAUTH,    'u', "Network user authentication (unified login)" },
+#if defined(CS_SEC_CHANBIND)
     { CS_SEC_CHANBIND,       'b', "Channel binding" },
+#endif
+#if defined(CS_SEC_CONFIDENTIALITY)
     { CS_SEC_CONFIDENTIALITY,'c', "Data confidentiality" },
+#endif
+#if defined(CS_SEC_DELEGATION)
     { CS_SEC_DELEGATION,     'd', "Credentials delegation" },
+#endif
+#if defined(CS_SEC_INTEGRITY)
     { CS_SEC_INTEGRITY,      'i', "Data integrity" },
+#endif
+#if defined(CS_SEC_MUTUALAUTH)
     { CS_SEC_MUTUALAUTH,     'm', "Mutual client/server authentication" },
+#endif
+#if defined(CS_SEC_DATAORIGIN)
     { CS_SEC_DATAORIGIN,     'o', "Data origin stamping" },
+#endif
+#if defined(CS_SEC_DETECTSEQ)
     { CS_SEC_DETECTSEQ,      'q', "Data out-of-sequence detection" },
+#endif
+#if defined(CS_SEC_DETECTREPLAY)
     { CS_SEC_DETECTREPLAY,   'r', "Data replay detection" },
+#endif
     { CS_UNUSED,             ' ', "" }
     };
 
@@ -1923,6 +1969,7 @@ static CS_RETCODE SetNetAuth (conn, principal, keytab_file, secmech, req_options
         DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully set principal %s.\n", principal);)
     }
 
+#if defined(CS_SEC_KEYTAB)
     /*
      * Set optional keytab file for DCE network authentication.
      */
@@ -1941,7 +1988,9 @@ static CS_RETCODE SetNetAuth (conn, principal, keytab_file, secmech, req_options
         }
         DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully set keytab %s.\n", keytab_file);)
     }
+#endif
 
+#if defined(CS_SEC_MECHANISM)
     /*
      * Set the security mechanism.
      * Note: If you do not supply a mechanism, or use "default", the first available
@@ -1962,6 +2011,7 @@ static CS_RETCODE SetNetAuth (conn, principal, keytab_file, secmech, req_options
         }
         DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully set secmech %s.\n", secmech);)
     }
+#endif
 
     /*
      * Always set the CS_SEC_NETWORKAUTH option. (Option defined in nss[0]).
@@ -1975,6 +2025,7 @@ static CS_RETCODE SetNetAuth (conn, principal, keytab_file, secmech, req_options
     }
     DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully enabled option %s.\n", nss[0].name);)
 
+#if defined(CS_SEC_MECHANISM)
     /*
      * Request for the secmech actually in use.
     */
@@ -1991,6 +2042,7 @@ static CS_RETCODE SetNetAuth (conn, principal, keytab_file, secmech, req_options
     }
     DBG(sqsh_debug(DEBUG_ERROR, "SetNetAuth: Succesfully obtained secmech name %s.\n", buf);)
     env_put( g_env, "secmech", buf, ENV_F_TRAN );
+#endif
 
     /*
      * Loop through the list of all other available security options
@@ -2077,6 +2129,7 @@ static CS_RETCODE ShowNetAuthCredExp (conn, cmdname)
 
     if (NETWORKAUTH == CS_TRUE)
     {
+#if defined(CS_SEC_CREDTIMEOUT)
         /*
          * If we use network authentication, then determine the credential timeout period.
         */
@@ -2132,6 +2185,7 @@ static CS_RETCODE ShowNetAuthCredExp (conn, cmdname)
                 fprintf (stdout, "%s: Network Authenticated session expires at: %s (%d secs)\n",
                              cmdname, dttm, (int) CredTimeOut );
         }
+#endif
     }
     else
         fprintf (stdout, "%s: No Network Authenticated session active\n", cmdname );
